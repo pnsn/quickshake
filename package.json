@@ -1,0 +1,32 @@
+{
+  "name": "quickShake",
+  "version": "0.0.1",
+  "description": "QuickShake serves waveform data stored on MongoDb",
+  "main": "app.js",
+  "dependencies": {
+    "bson": "latest",
+    "bufferutil": "^1.2.1",
+    "express": "latest",
+    "mocha": "latest",
+    "mongodb": "latest",
+    "ws": "latest"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jon Connolly",
+  "license": "GPL",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/pnsn/quickShake"
+  },
+  "keywords": [
+    "quickshake",
+    "mongodb"
+  ],
+  "bugs": {
+    "url": "https://github.com/joncon/quickShake/issues"
+  }
+}

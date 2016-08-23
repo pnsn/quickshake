@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head>
+    <title>WS Test</title>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    
+  </head>
+  <body>
+    
+  <script>
+  var ws = new WebSocket('ws://localdocker:8888?what=who&scnls=OCEN.HNZ.UW.--');
+
+//   ws.onopen=function(){
+//       ws.send('something');
+// };
+
+ws.onmessage = function(data, flags) {
+  // console.log(data)
+};
+   
+  </script>
+  </body>
+</html>
