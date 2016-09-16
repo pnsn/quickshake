@@ -26,5 +26,5 @@ node_modules
 # Users Environment Variables
 .lock-wscript
 .DS_STORE
-script/secret.sh
+.secret.sh
 npm-debug.log

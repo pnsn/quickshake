@@ -1,14 +1,13 @@
-db:
-  image: mongo:3.2
-  container_name: quickMongo
+# db:
+#   image: mongo:3.2
+#   container_name: quickMongo
 web:
   build: .
-  command: bash -c "node app.js"
-  # command: bash -c 'ls ~/.ssh'
+  command: bash -c "cd /quickshake && npm install && source /quickshake/script/secret.sh &&  npm start"
   volumes:
-    - .:/quickShake
+    - .:/quickshake
   ports:
-    - "80:80"
-  links:
-    - db
+    - "8888:8888"
+  # links:
+  #   - db
   container_name: quickShake
