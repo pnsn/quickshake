@@ -1,0 +1,151 @@
+#azure-logo {
+	float: right;
+	margin-top: 5%;
+}
+
+#azure-logo a img {
+	width: 120px;
+}
+
+#quickshake {
+	height: 100%;
+	width: 100%;
+	min-height: 500px;
+}
+
+#quick-shake-CMS {
+	clear: both;
+}
+
+.interior {
+	margin-top: 10px;
+}
+
+#quick-shake-logo {
+	float: left;
+}
+
+#quick-shake-logo img {
+	height: 80px;
+}
+
+#quick-shake-header {
+	font-size: 36px;
+	font-weight: 300;
+	color: black;
+	margin-left: 41%;
+	margin-top: 20px;
+}
+
+#quick-shake-timeout {
+	background-color: white;
+	opacity: 0.9;
+	text-align: center;
+	color: #565656;
+}
+
+#quick-shake-timeout p {
+	margin-bottom: 5px;
+}
+
+#quick-shake-canvas {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+#quick-shake-controls {
+	margin-top: 10px;
+	overflow: hidden;
+}
+
+#quick-shake-controls i {
+	text-align: center;
+	color: #107a10;
+}
+
+#quick-shake-controls #state-buttons > i {
+	display: inline-block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+#quick-shake-controls .disabled {
+	opacity: 0.4;
+}
+
+#quick-shake-controls .ui-state-default, #quick-shake-controls .ui-widget-content .ui-state-default, #quick-shake-controls .ui-widget-header .ui-state-default {
+	background: #107a10 !important;
+	border: none !important;
+	border-radius: 50%;
+}
+
+.ui-slider {
+	border-radius: 10px;
+}
+
+#quick-shake-scale {
+	position: absolute;
+	left: 0px;
+	display: inline-block;
+	width: 55px;
+	border-right: solid #888888 2px;
+}
+
+#quick-shake-scale #top {
+	top: 0px;
+	right: 1px;
+}
+
+#quick-shake-scale #bottom {
+	bottom: 0px;
+	right: 3px;
+}
+
+#quick-shake-scale, #quick-shake-canvas, #quick-shake-controls {
+	visibility: hidden;
+}
+
+#playback {
+	margin-bottom: 5px;
+}
+
+.quickshake-warning {
+	display: none;
+}
+
+#station-select.controls {
+	margin-bottom: 10px;
+}
+
+.quickshake-station-warning {
+	display: none;
+}
+
+.quickshake-station-warning .station-warning {
+	display: inline;
+}
+
+.quickshake-event-warning, .quickshake-invalid-event-warning {
+	display: none;
+}
+
+.quickshake-event-warning .evid-warning, .quickshake-invalid-event-warning .evid-warning {
+	display: inline;
+}
+
+ul.station-select {
+	list-style-type: none;
+}
+
+.ui-state-highlight {
+	height: 10px;
+}
+
+#select-evid {
+	width: 100px;
+}
+
+#station-sorter {
+	display: none;
+}

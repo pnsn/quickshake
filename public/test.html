@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <head>
+    <title>WS Test</title>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    
+  </head>
+  <body>
+    
+  <script>
+  var ws = new WebSocket('ws://localdocker:8888?scnls=OCEN.HNZ.UW.--');
+
+//   ws.onopen=function(){
+//       ws.send('something');
+// };
+
+var index={};
+var i;
+var count=0;
+// setTimeout(function(){
+//   // ws.close();
+//   console.log("done");
+//   console.log(index);
+//   console.log(count);
+// }, 2000);
+ws.onmessage = function(message, flags) {
+  count ++;
+  json=JSON.parse(message['data'])
+  i=json["_id"]
+  // console.log(json);
+  
+  console.log(json["_id"]);
+  // console.log(Date.now() - json['starttime']);
+  // console.log(json["key"]);
+  // if(index.hasOwnProperty(i)){
+  //   index[i]++;
+  // }else{
+  //   index[i]=1;
+  // }
+
+};
+   
+  </script>
+  </body>
+</html>
