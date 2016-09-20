@@ -7,14 +7,14 @@
     <link rel="stylesheet" type="text/css" href= "https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href= "https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css">
     <link rel="stylesheet" type="text/css" href="css/quickshake.css">
+    <link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css">
     <script src="http://code.jquery.com/jquery-1.10.0.js"></script>
-    <script src="https://code.jquery.com/ui/1.10.3/jquery-ui.min.js"   integrity="sha256-lnH4vnCtlKU2LmD0ZW1dU7ohTTKrcKP50WA9fa350cE="   crossorigin="anonymous"></script>  
-    
-    
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.11.0/js/bootstrap-select.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.10.3/jquery-ui.min.js"   integrity="sha256-lnH4vnCtlKU2LmD0ZW1dU7ohTTKrcKP50WA9fa350cE="   crossorigin="anonymous"></script>
+
   <script src="javascript/bootstrap.min.js"></script>
   <script src="javascript/bootstrap_menu.js"></script>
   <script src="javascript/bootstrap-datetimepicker.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.11.0/js/bootstrap-select.min.js"></script>
   <script src="javascript/jquery.touchSwipe.min.js"></script>   
   <script src="javascript/quickshake.js"></script>
     
@@ -101,22 +101,22 @@
     </div>
   </div>
 </div>
-<div class="col-md-15 col-xs-15 full-height">
+<div class="col-md-12 col-xs-12 full-height">
   <div id="quickshake">
     <canvas id="quick-shake-canvas"></canvas>
   </div>
 </div>
-<div class="col-md-15 col-xs-15" id="quick-shake-controls">
-  <div class="controls col-md-5 col-xs-15 col-md-push-5" id="state-buttons">
-    <i class="fa fa-play fa-3x disabled col-xs-5" id="play-button" title="Play"></i>
-    <i class="fa fa-pause fa-3x col-xs-5" id="stop-button" title="Pause"></i>
-    <i class="fa fa-step-forward fa-3x disabled col-xs-5" id="realtime-button" title="Realtime"></i>
+<div class="col-md-12 col-xs-12" id="quick-shake-controls">
+  <div class="controls col-md-4 col-xs-12 col-md-push-4" id="state-buttons">
+    <i class="fa fa-play fa-3x disabled col-xs-4" id="play-button" title="Play"></i>
+    <i class="fa fa-pause fa-3x col-xs-4" id="stop-button" title="Pause"></i>
+    <i class="fa fa-step-forward fa-3x disabled col-xs-4" id="realtime-button" title="Realtime"></i>
   </div>
-  <div class="controls col-md-5 col-sm-7 col-xs-15 col-md-pull-5" id="playback">
+  <div class="controls col-md-4 col-xs-12 col-md-pull-4" id="playback">
     <label>Shake History</label>
     <div id="playback-slider"></div>
   </div>
-  <div class="controls col-md-5 col-sm-7 pull-right hidden-xs" id="scale">
+  <div class="controls col-md-4 pull-right hidden-xs" id="scale">
     <label>Scale (%g)</label>
     <div id="scale-slider"></div>
   </div>
