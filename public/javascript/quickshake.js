@@ -433,6 +433,7 @@ $(function(){
     $(".loading").hide();
     
     $("#quick-shake-scale, #quick-shake-canvas, #quick-shake-controls").css("visibility", "visible");
+    $("#quickshake").height(window.innerHeight*.85);
     var height = $("#quickshake").height()-45; //banner height && controls height 
     this.width = $("#quickshake").width();  
     this.channelHeight = height/channels.length;
@@ -483,8 +484,8 @@ $(function(){
   
 
   //Globals  
-  var viewerWidthSec=300;
-  var quickshake = new QuickShake(viewerWidthSec);
+  var viewerWidthSec;
+  var quickshake;
   var socket;
   
   //Magic 3 variables 
@@ -600,6 +601,9 @@ $(function(){
   });
   selector.selectpicker();
   
+  var width = getUrlParam("width") ? getUrlParam("width") : $("#width-select").val();
+  $("#width-select").val(width);
+  viewerWidthSec = $("#width-select").val()*60;
   
   // handle stations in url
   function getStations(){
@@ -682,17 +686,13 @@ $(function(){
       
       var evid = $("#select-evid").val();
       var start = $("#starttime").val();
-      var duration = $("#duration").val();
+      var width = $("#width-select").val();
     
       if (evid){ //make sure everything is where it should be
         url += "&evid="+evid;
-        if(duration){
-          url += "&duration=" + duration;
-        } else {
-          url += "&duration=" + 5;
-        }
-      } else if (duration){
-        url += "&duration="+ duration;
+      } 
+      if (width){
+        url += "&width="+ width;
       }
       
       if(start){
@@ -707,6 +707,8 @@ $(function(){
   });
 
 // End station select stuff
+
+  quickshake= new QuickShake(viewerWidthSec); 
 
 // Controls stuff
   $("#playback-slider").slider({
@@ -759,7 +761,6 @@ $(function(){
 // End UI stuff
 
   
-  
   ///init stuff
   
   //TODO: is this the proper way?
@@ -799,7 +800,6 @@ $(function(){
   initialize();
   
 // Websocket stuff
- 
 
   function initializeSocket(){
     if(window.WebSocket){
