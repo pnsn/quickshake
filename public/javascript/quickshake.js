@@ -1,34 +1,36 @@
 //client side of quakeShake 
 $(function(){  
-  var quickshake = new QuickShake(); 
-  function QuickShake(){
-    this.pixPerSec      = 20;  //10 pix/sec = samples second i.e. the highest resolution we can display
-    this.timeWindowSec  = 102.4;
-    this.timeStep       = 1000/this.pixPerSec;
-    this.channelHeight  = 90; //how many pix for each signal
+  //initial params that should be consistent across all channels on page
+  function QuickShake(viewerWidthSec){
+    this.viewerWidthSec = viewerWidthSec; //width of viewer in seconds
+    //these vals are set dynamically on load and on window resize
     this.height         = null;
-    this.width          = this.timeWindowSec*this.pixPerSec;
-    this.buffer         = null;
+    this.width          = null; 
+    this.sampPerSec     = null;  // number of samples to use  i.e. the highest resolution we can display 1 samp/pix
+    this.refreshRate    = null;  //refresh rate in milliseconds
+    this.channelHeight  = null; //how many pix for each signal
+    //end dynamic vals
+    this.buffer         = {};
     this.axisColor      = "#000";
   	this.lineWidth      = 1;
-  	this.tickInterval   = 10*1000;
+  	this.tickInterval   =  null;
     this.starttime      = Date.now()*1000; //make these real big and real small so they will be immediately overwritten
     this.endtime        = 0;
     this.startPixOffset = this.width; //starttime pixelOffset
-    this.lastTimeFrame  = null; // track the time of the last time frame(left side of canvas this will be incremented each interval)
+    this.viewerLeftTime = null; // track the time of the last time frame(left side of canvas this will be incremented each interval)
     this.canvasElement  = document.getElementById("quick-shake-canvas");
     this.localTime      = true;
     this.stationScalar  =3.207930*Math.pow(10,5)*9.8; // count/scalar => %g
     //log values
     this.scale          = 4; //starting scale slide value 
-    this.scaleSliderMin  = 2.5;
-    this.scaleSliderMax  = 6;
+    this.scaleSliderMin = 2.5;
+    this.scaleSliderMax  =6;
     //end log values
     this.realtime       = true; //realtime will fast forward if tail of buffer gets too long.
     this.scroll         = null; //sets scrolling
     this.timeout        = 60; //Number of minutes to keep active
     this.lineColor      ="#000";
-    this.host           ="ws://localdocker:8888?scnls=OCEN.HNZ.UW.--";
+    this.host           ="ws://localdocker:8888?scnls=BROK.HNZ.UW.--,,";//,TAHO.HNZ.UW.--,BABR.ENZ.UW.--,JEDS.ENZ.UW.--";
     this.tz             ="PST";
   }; 
   
@@ -46,44 +48,36 @@ $(function(){
   //  }
   //        ....
   //}
-  
   //called when new data arrive. Functions independently from 
   // drawSignal method which is called on a sampRate interval
   QuickShake.prototype.updateBuffer = function(packet){
-     //we want to be writting new data just inside of canvas left
-    if(this.lastTimeFrame == null){
-      this.lastTimeFrame = this.makeTimeKey(packet.starttime);
-      console.log(packet.starttime);
-    
-      this.startPixOffset -=(this.pixPerSec*4);
-    
-      //400 for each channel + 20 pix for top and bottom time line plus 2px margin
+    if(this.viewerLeftTime == null){
+      this.viewerLeftTime = this.makeTimeKey(packet.starttime);
+      this.startPixOffset -=(this.sampPerSec*4);
       this.height = channels.length*this.channelHeight + 44; 
       this.canvasElement.height = this.height;
       this.canvasElement.width = this.width;
       // this.updateGs(this.scale);    
     }
-
-    if(this.buffer == null)
-      this.buffer = {};
+    this.updatePlaybackSlider();
     //update times to track oldest and youngest data points
     if(packet.starttime < this.starttime)
       this.starttime = this.makeTimeKey(packet.starttime);
     if(packet.endtime > this.endtime)
       this.endtime = this.makeTimeKey(packet.endtime);
     //decimate data
-    this.updatePlaybackSlider();
-    var _decimate = packet.samprate/this.pixPerSec;
-    var _i = 0;
-    var _t = packet.starttime;
+    var _decimate = parseInt(packet.samprate/this.sampPerSec,0);
+    var _t = this.makeTimeKey(packet.starttime);
+    //move index to correct for time offset
+    var _i = parseInt(((_t - packet.starttime)*this.sampPerSec/1000),0);
     while(_i < packet.data.length){
-      var _index = Math.round(_i+= _decimate);
-      if(_index < packet.data.length){
-        if(!this.buffer[this.makeTimeKey(_t)]){
-          this.buffer[this.makeTimeKey(_t)] ={};
+      if(_i < packet.data.length){
+        if(!this.buffer[_t]){
+          this.buffer[_t] ={};
         }
-        this.buffer[this.makeTimeKey(_t)][packet.key] = packet.data[_index]/this.stationScalar;
-        _t+=this.timeStep; 
+        this.buffer[_t][packet.key] = packet.data[_i]/this.stationScalar;
+        _t+=this.refreshRate; 
+        _i+=_decimate;
         
       }
     } 
@@ -95,96 +89,50 @@ $(function(){
       if(this.startPixOffset >  0){
         this.startPixOffset--;
       }else{
-        this.lastTimeFrame += this.timeStep;
+        this.viewerLeftTime += this.refreshRate;
       }
       
-      //ADJUST PLAYwe need to adjust play if data on end of buffer tails off canvas
-      //ideally we want new data written on canvas at about 10 seconds in 
+      
       if(this.realtime){
-        var tail = parseInt(this.startPixOffset + ((this.endtime - this.lastTimeFrame)/1000 * this.pixPerSec) - this.width, 0);
-        if(tail < -50)
-          pad=0;
-        else if(tail < 20)
-          pad =2;
-        else if(tail < 100)
-          pad = 4;
-        else if(tail < 1000)
-          pad =9;
-        else if(tail < 10000)
-          pad=99;
-        else
-          pad=9999;
-          //need to adjust these two values if we added padding
-        if(this.startPixOffset ==0){
-          this.lastTimeFrame += pad*this.timeStep;
-        }
-        this.startPixOffset = Math.max(0,   this.startPixOffset -pad);
-      }
-    
-      //PRUNE the buffer at 6 canvas widths by three canvas widths
-      if(((this.endtime - this.starttime)/1000)*this.pixPerSec > 6*this.width){
-        var time= this.starttime;
-        while(time < this.starttime + 3*this.timeWindowSec*1000){          
-          delete this.buffer[time];
-          time+=this.timeStep; 
-        }
-        this.starttime = time;
-      }
+        this.adjustPlay();
+        this.truncateBuffer();
+      }      
     }
     
     // FIND MEAN AND Extreme vals
-    var start = this.lastTimeFrame;
-	  var stop = this.lastTimeFrame + this.timeWindowSec*1000;
-	  if(start < stop){
+    //only consider part of buffer in viewer
+    var cursor = this.viewerLeftTime;
+	  var cursorStop = cursor + this.viewerWidthSec*1000;
+	  if(cursor < cursorStop){
 	    var ctx = this.canvasElement.getContext("2d");
       ctx.clearRect(0, 0, this.width-0, this.height);
   		ctx.lineWidth = this.lineWidth;
       this.drawAxes(ctx);
   		
       ctx.beginPath();
-
       //iterate through all channels and draw
       for(var i=0; i< channels.length; i++){
         var channel = channels[i];
-        start = this.lastTimeFrame;
+        cursor = this.viewerLeftTime; //start back at left on each iteration through channels
       
         
-        //find mean and max
+        //find mean
         var sum=0;
-        // var min = Number.MAX_VALUE;
-        // var max = -Number.MAX_VALUE;
         //use full array for ave an max
-        var starttime = this.lastTimeFrame;
+        var time = this.viewerLeftTime;
         var count =0;
-        console.log("startime=" + starttime);
-        while(starttime <= this.endtime){
-          if(this.buffer[starttime] && this.buffer[starttime][channel]){
-            var val = this.buffer[starttime][channel];
+        while(time <= this.endtime){
+          if(this.buffer[time] && this.buffer[time][channel]){
+            var val = this.buffer[time][channel];
             sum+=val;
-            // max = val > max ? val : max;
-            // min = val < min ? val :min;
             count++;
             
           }
-          starttime+=this.timeStep;
+          time+=this.refreshRate;
         }
         var mean = sum/count;
         
-        // //switch vals if min is further from center
-        // if(Math.abs(max - mean) < Math.abs(min - mean)){
-        //   max = min;
-        // };
-        //
-        // this.scale is default 1 and adjusted by scale slider
-        // max = parseInt(Math.abs(max-mean)*this.scale,0);
-        
-        // //FIXME Debugging
-        // $("#status").text("Pad by " + pad + ", tail:" + tail + ", bufferLength: " + count );
-        // var s = channel.sta.toLowerCase();
-        // $("#status-" + s).text(s+ ":" +  " mean: " + mean + ", max: " + max + ", min:" + min + ", sum: " + sum  );        
-      
-        
-        // ctx.strokeStyle = channel.lineColor;
+ 
         ctx.strokeStyle = this.lineColor;
     
     		//Draw!! from left to write
@@ -194,12 +142,11 @@ $(function(){
     	  //boolean to use moveTo or lineTo
     	  // first time through we want to use moveTo
     	  var gap = true;
-    	  // draw Always start from lastTimeFrame and go one canvas width
+    	  // draw Always start from viewerLeftTime and go one canvas width
     	  count = 0;
-        
-        while(start <= stop){
-          if(this.buffer[start] && this.buffer[start][channel]){
-            var val = this.buffer[start][channel];
+        while(cursor <= cursorStop){
+          if(this.buffer[cursor] && this.buffer[cursor][channel]){
+            var val = this.buffer[cursor][channel];
             var norm = ((val - mean) *Math.pow(10,this.scale)); 
             
             if(norm < -1)
@@ -210,7 +157,7 @@ $(function(){
             var chanAxis = 22 + (this.channelHeight/2) + this.channelHeight*i; //22 is offset for header timeline.
             var yval= Math.round( (this.channelHeight) / 2 * norm + chanAxis);
             
-            if(gap){
+            if(gap){          
               ctx.moveTo( canvasIndex, yval);
               gap =false;
             }else{
@@ -220,7 +167,7 @@ $(function(){
             gap = true;
           }
           canvasIndex++;
-          start+= this.timeStep;
+          cursor+= this.refreshRate;
         
         }//while
         ctx.stroke();
@@ -230,8 +177,13 @@ $(function(){
   };
   
   //make a key based on new samprate that zeros out the insignificant digits. 
+  //if the timestamp is less than starttime, increment by the refresh rate
   QuickShake.prototype.makeTimeKey = function(t){
-    return parseInt(t/this.timeStep,0)*this.timeStep;
+    var _t =parseInt(t/this.refreshRate,0)*this.refreshRate;
+    if(_t < t){
+      _t+=this.refreshRate;
+    }
+    return _t;
   };
 
    
@@ -288,37 +240,79 @@ $(function(){
     
     //centerline
     
-    var offset = this.lastTimeFrame%this.tickInterval;  //should be number between 0 & 9999 for 10 second ticks
+    var offset = this.viewerLeftTime%this.tickInterval; 
     //what is time of first tick to left  of startPixOffset
-    var tickTime = this.lastTimeFrame - offset;
+    var tickTime = this.viewerLeftTime - offset;
     
-    var canvasIndex = this.startPixOffset - offset/this.timeStep;
-    var pixInterval = this.tickInterval/this.timeStep;
+    var canvasIndex = this.startPixOffset - offset/this.refreshRate;
+    var pixInterval = this.tickInterval/this.refreshRate;
+    var index =0;
     while(canvasIndex < edge.right + 20){ //allow times to be drawn off of canvas
       // ctx.moveTo(canvasIndex, this.height -19);
       ctx.moveTo(canvasIndex, 20);
       ctx.lineTo(canvasIndex, this.height - 15);
-      
-      ctx.fillText(this.dateFormat(tickTime), canvasIndex - 23, 12); //top
-      ctx.fillText(this.dateFormat(tickTime), canvasIndex - 23, this.height -1); //bottom
+      var tzStamp= index %4==0;
+      ctx.fillText(this.dateFormat(tickTime, tzStamp, "top"), canvasIndex - 23, 12); //top
+      ctx.fillText(this.dateFormat(tickTime, tzStamp, "bottom"), canvasIndex - 23, this.height -1); //bottom
       canvasIndex+= pixInterval;
       tickTime+=this.tickInterval;
+      index++;
     }
     ctx.strokeStyle = "#CCCCCC"; //vertical time lines
     ctx.stroke();
   };
   
+  
+  //In realtime, we need to adjust play if data on end of buffer tails off canvas
+  //ideally we want new data written on canvas a few sampPerSec in
+  //We want to avoid player constantly trying to catch up.
+  QuickShake.prototype.adjustPlay = function(){
+    var pad=0;
+    var cursorOffset= (this.viewerWidthSec/10)*this.sampPerSec;
+    //i.e. how much buffer in pixels is hanging off the right side of the viewer
+    //tail in px    
+    var tail =  cursorOffset+(this.endtime - this.startPixOffset - this.viewerLeftTime-this.viewerWidthSec*1000)/1000 * this.sampPerSec;    
+    //when we're close to cursorOffset just pad by one to avoid jerky behavior
+    if (tail >-cursorOffset && tail < cursorOffset/2){
+      pad=1;
+    }else if (tail > -cursorOffset/2){
+      pad =parseInt(Math.abs(tail/10),0);
+    }
+    if(this.startPixOffset ==0){
+      this.viewerLeftTime += pad*this.refreshRate;
+    }
+    this.startPixOffset = Math.max(0,   this.startPixOffset -pad);
+    
+  };
+  
+  //trim buff when it gets wild
+  QuickShake.prototype.truncateBuffer=function(){
+    if((this.endtime - this.starttime) > 15*this.viewerWidthSec*1000){
+      var time= this.starttime;
+      while(time < this.starttime + 10*this.viewerWidthSec*1000){
+        delete this.buffer[time];
+        time+=this.refreshRate;
+      }
+      this.starttime = time;
+    }
+  
+  };
+  
+  
   //accept milliseconds and return data string of format HH:MM:SS in UTC or local
-  QuickShake.prototype.dateFormat = function(milliseconds){
+  QuickShake.prototype.dateFormat = function(milliseconds, tzStamp, position){
     var d = new Date(milliseconds);
-    if(this.localTime){
+    if(position==="top"){
       var hours =  d.getHours();
       var minutes = d.getMinutes();
       var seconds = d.getSeconds();
+      //get client tz from string
+      var tz= String(String(d)).match(/\(\w{3}\)/)[0].match(/\w{3}/)[0];
     }else{
       var hours =  d.getUTCHours();
       var minutes = d.getUTCMinutes();
       var seconds = d.getUTCSeconds();
+      var tz = "UTC";
     }
     var time;
     if(hours < 10)
@@ -328,8 +322,8 @@ $(function(){
     if(seconds < 10)
       seconds = "0" + seconds;
     time = hours + ":" + minutes + ":" + seconds;
-    if(seconds == "00")
-      time += " PST";
+    if(tzStamp)
+      time += " " + tz;
     return time;
   };
   
@@ -338,7 +332,7 @@ $(function(){
     $("#playback-slider" ).slider( "option", "max", this.endtime);
     $("#playback-slider").slider( "option", "min", this.starttime);
     if(this.scroll){
-      $("#playback-slider").slider( "option", "value", this.lastTimeFrame);
+      $("#playback-slider").slider( "option", "value", this.viewerLeftTime);
     }
   };
   
@@ -352,11 +346,10 @@ $(function(){
   QuickShake.prototype.playScroll = function(){
       _this = this;
       this.scroll = setInterval(function(){
-        if(_this.buffer !== null && _this.lastTimeFrame!==null){
-          console.log("boom");
+        if(_this.buffer != null){
           _this.drawSignal();
         }
-      }, 1000/this.pixPerSec);
+      }, this.refreshRate);
   };
   
   QuickShake.prototype.selectPlayback=function(e,ui){
@@ -366,10 +359,10 @@ $(function(){
       }
       var val = ui.value;
       if(val > this.endtime){
-        $("#playback-slider").slider( "option", "value", this.lastTimeFrame);
+        $("#playback-slider").slider( "option", "value", this.viewerLeftTime);
       
       }else{
-        this.lastTimeFrame= this.makeTimeKey(val);
+        this.viewerLeftTime= this.makeTimeKey(val);
         this.drawSignal();
       }
     }
@@ -377,7 +370,7 @@ $(function(){
   
   //Handles the connection timeout 
   QuickShake.prototype.setTimeout = function(){
-    if($.urlParam('timeout')==true||$.urlParam('timeout')==null){ //for some reason I have to put == true...
+    if(getUrlParam('timeout')==true||getUrlParam('timeout')==null){ //for some reason I have to put == true...
       //Initial interval for checking state  
 
       var idleTime = 0;
@@ -435,54 +428,50 @@ $(function(){
   };
   
   // Handles sizing of the canvas for different screens
-  QuickShake.prototype.fullWidth=function(){
-    var height, width, offset;
-    offSet=10; //Default for mobile and if there is no scale
-    
+  QuickShake.prototype.configViewer=function(){
+    var offSet=10; //Default for mobile and if there is no scale    
     $(".loading").hide();
     
     $("#quick-shake-scale, #quick-shake-canvas, #quick-shake-controls").css("visibility", "visible");
-
-      height = $("#quickshake").height()-45; //banner height && controls height 
-      width = $("#quickshake").width();
-  
+    var height = $("#quickshake").height()-45; //banner height && controls height 
+    this.width = $("#quickshake").width();  
     this.channelHeight = height/channels.length;
     this.height = this.channelHeight*channels.length + 44;//44 for top & bottom time stamps
-    this.width = width;
+    this.sampPerSec = Math.round(this.width/this.viewerWidthSec);
+    this.refreshRate    = Math.round(1000/this.sampPerSec); //refresh rate in milliseconds
+    this.tickInterval=1000*(this.viewerWidthSec/10);
 
     this.canvasElement.height=this.height;
     this.canvasElement.width=this.width;
-
-    this.timeWindowSec  = this.width/this.pixPerSec;
-    // this.startPixOffset = 0;
     this.updateScale();
 
     //Resizing when paused erased the canvas
     // if(!this.scroll){
-   //    this.drawSignal();
-   //  }
+    //   quickshake.drawSignal();
+    // }
   };
-  
   var timeout;
   // Create a delay to simulate end of resizing
   $( window ).resize(function(){
     clearTimeout(timeout);
-    timeout = setTimeout(quickshake.fullWidth(), 500);
+    timeout = setTimeout(quickshake.configViewer(), 500);
   });
-  
-  var lastScale = quickshake.scale;
+  var _this =this;
+  var lastScale = _this.scale;
   $("#quick-shake-canvas").swipe( {
       pinchStatus:function(event, phase, direction, distance , duration , fingerCount, pinchScale) {
         // Make sure it is actually a two finger scale and not a tap
         if(distance > 0 && fingerCount >1 ){
-          quickshake.selectScale(event, lastScale + parseFloat(pinchScale) - 1);
+          _this.selectScale(event, lastScale + parseFloat(pinchScale) - 1);
         } 
         //Save value of scale at the end to use as baseline
         if (phase === $.fn.swipe.phases.PHASE_END || phase === $.fn.swipe.phases.PHASE_CANCEL){
-          lastScale = quickshake.scale;
+          lastScale = _this.scale;
         }
       }
   });
+  
+  
   
   /*****End QuickShake prototype 
   *
@@ -492,20 +481,19 @@ $(function(){
   *
   ***/
   
-  
-  
-  //returns param value (from stack overflow)
-  $.urlParam = function(name){      
-      var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
-      if (results==null){
-         return null;
-      }
-      else{
-         return results[1] || 0;
-      }
-  };
 
- //UI Elements
+  //Globals  
+  var viewerWidthSec=300;
+  var quickshake = new QuickShake(viewerWidthSec);
+  var socket;
+  
+  //Magic 3 variables 
+  var channels = []; //array of scnls ['OCP.HNZ.UW.--','TAHO.HNZ.UW.--','BABR.ENZ.UW.--','JEDS.ENZ.UW.--']
+  var startTime;
+  var endTime; 
+  initialize();
+  
+  
   
   //TODO: get this from Mongo or whatever 
   var stationGroups = {
@@ -527,32 +515,29 @@ $(function(){
   var chans = [];
   $("#starttime").datetimepicker({format: 'yyyy-mm-dd hh:ii:ss', useCurrent:true});
   
-  //TODO: Edit stations in the edit station modal (add&delete)
-  //Populate group selector
-  var selector = $('select#group-dropdown.station-select');
-  selector.attr({
-    'data-live-search':true //add data-tokens to make stations visible --> maybe have keywords in the future?
-  }).append($("<option data-hidden='true' data-tokens='false'>").text("Select a group"));
-  $.each(stationGroups, function(i, group){
-    selector.append($('<option value='+group.scnls+' data-tokens='+group.scnls+ ','+ group.name+' id=group-'+group.name+' data-subtext='+group.scnls+'>').text(group.name));
-  });
-  selector.change(function(){
-    chans = selector.children(":selected").attr('data-tokens').split(",");
-    //remove the group name --> unnecessary if searchability gets removed
-    var g = selector.children(":selected").text();
-    chans = $.grep(chans, function(n){
-      return n != g;
-    });
-  });
-  selector.selectpicker();
-  
-  $("ul#station-sorter.station-select").sortable({
-      placeholder:"ui-state-highlight"
-  }).disableSelection();
   
   
+  
+  
+  //helper functions
+  
+  
+  function getUrlParam(param){
+    var pageUrl = window.location.search.substring(1);
+    var params = pageUrl.split('&');
+    for (var i = 0; i < params.length; i++){
+      var p = params[i].split('=');
+      if (p[0] == param){
+          return p[1];
+      }
+    }
+  }
+    
+  // handle starttime and endtime from url
+  // Note: jquery uses ms
+  //$("#starttime").datetimepicker({format: 'yyyy-mm-dd hh:ii:ss', useCurrent:true});  
   function getTimeRange(start){ //they can enter their own time if later than evid time
-    var urlS = $.urlParam("start"); //start time from URL
+    var urlS = getUrlParam("start"); //start time from URL
     var evidS = start; //start time from Evid
     var startTime; //default: take starttime from evid
     
@@ -576,8 +561,8 @@ $(function(){
     
     if(evidS.val()>1){ //check if there's an evid entered
       evid = evidS.val();
-    }else if ($.urlParam("evid")){ //if not, look in URL
-      evid = $.urlParam("evid");
+    }else if (getUrlParam("evid")){ //if not, look in URL
+      evid = getUrlParam("evid");
       evidS.val(evid);
     } 
     if(evid && evid.length == 8 && (evid.charAt(0) == 6 || evid.charAt(0)==1)){
@@ -591,14 +576,14 @@ $(function(){
     }
     
     eSelect.change(function(){
-      evid = evidS.val(); //is this a good idea?
+    evid = evidS.val(); //is this a good idea?
     });
   }
   
   function getDuration(){
-    if($.urlParam("duration") && $.urlParam("duration") <= 10){ //forcing it to be less than 10
-      $("#duration").val($.urlParam("duration"));
-    } else if(!$.urlParam("duration")){
+    if(getUrlParam("duration") && getUrlParam("duration") <= 10){ //forcing it to be less than 10
+      $("#duration").val(getUrlParam("duration"));
+    } else if(!getUrlParam("duration")){
       $("#duration").append("<option selected='selected'></option>");
     }
     return $("#duration").val();
@@ -606,9 +591,9 @@ $(function(){
   
   // handle stations in url
   function getStations(){
-    var groupName = $.urlParam("group");
+    var groupName = getUrlParam("group");
     var groupScnls;
-    var urlScnls = $.urlParam("scnls");
+    var urlScnls = getUrlParam("scnls");
     if (groupName){
       groupScnls = $('select#group-dropdown option#group-' + groupName).val();
       $('select#group-dropdown').selectpicker('val', groupScnls);
@@ -625,6 +610,39 @@ $(function(){
     }
     
   }
+  
+  
+  /*
+  *  UI logic
+  *  
+  *
+  *  
+  */
+  
+  $("ul#station-sorter.station-select").sortable({
+      placeholder:"ui-state-highlight"
+  }).disableSelection();
+  
+  
+  //TODO: Edit stations in the edit station modal (add&delete)
+  //Populate group selector
+  var selector = $('select#group-dropdown.station-select');
+  selector.attr({
+    'data-live-search':true //add data-tokens to make stations visible --> maybe have keywords in the future?
+  }).append($("<option data-hidden='true' data-tokens='false'>").text("Select a group"));
+  $.each(stationGroups, function(i, group){
+    selector.append($('<option value='+group.scnls+' data-tokens='+group.scnls+ ','+ group.name+' id=group-'+group.name+' data-subtext='+group.scnls+'>').text(group.name));
+  });
+  selector.change(function(){
+    chans = selector.children(":selected").attr('data-tokens').split(",");
+    //remove the group name --> unnecessary if searchability gets removed
+    var g = selector.children(":selected").text();
+    chans = $.grep(chans, function(n){
+      return n != g;
+    });
+  });
+  selector.selectpicker();
+  
 
   // Make the update button change color when stuff is changed
   $(".station-select").change(function(){
@@ -665,7 +683,7 @@ $(function(){
     //there must always be a channel array in winterfell
     if(chans.length > 0){
       url = quickshake.host +"?"; //TODO: not just coastal in future
-      if($.urlParam('timeout')=='false'){
+      if(getUrlParam('timeout')=='false'){
         url += "timeout=false&";
       }
     
@@ -696,7 +714,6 @@ $(function(){
         url += "&start="+(start.getTime()/1000);
       }
     
-      // console.log(url);
       location.href= url;
     } else {
       $(".quickshake-warning").show();
@@ -753,26 +770,15 @@ $(function(){
     }
     return false;
   });
-  
-  
-  //end UI elements
-  
-  
-  //begin
-  var socket;
-  //stupid hack since this code is being hosted in a billion places. Fix after games.
-  
- //Magic 3 variables 
-  var channels = []; //array of scnls ['OCP.HNZ.UW.--','TAHO.HNZ.UW.--','BABR.ENZ.UW.--','JEDS.ENZ.UW.--']
-  var startTime;
-  var endTime; 
 
-//Station selection UI stuff
-   
-   
-  initialize();
-   
+// End UI stuff
+
   
+  
+  ///init stuff
+  
+  //TODO: is this the proper way?
+  //yes, yes it is.
   function initialize(){
     var evid = getEvent();
     var duration = getDuration();
@@ -793,34 +799,54 @@ $(function(){
       });
     } else {
       startTime=getTimeRange();
-      initializeSocket();
     }
     
     if (startTime){
       endTime = parseFloat(startTime) + duration*60; //minutes to seconds
     }
+    //TODO: is this the proper way?
+    //yes it is.
+    function initialize(){
+      var evid = getEvent();
+      var duration = getDuration();
+      if(evid && !duration){
+        duration = 3;
+        $("#duration").val(duration);
+      }
+      getStations();
+      if (evid) {
+        //only have a duration if there is an evid it may not be needed otherwise
+        $.ajax("/events/event_time?evid="+evid
+        ).done(function(response){
+          startTime=getTimeRange(response);
+          initializeSocket();
+        }).fail(function(message){
+          $(".evid-warning").append(evid);
+          $(".quickshake-event-warning").show();
+        });
+      }else{
+        startTime=getTimeRange();
+      }
     
-    quickshake.setTimeout();
-    quickshake.fullWidth();
+      if (startTime){
+        endTime = parseFloat(startTime) + duration*60; //minutes to seconds
+      }    
+    }
+    initializeSocket();
+    quickshake.configViewer();
+    quickshake.playScroll(); 
     
-    //Endtime and startTime go to mongo
-    //no getting sockety until everything is done
   }
   
- 
-    
-  // handle starttime and endtime from url
-  // Note: jquery uses ms
-  //$("#starttime").datetimepicker({format: 'yyyy-mm-dd hh:ii:ss', useCurrent:true});
   
-
-// End controls stuff
+  
 // Websocket stuff
  
 
   function initializeSocket(){
     if(window.WebSocket){
       socket = new WebSocket(quickshake.host);
+      quickshake.setTimeout();
       };
 
       socket.onmessage = function(message, flags) {
@@ -831,8 +857,4 @@ $(function(){
   }
   
 //end socket stuff
-  
-  
-  quickshake.playScroll(); //get these wheels moving!
-
 });
