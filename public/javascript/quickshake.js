@@ -253,9 +253,8 @@ $(function(){
       // ctx.moveTo(canvasIndex, this.height -19);
       ctx.moveTo(canvasIndex, 20);
       ctx.lineTo(canvasIndex, this.height - 15);
-      var tzStamp= index %4==0;
-      ctx.fillText(this.dateFormat(tickTime, tzStamp, "top"), canvasIndex - 23, 12); //top
-      ctx.fillText(this.dateFormat(tickTime, tzStamp, "bottom"), canvasIndex - 23, this.height -1); //bottom
+      ctx.fillText(this.dateFormat(tickTime, "top"), canvasIndex - 23, 12); //top
+      ctx.fillText(this.dateFormat(tickTime, "bottom"), canvasIndex - 23, this.height -1); //bottom
       canvasIndex+= pixInterval;
       tickTime+=this.tickInterval;
       index++;
@@ -269,7 +268,6 @@ $(function(){
   //ideally we want new data written on canvas a few sampPerSec in
   //We want to avoid player constantly trying to catch up.
   QuickShake.prototype.adjustPlay = function(){
-    
     var pad=0;
     var cursorOffset= (this.viewerWidthSec/10)*this.sampPerSec;
     //i.e. how much buffer in pixels is hanging off the right side of the viewer
@@ -305,7 +303,7 @@ $(function(){
   
   
   //accept milliseconds and return data string of format HH:MM:SS in UTC or local
-  QuickShake.prototype.dateFormat = function(milliseconds, tzStamp, position){
+  QuickShake.prototype.dateFormat = function(milliseconds, position){
     var d = new Date(milliseconds);
     if(position==="top"){
       var hours =  d.getHours();
@@ -319,6 +317,11 @@ $(function(){
       var seconds = d.getUTCSeconds();
       var tz = "UTC";
     }
+    
+    var tiempo = this.viewerWidthSec/60;
+  
+    tzStamp = (minutes % tiempo == 0 && seconds == 0) || (minutes % tiempo == tiempo / 2 && seconds == 0) || (minutes % tiempo == tiempo / 2 - 0.5 && seconds == 30);
+    
     var time;
     if(hours < 10)
      hours = "0" + hours;
@@ -438,6 +441,7 @@ $(function(){
     $(".loading").hide();
     
     $("#quick-shake-scale, #quick-shake-canvas, #quick-shake-controls").css("visibility", "visible");
+    $("#quickshake").height(window.innerHeight*.85);
     var height = $("#quickshake").height()-45; //banner height && controls height 
     this.width = $("#quickshake").width();  
     this.channelHeight = height/channels.length;
@@ -488,16 +492,14 @@ $(function(){
   
 
   //Globals  
-  var viewerWidthSec=300;
-  var quickshake = new QuickShake(viewerWidthSec);
+  var viewerWidthSec;
+  var quickshake;
   var socket;
   
   //Magic 3 variables 
   var channels = []; //array of scnls ['OCP.HNZ.UW.--','TAHO.HNZ.UW.--','BABR.ENZ.UW.--','JEDS.ENZ.UW.--']
   var startTime;
   var endTime; 
-  initialize();
-  
   
   
   //TODO: get this from Mongo or whatever 
@@ -519,14 +521,8 @@ $(function(){
   //can't set it to channels or else it constantly updates 
   var chans = [];
   $("#starttime").datetimepicker({format: 'yyyy-mm-dd hh:ii:ss', useCurrent:true});
-  
-  
-  
-  
-  
+
   //helper functions
-  
-  
   function getUrlParam(param){
     var pageUrl = window.location.search.substring(1);
     var params = pageUrl.split('&');
@@ -594,6 +590,29 @@ $(function(){
     return $("#duration").val();
   }
   
+  //TODO: Edit stations in the edit station modal (add&delete)
+  //Populate group selector
+  var selector = $('select#group-dropdown.station-select');
+  selector.attr({
+    'data-live-search':true //add data-tokens to make stations visible --> maybe have keywords in the future?
+  }).append($("<option data-hidden='true' data-tokens='false'>").text("Select a group"));
+  $.each(stationGroups, function(i, group){
+    selector.append($('<option value='+group.scnls+' data-tokens='+group.scnls+ ','+ group.name+' id=group-'+group.name+' data-subtext='+group.scnls+'>').text(group.name));
+  });
+  selector.change(function(){
+    chans = selector.children(":selected").attr('data-tokens').split(",");
+    //remove the group name --> unnecessary if searchability gets removed
+    var g = selector.children(":selected").text();
+    chans = $.grep(chans, function(n){
+      return n != g;
+    });
+  });
+  selector.selectpicker();
+  
+  var width = getUrlParam("width") ? getUrlParam("width") : $("#width-select").val();
+  $("#width-select").val(width);
+  viewerWidthSec = width*60;
+  
   // handle stations in url
   function getStations(){
     var groupName = getUrlParam("group");
@@ -616,38 +635,12 @@ $(function(){
     
   }
   
-  
-  /*
-  *  UI logic
-  *  
-  *
-  *  
-  */
-  
   $("ul#station-sorter.station-select").sortable({
       placeholder:"ui-state-highlight"
   }).disableSelection();
   
   
-  //TODO: Edit stations in the edit station modal (add&delete)
-  //Populate group selector
-  var selector = $('select#group-dropdown.station-select');
-  selector.attr({
-    'data-live-search':true //add data-tokens to make stations visible --> maybe have keywords in the future?
-  }).append($("<option data-hidden='true' data-tokens='false'>").text("Select a group"));
-  $.each(stationGroups, function(i, group){
-    selector.append($('<option value='+group.scnls+' data-tokens='+group.scnls+ ','+ group.name+' id=group-'+group.name+' data-subtext='+group.scnls+'>').text(group.name));
-  });
-  selector.change(function(){
-    chans = selector.children(":selected").attr('data-tokens').split(",");
-    //remove the group name --> unnecessary if searchability gets removed
-    var g = selector.children(":selected").text();
-    chans = $.grep(chans, function(n){
-      return n != g;
-    });
-  });
-  selector.selectpicker();
-  
+
 
   // Make the update button change color when stuff is changed
   $(".station-select").change(function(){
@@ -687,7 +680,7 @@ $(function(){
   $("button.update.station-select").click(function(){
     //there must always be a channel array in winterfell
     if(chans.length > 0){
-      url = quickshake.host +"?"; //TODO: not just coastal in future
+      url = "?"; //TODO: not just coastal in future
       if(getUrlParam('timeout')=='false'){
         url += "timeout=false&";
       }
@@ -701,25 +694,20 @@ $(function(){
       
       var evid = $("#select-evid").val();
       var start = $("#starttime").val();
-      var duration = $("#duration").val();
+      var width = $("#width-select").val();
     
       if (evid){ //make sure everything is where it should be
         url += "&evid="+evid;
-        if(duration){
-          url += "&duration=" + duration;
-        } else {
-          url += "&duration=" + 5;
-        }
-      } else if (duration){
-        url += "&duration="+ duration;
+      } 
+      if (width){
+        url += "&width="+ width;
       }
       
       if(start){
         start = new Date(start);
         url += "&start="+(start.getTime()/1000);
       }
-    
-      location.href= url;
+      location.search = url;
     } else {
       $(".quickshake-warning").show();
     }
@@ -727,6 +715,8 @@ $(function(){
   });
 
 // End station select stuff
+
+  quickshake= new QuickShake(viewerWidthSec); 
 
 // Controls stuff
   $("#playback-slider").slider({
@@ -779,7 +769,6 @@ $(function(){
 // End UI stuff
 
   
-  
   ///init stuff
   
   //TODO: is this the proper way?
@@ -805,47 +794,19 @@ $(function(){
     } else {
       startTime=getTimeRange();
     }
-    
+
     if (startTime){
       endTime = parseFloat(startTime) + duration*60; //minutes to seconds
     }
-    //TODO: is this the proper way?
-    //yes it is.
-    function initialize(){
-      var evid = getEvent();
-      var duration = getDuration();
-      if(evid && !duration){
-        duration = 3;
-        $("#duration").val(duration);
-      }
-      getStations();
-      if (evid) {
-        //only have a duration if there is an evid it may not be needed otherwise
-        $.ajax("/events/event_time?evid="+evid
-        ).done(function(response){
-          startTime=getTimeRange(response);
-          initializeSocket();
-        }).fail(function(message){
-          $(".evid-warning").append(evid);
-          $(".quickshake-event-warning").show();
-        });
-      }else{
-        startTime=getTimeRange();
-      }
-    
-      if (startTime){
-        endTime = parseFloat(startTime) + duration*60; //minutes to seconds
-      }    
-    }
+
     initializeSocket();
     quickshake.configViewer();
     
   }
   
-  
+  initialize();
   
 // Websocket stuff
- 
 
   function initializeSocket(){
     if(window.WebSocket){
