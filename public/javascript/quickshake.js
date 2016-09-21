@@ -251,9 +251,8 @@ $(function(){
       // ctx.moveTo(canvasIndex, this.height -19);
       ctx.moveTo(canvasIndex, 20);
       ctx.lineTo(canvasIndex, this.height - 15);
-      var tzStamp= index % (viewerWidthSec/60 < 5 ? 4 : viewerWidthSec/60) == 0;
-      ctx.fillText(this.dateFormat(tickTime, tzStamp, "top"), canvasIndex - 23, 12); //top
-      ctx.fillText(this.dateFormat(tickTime, tzStamp, "bottom"), canvasIndex - 23, this.height -1); //bottom
+      ctx.fillText(this.dateFormat(tickTime, "top"), canvasIndex - 23, 12); //top
+      ctx.fillText(this.dateFormat(tickTime, "bottom"), canvasIndex - 23, this.height -1); //bottom
       canvasIndex+= pixInterval;
       tickTime+=this.tickInterval;
       index++;
@@ -300,7 +299,7 @@ $(function(){
   
   
   //accept milliseconds and return data string of format HH:MM:SS in UTC or local
-  QuickShake.prototype.dateFormat = function(milliseconds, tzStamp, position){
+  QuickShake.prototype.dateFormat = function(milliseconds, position){
     var d = new Date(milliseconds);
     if(position==="top"){
       var hours =  d.getHours();
@@ -314,6 +313,11 @@ $(function(){
       var seconds = d.getUTCSeconds();
       var tz = "UTC";
     }
+    
+    var tiempo = this.viewerWidthSec/60;
+  
+    tzStamp = (minutes % tiempo == 0 && seconds == 0) || (minutes % tiempo == tiempo / 2 && seconds == 0) || (minutes % tiempo == tiempo / 2 - 0.5 && seconds == 30);
+    
     var time;
     if(hours < 10)
      hours = "0" + hours;
