@@ -251,7 +251,7 @@ $(function(){
       // ctx.moveTo(canvasIndex, this.height -19);
       ctx.moveTo(canvasIndex, 20);
       ctx.lineTo(canvasIndex, this.height - 15);
-      var tzStamp= index %4==0;
+      var tzStamp= index % (viewerWidthSec/60 < 5 ? 4 : viewerWidthSec/60) == 0;
       ctx.fillText(this.dateFormat(tickTime, tzStamp, "top"), canvasIndex - 23, 12); //top
       ctx.fillText(this.dateFormat(tickTime, tzStamp, "bottom"), canvasIndex - 23, this.height -1); //bottom
       canvasIndex+= pixInterval;
@@ -603,7 +603,7 @@ $(function(){
   
   var width = getUrlParam("width") ? getUrlParam("width") : $("#width-select").val();
   $("#width-select").val(width);
-  viewerWidthSec = $("#width-select").val()*60;
+  viewerWidthSec = width*60;
   
   // handle stations in url
   function getStations(){
