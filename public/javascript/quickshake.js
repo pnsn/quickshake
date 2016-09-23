@@ -57,6 +57,8 @@ $(function(){
       this.height = channels.length*this.channelHeight + 44; 
       this.canvasElement.height = this.height;
       this.canvasElement.width = this.width;
+      this.playScroll(); 
+      
       // this.updateGs(this.scale);    
     }
     this.updatePlaybackSlider();
@@ -270,10 +272,12 @@ $(function(){
     var cursorOffset= (this.viewerWidthSec/10)*this.sampPerSec;
     //i.e. how much buffer in pixels is hanging off the right side of the viewer
     //tail in px    
-    var tail =  cursorOffset+(this.endtime - this.startPixOffset - this.viewerLeftTime-this.viewerWidthSec*1000)/1000 * this.sampPerSec;    
+    var tail = this.startPixOffset + cursorOffset+(this.endtime - this.viewerLeftTime-this.viewerWidthSec*1000)/1000 * this.sampPerSec;    
     //when we're close to cursorOffset just pad by one to avoid jerky behavior
-    if (tail >-cursorOffset && tail < cursorOffset/2){
+    if (tail > -cursorOffset && tail < cursorOffset/2){
       pad=1;
+    }else if(tail < -cursorOffset){
+      pad -1;
     }else if (tail > -cursorOffset/2){
       pad =parseInt(Math.abs(tail/10),0);
     }
@@ -816,8 +820,7 @@ $(function(){
 
     initializeSocket(stations);
     quickshake.configViewer();
-    quickshake.playScroll();
-
+    
   }
   
   initialize();

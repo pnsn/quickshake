@@ -8,15 +8,15 @@ function Conf(){
     authMech: "DEFAULT",
     authSource: "admin",
     rtCollection: "cwaves"
-  }
+  };
   this.http ={
-    port: 8888,
-  }
+    port: 8888
+  };
 //the number of tracebuffs to keep in the buffer for each scnl
   this.ringBuffer={
-    max: 600,  
+    max: 800 
   };
-}
+};
 
 
 module.exports = Conf;
