@@ -30,7 +30,7 @@ $(function(){
     this.scroll         = null; //sets scrolling
     this.timeout        = 60; //Number of minutes to keep active
     this.lineColor      ="#000";
-    this.host           ="ws://localdocker:8888?scnls=BROK.HNZ.UW.--,,";//,TAHO.HNZ.UW.--,BABR.ENZ.UW.--,JEDS.ENZ.UW.--";
+    this.host           ="ws://localdocker:8888?";
     this.tz             ="PST";
   }; 
   
@@ -39,15 +39,15 @@ $(function(){
   
   //buffer will be of form:
   
-  //  {
+  //  
   //    milliseconds: {
   //      chan1: val,
   //      chan2: val,
   //      ....
   //      chanN: val
-  //  }
+  //    }
   //        ....
-  //}
+  //  
   //called when new data arrive. Functions independently from 
   // drawSignal method which is called on a sampRate interval
   QuickShake.prototype.updateBuffer = function(packet){
@@ -455,6 +455,7 @@ $(function(){
     //   quickshake.drawSignal();
     // }
   };
+  
   var timeout;
   // Create a delay to simulate end of resizing
   $( window ).resize(function(){
@@ -502,7 +503,7 @@ $(function(){
   var stationGroups = {
     "group1":{
       name:"Groupy",
-      scnls:['OCP.HNZ.UW.--','TAHO.HNZ.UW.--','BABR.ENZ.UW.--','JEDS.ENZ.UW.--']
+      scnls:['TAHO.HNZ.UW.--','BABR.ENZ.UW.--','JEDS.ENZ.UW.--']
     },
     "group2":{
       name:"Grouper",
@@ -510,7 +511,7 @@ $(function(){
     },
     "group3":{
       name:"Groupaloo",
-      scnls:['OCP.HNZ.UW.--','TAHO.HNZ.UW.--','CORE.ENZ.UW.--','BROK.HNZ.UW.--']
+      scnls:['TAHO.HNZ.UW.--','CORE.ENZ.UW.--','BROK.HNZ.UW.--']
     }
   };
   
@@ -577,6 +578,17 @@ $(function(){
     });
   }
   
+  function getEvents(){
+    console.log("Hi");
+    jQuery.getJSON("http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2014-01-01&endtime=2014-01-02&minmagnitude=5&callback=text/javascript", function(data){
+      console.log(data);
+      
+      
+    });
+  }
+  
+  getEvents();
+  
   function getDuration(){
     if(getUrlParam("duration") && getUrlParam("duration") <= 10){ //forcing it to be less than 10
       $("#duration").val(getUrlParam("duration"));
@@ -628,6 +640,8 @@ $(function(){
     } else {
       chans = channels;
     }
+    
+    return channels;
     
   }
   
@@ -776,7 +790,12 @@ $(function(){
       duration = 3;
       $("#duration").val(duration);
     }
-    getStations();
+    var stations = "scnls=";
+    var scnls = getStations();
+    $.each(scnls, function(index, station){
+      stations += station + ",";
+    });
+    
     if (evid) {
       //only have a duration if there is an evid it may not be needed otherwise
       $.ajax("/events/event_time?evid="+evid
@@ -795,7 +814,7 @@ $(function(){
       endTime = parseFloat(startTime) + duration*60; //minutes to seconds
     }
 
-    initializeSocket();
+    initializeSocket(stations);
     quickshake.configViewer();
     quickshake.playScroll();
 
@@ -805,9 +824,9 @@ $(function(){
   
 // Websocket stuff
 
-  function initializeSocket(){
+  function initializeSocket(stations){
     if(window.WebSocket){
-      socket = new WebSocket(quickshake.host);
+      socket = new WebSocket(quickshake.host + stations);
       quickshake.setTimeout();
       };
 
