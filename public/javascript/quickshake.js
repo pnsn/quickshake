@@ -318,9 +318,18 @@ $(function(){
       var tz = "UTC";
     }
     
-    var tiempo = this.viewerWidthSec/60;
-  
-    tzStamp = (minutes % tiempo == 0 && seconds == 0) || (minutes % tiempo == tiempo / 2 && seconds == 0) || (minutes % tiempo == tiempo / 2 - 0.5 && seconds == 30);
+    var viewerWidthMin = this.viewerWidthSec/60;
+    
+    if(60 % viewerWidthMin == 0 || viewerWidthMin % 5 == 0){
+      var isOnTime = minutes % viewerWidthMin == 0 && seconds == 0;
+      var isOnHalfTime = minutes % viewerWidthMin == viewerWidthMin / 2 && seconds == 0;
+      var isBetweenTime = minutes % viewerWidthMin == viewerWidthMin / 2 - 0.5 && seconds == 30;
+      
+      tzStamp = isOnTime || isOnHalfTime || isBetweenTime;
+    } else { 
+      tzStamp = seconds == 54 || seconds == 24;
+    }
+    
     
     var time;
     if(hours < 10)
