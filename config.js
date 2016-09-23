@@ -7,7 +7,7 @@ function Conf(){
     passwd: process.env.MONGO_PASSWD,
     authMech: "DEFAULT",
     authSource: "admin",
-    rtCollection: "cwaves"
+    rtCollection: "ring"
   };
   this.http ={
     port: 8888
