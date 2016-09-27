@@ -647,7 +647,6 @@ $(function() {
     if(channels.length > 0) {
       return channels;
     } else if ($('select#group-select option:selected').length > 0 && $('select#group-select option:selected')[0].value){
-      console.log($('select#group-select option:selected'))
       channels = $('select#group-select option:selected').first().val().split(",");
       return channels;
     } else {
@@ -658,7 +657,7 @@ $(function() {
 
   $("ul#station-sorter.station-select").sortable({
     placeholder: "ui-state-highlight"
-  }).disableSelection()
+  }).disableSelection();
 
   // Make the update button change color when stuff is changed
   $(".station-select").change(function() {
@@ -731,12 +730,12 @@ $(function() {
       }
 
       url += "scnls=" + channels;
-        // location.search = url;
+      location.search = url;
     } else {
       $(".quickshake-warning").show();
     }
 
-    console.log(url)
+    // console.log(url)
   });
 
   // End station select stuff
