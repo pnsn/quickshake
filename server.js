@@ -1,17 +1,30 @@
 var express=require('express')
     ,app = express()
-    , http = require('http').Server(app)
-    , url = require('url')
-    , WebSocketServer = require('ws').Server
-    , wss = new WebSocketServer({server: http})
-    , Conf = require("./config.js")
-    , MongoServer = require(__dirname + '/lib/mongoServer')
-    , RingBuffer = require(__dirname + '/lib/ringBuffer');
-
+    ,http = require('http').Server(app)
+    ,url = require('url')
+    ,WebSocketServer = require('ws').Server
+    ,wss = new WebSocketServer({server: http})
+    ,Conf = require("./config.js")
+    ,MongoClient  = require('mongodb').MongoClient
+    ,RingBuffer = require(__dirname + '/lib/ringBuffer')
+    ,MongoArchive = require(__dirname + '/lib/mongoArchive') 
+    ,MongoRealTime = require(__dirname + '/lib/mongoRealTime');
+    
 
 var conf = new Conf();
+var mongoUrl=this.url = "mongodb://" + conf.mongo.user + ":" + conf.mongo.passwd + "@" 
+        + conf.mongo.host + ":" + conf.mongo.port + "/" + conf.mongo.dbname 
+        + "?authMechanism=" + conf.mongo.authMech + "&authSource=" + conf.mongo.authSource;
 
 app.use(express.static('public'));
+
+var RING_BUFF = new RingBuffer(conf.ringBuffer.max);
+var mongoRT = new MongoRealTime(MongoClient, mongoUrl, conf.mongo.rtCollection, RING_BUFF);
+var mongoArchive = new MongoArchive(MongoClient, mongoUrl, RING_BUFF, 5000);
+mongoArchive.start();
+
+
+///routes
 //route for GET request to root
 // app.get('/', function (req, res) {
 //   res.sendFile(__dirname + '/public/index.html');
@@ -30,22 +43,25 @@ app.get('/scnls', function (req, res) {
 // app.get('/groups', function (req, res) {
 
 // });
-var RING_BUFF = new RingBuffer(conf.ringBuffer.max);
-var mongo = new MongoServer(RING_BUFF);
+
+
+
 
 var CLIENTS={};
 var lastId=-1;
-/*mongo listeners
+
+/*mongoRing listeners
 *Only one per app not client connection
 */
-mongo.tail();
+mongoRT.tail();
 
-mongo.on('message', sendMessage);
+mongoRT.on('message', sendMessage);
 
-mongo.on('close', function(doc){
+mongoRT.on('close', function(doc){
   var msg = 'closing message:';
   CLIENTS={};
 });
+
 /* end mongo listeners*/
 
 
