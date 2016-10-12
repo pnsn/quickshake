@@ -4,12 +4,14 @@ var express=require('express')
     ,url = require('url')
     ,WebSocketServer = require('ws').Server
     ,wss = new WebSocketServer({server: http})
+    ,logger = require('winston')
     ,Conf = require("./config.js")
     ,MongoClient  = require('mongodb').MongoClient
     ,RingBuffer = require(__dirname + '/lib/ringBuffer')
     ,MongoArchive = require(__dirname + '/lib/mongoArchive') 
     ,MongoRealTime = require(__dirname + '/lib/mongoRealTime');
     
+const debug = require('debug')('quickshake');  
 
 var conf = new Conf();
 var mongoUrl=this.url = "mongodb://" + conf.mongo.user + ":" + conf.mongo.passwd + "@" 
@@ -17,10 +19,11 @@ var mongoUrl=this.url = "mongodb://" + conf.mongo.user + ":" + conf.mongo.passwd
         + "?authMechanism=" + conf.mongo.authMech + "&authSource=" + conf.mongo.authSource;
 
 app.use(express.static('public'));
-
+logger.level="debug";
+logger.add(logger.transports.File, { filename: 'log/server.log' });
 var RING_BUFF = new RingBuffer(conf.ringBuffer.max);
-var mongoRT = new MongoRealTime(MongoClient, mongoUrl, conf.mongo.rtCollection, RING_BUFF);
-var mongoArchive = new MongoArchive(MongoClient, mongoUrl, RING_BUFF, 5000);
+var mongoRT = new MongoRealTime(MongoClient, mongoUrl, conf.mongo.rtCollection, RING_BUFF, logger);
+var mongoArchive = new MongoArchive(MongoClient, mongoUrl, RING_BUFF, 5000, logger);
 mongoArchive.start();
 
 

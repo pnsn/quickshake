@@ -2,16 +2,19 @@
   "name": "quickShake",
   "version": "0.0.1",
   "description": "QuickShake serves waveform data stored on MongoDb",
-  "main": "app.js",
+  "main": "server.js",
   "dependencies": {
-    "bson": "latest",
+    "bson": "0.5.5",
     "bufferutil": "^1.2.1",
-    "express": "latest",
-    "mocha": "latest",
-    "mongodb": "latest",
-    "ws": "latest"
+    "express": "4.14.0",
+    "mocha": "3.1.2",
+    "mongodb": "2.2.10",
+    "ws": "1.1.1",
+    "winston": "latest"
   },
-  "devDependencies": {},
+  "devDependencies": {
+     "debug": "latest"
+  },
   "scripts": {
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
