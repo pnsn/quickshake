@@ -41,71 +41,76 @@
     </div>
   </div>
 </div>
-<div class="loading"></div>
-<div class="controls col-xs-12 col-sm-10 col-sm-offset-1 col-md-10 col-md-offset-1" id="station-select">
-  <div class="quickshake-warning alert alert-danger">
-    <strong>No stations selected!</strong>
-    Please select at least one group to view.
-  </div>
-  <div class="quickshake-station-warning alert alert-warning">
-    <strong>
-      There was a problem with
-      <div class="station-warning"></div>
-    </strong>
-    Please select another station or try again later.
-  </div>
-  <div class="quickshake-event-warning alert alert-danger">
-    Event
-    <strong class="evid-warning"></strong>
-    not found.
-  </div>
-  <div class="quickshake-invalid-event-warning alert alert-danger">
-    Event
-    <strong class="evid-warning"></strong>
-    is invalid.
-  </div>
-  <form class="form-inline" role="form">
-    <select class="station-select selectpicker" id="group-select"></select>
-    <button class="button btn btn-default reorder station-select" type="button">Edit Stations</button>
-    <select class="station-select selectpicker" id="event-select"></select>
-    <div class="form-group">
-      <label for="select-evid">Evid:</label>
-      <input class="station-select form-control" id="evid-select" placeholder="Evid" type="text"></input>
-    </div>
-    
-    <div class="form-group">
-      <label for="starttime">Start: </label>
-      <input class="station-select form-control" id="start-select" placeholder="Start time" type="text"></input>
-    </div>
-    <div class="form-group">
-      <label for="width-select">Width:</label>
-      <select class="station-select" id="width-select">
-         <option value="2">2</option>
-         <option value="5">5</option>
-         <option value="10">10</option>
-      </select>
-      <label for="width-select"> minutes</label>
-    </div>
-    <button class="button btn btn-default update station-select" type="button">Update</button>
-  </form>
+
+<!--this is broken because the logic for it was in pnsn.js -->
+<div class="loading"></div> 
+
+
+
+<div id="header">This is where I'd put information...if I had it
+<button class="button btn btn-default open-controls" type="button">Update</button>
 </div>
-<div class="modal fade" id="station-rearrange">
-  <div class="modal-dialog">
+
+
+<div class="modal fade " id="controls">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <div class="modal-title">
-          <h4>Edit Stations</h4>
+          <h4>Controls</h4>
         </div>
       </div>
       <div class="modal-body">
-        <div class="quickshake-warning alert alert-danger">
-          <strong>No stations selected!</strong>
-          Please select at least one station to view.
-        </div>
-        <ul class="station-select list-group" id="station-sorter"></ul>
+        <form class="form-inline" role="form">
+          <div class="form-group">
+             <label> Select group </label>
+             <select class="station-select selectpicker" id="group-select"></select>
+          </div>
+          <div class="form-group pull-right">
+            <label for="scnl-select">Enter SCNL: </label>
+            <input class="form-control" id="scnl-select" placeholder="STA.CHAN.NET.LOC" type="text"></input>
+            <button type="button" class="button btn btn-default add-station station-select">Add</button>
+          </div>
+          
+          <div class="quickshake-warning alert alert-danger alert-dismissable" id="length-warning" role="alert">
+             No more than 6 stations can be selected.
+             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          </div>
+          <div class="quickshake-warning alert alert-danger" id="scnl-warning" role="alert">
+             Invalid SCNL.
+             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          </div>
+          
+          <div id="sorter-container"><ul class="station-select list-group" id="station-sorter"></ul></div>
+          
+          <div class="form-group">
+             <select class="station-select selectpicker" id="event-select"></select>
+          </div>
+          
+          <div class="form-group">
+            <label for="select-evid">Evid:</label>
+            <input class="station-select form-control" id="evid-select" placeholder="Evid" type="text"></input>
+          </div>
+    
+          <div class="form-group">
+            <label for="starttime">Start: </label>
+            <input class="station-select form-control" id="start-select" placeholder="Start time" type="text"></input>
+          </div>
+          <div class="form-group">
+            <label for="width-select">Width:</label>
+            <select class="station-select" id="width-select">
+               <option value="2">2</option>
+               <option value="5">5</option>
+               <option value="10">10</option>
+            </select>
+            <label for="width-select"> minutes</label>
+          </div>
+
+        </form>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-default" data-dismiss="modal" type="button"> Done </button>
+         <button class="button btn btn-default update station-select" type="button">Update</button>
+         <button class="btn btn-default pull-left" data-dismiss ="modal" type="button">Cancel</button>
       </div>
     </div>
   </div>

@@ -1,7 +1,7 @@
 //client side of quakeShake 
 $(function() {
   //initial params that should be consistent across all channels on page
-  function QuickShake(viewerWidthSec) {
+  function QuickShake(viewerWidthSec, channels) {
     this.viewerWidthSec = viewerWidthSec; //width of viewer in seconds
     //these vals are set dynamically on load and on window resize
     this.height = null;
@@ -32,6 +32,7 @@ $(function() {
     this.lineColor = "#000";
     this.host = "ws://localdocker:8888?";
     this.tz = "PST";
+    this.channels = channels;
   };
 
   // incoming data are appended to buf
@@ -54,7 +55,7 @@ $(function() {
     if (this.viewerLeftTime == null) {
       this.viewerLeftTime = this.makeTimeKey(packet.starttime);
       this.startPixOffset -= (this.sampPerSec * 4);
-      this.height = channels.length * this.channelHeight + 44;
+      this.height = this.channels.length * this.channelHeight + 44;
       this.canvasElement.height = this.height;
       this.canvasElement.width = this.width;
       this.playScroll();
@@ -112,10 +113,10 @@ $(function() {
       this.drawAxes(ctx);
 
       ctx.beginPath();
-      //iterate through all channels and draw
-      for (var i = 0; i < channels.length; i++) {
-        var channel = channels[i];
-        cursor = this.viewerLeftTime; //start back at left on each iteration through channels
+      //iterate through all this.channels and draw
+      for (var i = 0; i < this.channels.length; i++) {
+        var channel = this.channels[i];
+        cursor = this.viewerLeftTime; //start back at left on each iteration through this.channels
 
 
         //find mean
@@ -222,8 +223,8 @@ $(function() {
 
     ctx.beginPath();
     //channel center lines and labels:
-    for (var i = 0; i < channels.length; i++) {
-      var channel = channels[i];
+    for (var i = 0; i < this.channels.length; i++) {
+      var channel = this.channels[i];
       var cName = channel.split(".")[0];
       var yOffset = i * this.channelHeight;
       ctx.fillText(cName, edge.left + 10.5, 40.5 + yOffset);
@@ -454,8 +455,8 @@ $(function() {
     $("#quickshake").height(window.innerHeight * .85);
     var height = $("#quickshake").height() - 45; //banner height && controls height 
     this.width = $("#quickshake").width();
-    this.channelHeight = height / channels.length;
-    this.height = this.channelHeight * channels.length + 44; //44 for top & bottom time stamps
+    this.channelHeight = height / this.channels.length;
+    this.height = this.channelHeight * this.channels.length + 44; //44 for top & bottom time stamps
     this.sampPerSec = Math.round(this.width / this.viewerWidthSec);
     this.refreshRate = Math.round(1000 / this.sampPerSec); //refresh rate in milliseconds
     this.tickInterval = 1000 * (this.viewerWidthSec / 10);
@@ -644,6 +645,10 @@ $(function() {
   groupSelector.change(function() {
     channels = groupSelector.children(":selected").val().split(",");
     $('.quickshake-warning').hide();
+    $("ul#station-sorter.station-select li").remove();
+    $.each(channels, function(i, scnl) {
+      $("ul#station-sorter.station-select").append("<li class='list-group-item " + scnl + "'>" + scnl + "<i class='fa fa-sort pull-right'></i></li>");
+    });
   });
 
   groupSelector.selectpicker();
@@ -666,7 +671,9 @@ $(function() {
   }
 
   $("ul#station-sorter.station-select").sortable({
-    placeholder: "ui-state-highlight"
+    placeholder: "ui-state-highlight",
+    forcePlaceholderSize: true,
+    stop: updateChannels
   }).disableSelection();
 
   // Make the update button change color when stuff is changed
@@ -678,28 +685,66 @@ $(function() {
     // }
     $(".update.station-select").addClass("btn-primary");
   });
-
-  // Add only selected stations to the rearrange thingy
-  $("button.reorder.station-select").click(function() {
+  
+  $("button.open-controls").click(function(){
+    $("#controls").modal("show");
     $("ul#station-sorter.station-select li").remove();
     $.each(channels, function(i, scnl) {
-      $("ul#station-sorter.station-select").append("<li class='list-group-item " + scnl + "'>" + scnl + "<i class='fa fa-sort pull-right'></i></li>");
+      updateList(scnl);
     });
-
-    $("#station-sorter").show();
-    $("#station-rearrange").modal("show");
+    $("#station-sorter").show();    
   });
+  
+  $(".remove-station").click(function(e){
 
-  // Reorder the channels when you leave the modal
-  $('#station-rearrange').on('hidden.bs.modal', function() {
+    console.log("removeME");
+    // console.log(this.parent());
+    e.preventDefault;
+  });
+  
+  $("button.add-station").click(function(e){
+    var newScnl = $("#scnl-select").val();
+    var testScnl = newScnl.split(".");
+    var valid = true;
+    if(testScnl.length == 4){
+      $.each(newScnl.split("."), function(i, val){
+        if (val.length == 0) {
+          valid = false;
+        } 
+      });
+    } else {
+      valid = false;
+    }
+    
+    if(valid && channels.length < 6){
+      updateList(newScnl);
+      updateChannels();
+    } else if(channels.length >= 6){
+      $("#length-warning").show();
+    } else {
+      $("#scnl-warning").show();
+    }
+    
+    e.preventDefault;
+  });
+  
+  function updateList(scnl){
+    $("ul#station-sorter.station-select").append("<li class='list-group-item' id= '" + scnl + "'>" + scnl   
+    + "<i class='fa fa-sort pull-right'></i>"
+    + "<a class='remove-station fa fa-times'></a>"
+    +"</li>");
+  }
+  
+  function updateChannels(){
     channels = [];
-    $("ul#station-sorter li").each(function() {
-      channels.push($(this).text().trim());
+    var ids = $("ul#station-sorter").sortable("toArray");
+    $.each(ids, function(i, id) {
+      channels.push(id);
     });
     if ($("ul#station-sorter li").css('position') == "relative") {
       $(".update.station-select").addClass("btn-primary");
     }
-  });
+  }
 
   // Update URL with correct station order and whatnot
   $("button.update.station-select").click(function() {
@@ -802,7 +847,7 @@ $(function() {
     populateForm();
     
     var width = getValue("width") * 60;
-    quickshake = new QuickShake(width);
+    quickshake = new QuickShake(width, channels);
 
     if (channels.length > 0){
       $('.quickshake-warning').hide();

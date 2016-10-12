@@ -1,10 +1,10 @@
-#azure-logo {
-	float: right;
-	margin-top: 5%;
+#header {
+  height: 75px;
 }
 
-#azure-logo a img {
-	width: 120px;
+#sorter-container {
+  margin: 5px 0px;
+/*  min-height: 150px;*/
 }
 
 #quickshake {
@@ -139,7 +139,7 @@ ul.station-select {
 }
 
 .ui-state-highlight {
-	height: 10px;
+	height: 42px;
 }
 
 #select-evid{
