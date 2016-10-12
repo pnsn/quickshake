@@ -643,7 +643,7 @@ $(function() {
   //What does this even do???
   groupSelector.change(function() {
     channels = groupSelector.children(":selected").val().split(",");
-    $('quickshake-warning').hide();
+    $('.quickshake-warning').hide();
   });
 
   groupSelector.selectpicker();
@@ -774,14 +774,14 @@ $(function() {
       if($("select#group-select option[id="+ getUrlParam("group") +"]") ){
         $("select#group-select option[id="+ getUrlParam("group") +"]").attr("selected", "selected");
         $('select#group-select').selectpicker('refresh');
-        $('quickshake-warning').hide();
+        $('.quickshake-warning').hide();
         
       }
     }
     
     if(getUrlParam("scnls")){
       channels=getUrlParam("scnls").split(",");
-      $('quickshake-warning').hide();
+      $('.quickshake-warning').hide();
     }
     
     if(getUrlParam("duration")){
@@ -805,6 +805,7 @@ $(function() {
     quickshake = new QuickShake(width);
 
     if (channels.length > 0){
+      $('.quickshake-warning').hide();
       // var evid = getValue("evid");
       // var duration = getValue("duration");
       // var start = getValue("start");
