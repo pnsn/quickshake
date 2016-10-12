@@ -110,16 +110,16 @@
 	margin-bottom: 5px;
 }
 
-.quickshake-warning {
-	display: none;
-}
+/*.quickshake-warning {
+  display: none;
+}*/
 
 #station-select.controls {
 	margin-bottom: 10px;
 }
 
 .quickshake-station-warning {
-	display: none;
+  display: none;
 }
 
 .quickshake-station-warning .station-warning {

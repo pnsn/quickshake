@@ -500,7 +500,6 @@ $(function() {
    ***/
 
   //Globals  
-  var viewerWidthSec;
   var quickshake;
   var socket;
 
@@ -512,7 +511,7 @@ $(function() {
       scnls: ['TAHO.HNZ.UW.--', 'BABR.ENZ.UW.--', 'JEDS.ENZ.UW.--']
     },
     "group2": {
-      name: "Groupaloop",
+      name: "Groupaloopa",
       scnls: ['CORE.ENZ.UW.--', 'BABR.ENZ.UW.--', 'JEDS.ENZ.UW.--', 'BROK.HNZ.UW.--']
     },
     "group3": {
@@ -557,7 +556,7 @@ $(function() {
   var eventSelector = $('select#event-select.station-select');
   eventSelector.attr({
     'data-live-search': true,
-    'disabled': true,
+    'disabled':'disabled',
     'title': "No events found."
   });
 
@@ -575,16 +574,19 @@ $(function() {
   }
 
   function getEvents() {
-    var events = [];
+    
     $.ajax({
       dataType: "json",
       url: "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=41&maxlatitude=51&minlongitude=-129&maxlongitude=-116&minmagnitude=2"
     }).done(function(data) {
+      var events = {};
       eventSelector.append($("<optgroup label='Earthquakes' id='earthquakes-group'></optgroup>"));
       eventSelector.append($("<optgroup label='Other events' id='others-group'></optgroup>"));
       var earthquakes = $("#earthquakes-group");
       var other = $("#others-group");
+
       $.each(data.features, function(i, feature) {
+        // console.log(i)
         var titleTokens = feature.properties.title.split(" ");
         var tokens = feature.id;
         $.each(titleTokens, function(i, token) {
@@ -593,6 +595,7 @@ $(function() {
         var dateString = makeDate(new Date(feature.properties.time));
         var title = dateString + " M " + feature.properties.mag;
         var append = $("<option value=" + feature.properties.time + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
+        
         if (feature.properties.type == "earthquake") {
           earthquakes.append(append);
         } else {
@@ -602,10 +605,15 @@ $(function() {
           evid: feature.id,
           description: feature.properties.title,
           starttime: feature.properties.time
-        };        
-        eventSelector.attr('disabled', false);
+        };
       });
-      eventSelector.append($("<option data-hidden='true' data-tokens='false' selected value='false'>").text("Select an event"));
+      
+      if (data.features.length > 0 ){
+        eventSelector.removeAttr('disabled');
+        eventSelector.append($("<option data-hidden='true' data-tokens='false' selected value='false'>").text("Select an event"));
+      } else {
+        console.log("wtf");
+      }
       
       if(getUrlParam("evid")){        
         evid = getUrlParam("evid");
@@ -614,8 +622,10 @@ $(function() {
           $('select#event-select').selectpicker('refresh');
         }
       }
-      
-      return events;
+      $('select#event-select').selectpicker('refresh');
+    }).fail(function(response){
+      console.log("I failed");
+      console.log(response);
     });
 
   }
@@ -624,7 +634,8 @@ $(function() {
   //Populate group groupSelector
   var groupSelector = $('select#group-select.station-select');
   groupSelector.attr({
-    'data-live-search': true //add data-tokens to make stations visible --> maybe have keywords in the future?
+    'data-live-search': true, 
+    'title': 'Select a group'
   }).append($("<option data-hidden='true' data-tokens='false'> title='Select a group' value='false' "));
   $.each(stationGroups, function(i, group) {
     groupSelector.append($('<option value=' + group.scnls + ' id=' + group.name + ' data-subtext=' + group.scnls + '>').text(group.name));
@@ -632,14 +643,13 @@ $(function() {
   //What does this even do???
   groupSelector.change(function() {
     channels = groupSelector.children(":selected").val().split(",");
+    $('quickshake-warning').hide();
   });
 
   groupSelector.selectpicker();
 
   eventSelector.change(function(){
     console.log(eventSelector.children(":selected"));
-    // $("evid-select").val(eventSelector.children(":selected").val());
-    //
   });
 
   // Returns the channels
@@ -650,7 +660,7 @@ $(function() {
       channels = $('select#group-select option:selected').first().val().split(",");
       return channels;
     } else {
-      $(".quickshake-warning").show();
+      // $(".quickshake-warning").show();
       return false;
     }
   }
@@ -661,11 +671,11 @@ $(function() {
 
   // Make the update button change color when stuff is changed
   $(".station-select").change(function() {
-    if (channels.length > 0) {
-      $(".quickshake-warning").hide();
-    } else {
-      $(".quickshake-warning").show();
-    }
+    // if (channels.length > 0) {
+    //   $(".quickshake-warning").hide();
+    // } else {
+    //   $(".quickshake-warning").show();
+    // }
     $(".update.station-select").addClass("btn-primary");
   });
 
@@ -732,7 +742,7 @@ $(function() {
       url += "scnls=" + channels;
       location.search = url;
     } else {
-      $(".quickshake-warning").show();
+      // $(".quickshake-warning").show();
     }
 
     // console.log(url)
@@ -764,11 +774,14 @@ $(function() {
       if($("select#group-select option[id="+ getUrlParam("group") +"]") ){
         $("select#group-select option[id="+ getUrlParam("group") +"]").attr("selected", "selected");
         $('select#group-select').selectpicker('refresh');
+        $('quickshake-warning').hide();
+        
       }
     }
     
     if(getUrlParam("scnls")){
       channels=getUrlParam("scnls").split(",");
+      $('quickshake-warning').hide();
     }
     
     if(getUrlParam("duration")){
@@ -787,22 +800,24 @@ $(function() {
   function initialize() {
     getEvents();
     populateForm();
+    
+    var width = getValue("width") * 60;
+    quickshake = new QuickShake(width);
+
     if (channels.length > 0){
-      var evid = getValue("evid");
-      var duration = getValue("duration");
-      var start = getValue("start");
-      var width = getValue("width");
-    
-      viewerWidthSec = width * 60;
-    
+      // var evid = getValue("evid");
+      // var duration = getValue("duration");
+      // var start = getValue("start");
+
       var stations = "scnls=" + getScnls();
-      
-      quickshake = new QuickShake(viewerWidthSec);
-      
+
+
       initializeSocket(stations);
       quickshake.configViewer();
-      
+
       //put evid logic back in
+    } else {
+      //show that message Kyla
     }
 
   }
