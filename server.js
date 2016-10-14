@@ -79,12 +79,12 @@ wss.on('connection', function connection(ws) {
   sendRing(id,ws);
   
   ws.on("close", function(){
-    console.log("closing");
+    logger.info("removing client: " + id);
     removeClient(id);
   });
   
   ws.on("error", function(error){
-    console.log(error);
+    logger.error(error);
     removeClient(id);
   });
   
@@ -92,7 +92,7 @@ wss.on('connection', function connection(ws) {
 });
 
 http.listen(conf.http.port, function(){
-  console.log("listening on port: " + conf.http.port);
+  logger.info("listening on port: " + conf.http.port);
 });
 
 //take client id and doc and send to clients
@@ -101,7 +101,7 @@ function sendMessage(doc){
   for(id in CLIENTS){
     var socket = CLIENTS[id]["socket"];
     if(socket.readyState != socket.OPEN){
-      console.log("removing client..........................................................");
+      logger.info("Socket closed, removing client" + id);
       removeClient(id);
     }
     if(CLIENTS[id] && CLIENTS[id]["params"]["scnls"].indexOf(doc["key"]) != -1){
