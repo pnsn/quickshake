@@ -45,8 +45,7 @@ describe("Ringbuffer update", function(){
   it("make valid scnl key", function(){
     expect(ringbuff.makeKey(ewKey)).to.equal(validKey);
   });
-  console.log(validKey);
-  console.log(ringbuff);
+
   it("has valid index", function(){
     expect(ringbuff['ring'][validKey].traces.length).to.equal(buffMax);
     expect(ringbuff['ring'][validKey].currentIndex).to.equal(buffMax-1);

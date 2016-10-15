@@ -12,37 +12,56 @@ var express=require('express')
     ,MongoRealTime = require(__dirname + '/lib/mongoRealTime');
     
 const debug = require('debug')('quickshake');  
-
 var conf = new Conf();
-var mongoUrl=this.url = "mongodb://" + conf.mongo.user + ":" + conf.mongo.passwd + "@" 
+var MONGO_URI=this.url = "mongodb://" + conf.mongo.user + ":" + conf.mongo.passwd + "@" 
         + conf.mongo.host + ":" + conf.mongo.port + "/" + conf.mongo.dbname 
         + "?authMechanism=" + conf.mongo.authMech + "&authSource=" + conf.mongo.authSource;
 
 app.use(express.static('public'));
 logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
+
+var _db;
 var RING_BUFF = new RingBuffer(conf.ringBuffer.max);
-var mongoRT = new MongoRealTime(MongoClient, mongoUrl, conf.mongo.rtCollection, RING_BUFF, logger);
-var mongoArchive = new MongoArchive(MongoClient, mongoUrl, RING_BUFF, 5000, logger);
-mongoArchive.start();
+var mongoRT = new MongoRealTime(conf.mongo.rtCollection, RING_BUFF, logger);
+var mongoArchive = new MongoArchive(RING_BUFF, 5000, logger);
+
+MongoClient.connect(MONGO_URI, function(err, db) {
+  if(err) throw err;  
+  _db = db;
+  mongoRT.database(db);
+  mongoArchive.database(db);
+  mongoRT.tail();
+  mongoArchive.start();
+  http.listen(conf.http.port, function(){
+    logger.info("listening on port: " + conf.http.port);
+  });
+});
 
 
-///routes
-//route for GET request to root
-// app.get('/', function (req, res) {
-//   res.sendFile(__dirname + '/public/index.html');
-// });
+//http routes
+//GET available scnls
+//GET scnls by timestamp
+//GET scnls realtime  
+//GET scnls by group (maintained by admin)
+
+//First request
+//HTML response
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/public/index.html');
+});
 
 
-//TODO: 
 //GET: unique list of scnls
+//JSON response
 app.get('/scnls', function (req, res) {
   ms.getScnls(function(){
    res.send(res); 
   });
 });
 
-//return document of groups with channels
+
+//oreturn document of groups with channels
 // app.get('/groups', function (req, res) {
 
 // });
@@ -56,13 +75,15 @@ var lastId=-1;
 /*mongoRing listeners
 *Only one per app not client connection
 */
-mongoRT.tail();
 
 mongoRT.on('message', sendMessage);
 
 mongoRT.on('close', function(doc){
-  var msg = 'closing message:';
-  CLIENTS={};
+  logger.info('closing message');
+});
+
+mongoRT.on('error',function(err){
+  logger.error(err);
 });
 
 /* end mongo listeners*/
@@ -91,9 +112,6 @@ wss.on('connection', function connection(ws) {
   
 });
 
-http.listen(conf.http.port, function(){
-  logger.info("listening on port: " + conf.http.port);
-});
 
 //take client id and doc and send to clients
 
