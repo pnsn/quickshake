@@ -537,7 +537,7 @@ $(function() {
   //TODO: fix live updating of channel order
   var channels = [];
   
-  $("start-select").datetimepicker({
+  $("#start-select").datetimepicker({
     format: 'yyyy-mm-dd hh:ii:ss',
     useCurrent: true
   });
@@ -563,7 +563,7 @@ $(function() {
 
   //Produces a date string for the eventselector name
   function makeDate(date) {
-    var values = [date.getMonth(), date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()];
+    var values = [date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()];
 
     $.each(values, function(i, value) {
       if (value < 10) {
@@ -595,18 +595,20 @@ $(function() {
         });
         var dateString = makeDate(new Date(feature.properties.time));
         var title = dateString + " M " + feature.properties.mag;
-        var append = $("<option value=" + feature.properties.time + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
+        var append = $("<option value=" + (parseInt(feature.properties.time, 10)/1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
         
         if (feature.properties.type == "earthquake") {
           earthquakes.append(append);
         } else {
           other.append(append);
         }
+        
         events[feature.id] = {
           evid: feature.id,
           description: feature.properties.title,
-          starttime: feature.properties.time
+          starttime: parseInt(feature.properties.time, 10)/1000.0
         };
+        // console.log(events[feature.id].starttime)
       });
       
       if (data.features.length > 0 ){
@@ -654,7 +656,13 @@ $(function() {
   groupSelector.selectpicker();
 
   eventSelector.change(function(){
+    // console.log()
     console.log(eventSelector.children(":selected"));
+    
+    $("#evid-select").val("");
+    $("#start-select").val("");
+    
+    
   });
 
   // Returns the channels
@@ -731,7 +739,6 @@ $(function() {
   function updateList(scnl){
     $("ul#station-sorter.station-select").append("<li class='list-group-item' id= '" + scnl + "'>" + scnl   
     + "<i class='fa fa-sort pull-right'></i>"
-    + "<a class='remove-station fa fa-times'></a>"
     +"</li>");
   }
   
@@ -771,6 +778,7 @@ $(function() {
       if ($('select#event-select option:selected').length > 0 && $('select#event-select option:selected')[0].value > 0) {
         url += "evid=" + $('select#event-select option:selected')[0].id + "&";
         url += "start=" + $('select#event-select option:selected')[0].value + "&";
+        console.log($('select#event-select option:selected')[0].value + "&");
       } else {
         if (evid) {
           url += "evid=" + evid + "&";
