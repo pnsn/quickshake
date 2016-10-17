@@ -31,8 +31,8 @@ MongoClient.connect(MONGO_URI, function(err, db) {
   _db = db;
   mongoRT.database(db);
   mongoArchive.database(db);
-  // mongoRT.tail();
-  // mongoArchive.start();
+  mongoRT.tail();
+  mongoArchive.start();
   http.listen(conf[env].http.port, function(){
     logger.info("listening on port: " + conf[env].http.port);
   });
