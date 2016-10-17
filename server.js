@@ -13,17 +13,17 @@ var express=require('express')
     
 const debug = require('debug')('quickshake');  
 var conf = new Conf();
-var MONGO_URI=this.url = "mongodb://" + conf.mongo.user + ":" + conf.mongo.passwd + "@" 
-        + conf.mongo.host + ":" + conf.mongo.port + "/" + conf.mongo.dbname 
-        + "?authMechanism=" + conf.mongo.authMech + "&authSource=" + conf.mongo.authSource;
+var env="production"; //get this from env
+
+var MONGO_URI = conf[env].mongo.uri;
 
 app.use(express.static('public'));
 logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
 
 var _db;
-var RING_BUFF = new RingBuffer(conf.ringBuffer.max);
-var mongoRT = new MongoRealTime(conf.mongo.rtCollection, RING_BUFF, logger);
+var RING_BUFF = new RingBuffer(conf[env].ringBuffer.max);
+var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, RING_BUFF, logger);
 var mongoArchive = new MongoArchive(RING_BUFF, 5000, logger);
 
 MongoClient.connect(MONGO_URI, function(err, db) {
@@ -31,10 +31,10 @@ MongoClient.connect(MONGO_URI, function(err, db) {
   _db = db;
   mongoRT.database(db);
   mongoArchive.database(db);
-  mongoRT.tail();
-  mongoArchive.start();
-  http.listen(conf.http.port, function(){
-    logger.info("listening on port: " + conf.http.port);
+  // mongoRT.tail();
+  // mongoArchive.start();
+  http.listen(conf[env].http.port, function(){
+    logger.info("listening on port: " + conf[env].http.port);
   });
 });
 
