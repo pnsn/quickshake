@@ -1,51 +1,91 @@
 var express=require('express')
     ,app = express()
-    , http = require('http').Server(app)
-    , url = require('url')
-    , WebSocketServer = require('ws').Server
-    , wss = new WebSocketServer({server: http})
-    , Conf = require("./config.js")
-    , MongoServer = require(__dirname + '/lib/mongoServer')
-    , RingBuffer = require(__dirname + '/lib/ringBuffer');
-
-
+    ,http = require('http').Server(app)
+    ,url = require('url')
+    ,WebSocketServer = require('ws').Server
+    ,wss = new WebSocketServer({server: http})
+    ,logger = require('winston')
+    ,Conf = require("./config.js")
+    ,MongoClient  = require('mongodb').MongoClient
+    ,RingBuffer = require(__dirname + '/lib/ringBuffer')
+    ,MongoArchive = require(__dirname + '/lib/mongoArchive') 
+    ,MongoRealTime = require(__dirname + '/lib/mongoRealTime');
+    
+const debug = require('debug')('quickshake');  
 var conf = new Conf();
+var MONGO_URI=this.url = "mongodb://" + conf.mongo.user + ":" + conf.mongo.passwd + "@" 
+        + conf.mongo.host + ":" + conf.mongo.port + "/" + conf.mongo.dbname 
+        + "?authMechanism=" + conf.mongo.authMech + "&authSource=" + conf.mongo.authSource;
 
 app.use(express.static('public'));
-//route for GET request to root
-// app.get('/', function (req, res) {
-//   res.sendFile(__dirname + '/public/index.html');
-// });
+logger.level="debug";
+logger.add(logger.transports.File, { filename: 'log/server.log' });
+
+var _db;
+var RING_BUFF = new RingBuffer(conf.ringBuffer.max);
+var mongoRT = new MongoRealTime(conf.mongo.rtCollection, RING_BUFF, logger);
+var mongoArchive = new MongoArchive(RING_BUFF, 5000, logger);
+
+MongoClient.connect(MONGO_URI, function(err, db) {
+  if(err) throw err;  
+  _db = db;
+  mongoRT.database(db);
+  mongoArchive.database(db);
+  mongoRT.tail();
+  mongoArchive.start();
+  http.listen(conf.http.port, function(){
+    logger.info("listening on port: " + conf.http.port);
+  });
+});
 
 
-//TODO: 
+//http routes
+//GET available scnls
+//GET scnls by timestamp
+//GET scnls realtime  
+//GET scnls by group (maintained by admin)
+
+//First request
+//HTML response
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/public/index.html');
+});
+
+
 //GET: unique list of scnls
+//JSON response
 app.get('/scnls', function (req, res) {
   ms.getScnls(function(){
    res.send(res); 
   });
 });
 
-//return document of groups with channels
+
+//oreturn document of groups with channels
 // app.get('/groups', function (req, res) {
 
 // });
-var RING_BUFF = new RingBuffer(conf.ringBuffer.max);
-var mongo = new MongoServer(RING_BUFF);
+
+
+
 
 var CLIENTS={};
 var lastId=-1;
-/*mongo listeners
+
+/*mongoRing listeners
 *Only one per app not client connection
 */
-mongo.tail();
 
-mongo.on('message', sendMessage);
+mongoRT.on('message', sendMessage);
 
-mongo.on('close', function(doc){
-  var msg = 'closing message:';
-  CLIENTS={};
+mongoRT.on('close', function(doc){
+  logger.info('closing message');
 });
+
+mongoRT.on('error',function(err){
+  logger.error(err);
+});
+
 /* end mongo listeners*/
 
 
@@ -60,21 +100,18 @@ wss.on('connection', function connection(ws) {
   sendRing(id,ws);
   
   ws.on("close", function(){
-    console.log("closing");
+    logger.info("removing client: " + id);
     removeClient(id);
   });
   
   ws.on("error", function(error){
-    console.log(error);
+    logger.error(error);
     removeClient(id);
   });
   
   
 });
 
-http.listen(conf.http.port, function(){
-  console.log("listening on port: " + conf.http.port);
-});
 
 //take client id and doc and send to clients
 
@@ -82,7 +119,7 @@ function sendMessage(doc){
   for(id in CLIENTS){
     var socket = CLIENTS[id]["socket"];
     if(socket.readyState != socket.OPEN){
-      console.log("removing client..........................................................");
+      logger.info("Socket closed, removing client" + id);
       removeClient(id);
     }
     if(CLIENTS[id] && CLIENTS[id]["params"]["scnls"].indexOf(doc["key"]) != -1){
