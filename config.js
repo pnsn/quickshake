@@ -1,21 +1,36 @@
 function Conf(){
-  this.mongo= {
-    host: process.env.MONGO_HOST,
-    port: process.env.MONGO_PORT,
-    dbname: "waveforms",
-    user: process.env.MONGO_USER,
-    passwd: process.env.MONGO_PASSWD,
-    authMech: "DEFAULT",
-    authSource: "admin",
-    rtCollection: "ring"
+  this.production= {
+    mongo:{
+      uri: "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWD + "@" 
+              + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" + "waveforms"
+              + "?authMechanism=DEFAULT" + "&authSource=admin",
+      rtCollection: "ring"
+    },
+    
+    http:{
+      port: 8888
+    },
+  //the number of tracebuffs to keep in the buffer for each scnl
+    ringBuffer: {
+      max: 800 
+    }
   };
-  this.http ={
-    port: 8888
+  this.testing= {
+    mongo:{
+      uri: "mongodb://mongo:27017",
+      rtCollection: "ring"
+    },
+    
+    http:{
+      port: 8888
+    },
+  //the number of tracebuffs to keep in the buffer for each scnl
+    ringBuffer: {
+      max: 800 
+    }
   };
-//the number of tracebuffs to keep in the buffer for each scnl
-  this.ringBuffer={
-    max: 800 
-  };
+  
+ 
 };
 
 
