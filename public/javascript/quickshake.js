@@ -647,7 +647,7 @@ $(function() {
     $('.quickshake-warning').hide();
     $("ul#station-sorter.station-select li").remove();
     $.each(channels, function(i, scnl) {
-      $("ul#station-sorter.station-select").append("<li class='list-group-item " + scnl + "'>" + scnl + "<i class='fa fa-sort pull-right'></i></li>");
+      updateList(scnl);
     });
   });
 
