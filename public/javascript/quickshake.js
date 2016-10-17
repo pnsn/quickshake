@@ -664,6 +664,12 @@ $(function() {
     
     
   });
+  
+  $("#evid-select").change(function(){
+    var net = $("#evid-select").val().charAt(0) + $("#evid-select").val().charAt(1);
+    // if(net)
+    // console.log(net)
+  });
 
   // Returns the channels
   function getScnls() {
