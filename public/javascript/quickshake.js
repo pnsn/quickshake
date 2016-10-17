@@ -30,7 +30,7 @@ $(function() {
     this.scroll = null; //sets scrolling
     this.timeout = 60; //Number of minutes to keep active
     this.lineColor = "#000";
-    this.host = "ws://localdocker:8888?";
+    this.host = "ws://web4.ess.washington.edu:8888?";
     this.tz = "PST";
     this.channels = channels;
   };

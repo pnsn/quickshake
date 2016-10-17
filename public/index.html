@@ -76,7 +76,7 @@
              No more than 6 stations can be selected.
              <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
           </div>
-          <div class="quickshake-warning alert alert-danger" id="scnl-warning" role="alert">
+          <div class="quickshake-warning alert alert-danger alert-dismissable" id="scnl-warning" role="alert">
              Invalid SCNL.
              <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
           </div>
@@ -92,6 +92,7 @@
             <input class="station-select form-control" id="evid-select" placeholder="Evid" type="text"></input>
           </div>
     
+    
           <div class="form-group">
             <label for="starttime">Start: </label>
             <input class="station-select form-control" id="start-select" placeholder="Start time" type="text"></input>
@@ -104,6 +105,11 @@
                <option value="10">10</option>
             </select>
             <label for="width-select"> minutes</label>
+            
+            <div class="quickshake-warning alert alert-danger alert-dismissable" id="evid-warning" role="alert">
+               Invalid event ID. Must include network code.
+               <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
           </div>
 
         </form>
