@@ -26,6 +26,7 @@ var RING_BUFF = new RingBuffer(conf[env].ringBuffer.max);
 var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, RING_BUFF, logger);
 var mongoArchive = new MongoArchive(RING_BUFF, 5000, logger);
 
+//create a connection pool
 MongoClient.connect(MONGO_URI, function(err, db) {
   if(err) throw err;  
   _db = db;
@@ -132,8 +133,9 @@ function sendMessage(doc){
 /*parse user params*/
 function parseParams(socket){
   var params = url.parse(socket.upgradeReq.url, true).query;
-  //turn scnls into array
-  if(params.hasOwnProperty("scnls")){
+  //it was necessary to call it this way
+  //since url parse does not create obj with Object.prototype as it's prototype
+  if(Object.prototype.hasOwnProperty.call(params, 'scnls')){
     params['scnls']= params["scnls"].split(",");
   }
   return params;
