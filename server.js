@@ -56,16 +56,28 @@ app.get('/', function (req, res) {
 //GET: unique list of scnls
 //JSON response
 app.get('/scnls', function (req, res) {
-  ms.getScnls(function(){
-   res.send(res); 
+  _db.listCollections().toArray((err, collections)=>{
+    if(err) throw err;
+    var scnls=[];
+    for(var i=0;i<collections.length; i++){
+      var col=collections[i]['name'];
+      if(col != "ring"){
+        col=ringBuff.mongoKey2Ew(collections[i]["name"]);
+        scnls.push(col);
+      }
+    }
+    res.send(scnls);
   });
 });
 
 
-//oreturn document of groups with channels
-// app.get('/groups', function (req, res) {
 
-// });
+
+//return document of groups with channels
+//FIXME: this should probably be managed in mongo but not now--not now!
+app.get('/groups', function (req, res) {
+  res.send(conf.groups);
+});
 
 
 
@@ -123,7 +135,7 @@ function sendMessage(doc){
       logger.info("Socket closed, removing client" + id);
       removeClient(id);
     }
-    if(CLIENTS[id] && CLIENTS[id]["params"]["scnls"].indexOf(ringBuff.makeKey(doc["key"]) != -1){
+    if(CLIENTS[id] && CLIENTS[id]["params"]["scnls"].indexOf(ringBuff.ewKey2Mongo(doc["key"])) != -1){
       socket.send(JSON.stringify(doc));
     }
   }
@@ -139,7 +151,7 @@ function parseParams(socket){
     var temp= params["scnls"].split(",");
     params['scnls'] =[];
     for(var i=0;i< temp.length; i++){
-      params['scnls'].push(ringBuff.makeKey(temp[i]));
+      params['scnls'].push(ringBuff.ewKey2Mongo(temp[i]));
     }
   }
   return params;
