@@ -22,9 +22,9 @@ logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
 
 var _db;
-var RING_BUFF = new RingBuffer(conf[env].ringBuffer.max);
-var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, RING_BUFF, logger);
-var mongoArchive = new MongoArchive(RING_BUFF, 5000, logger);
+var ringBuff = new RingBuffer(conf[env].ringBuffer.max);
+var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, ringBuff, logger);
+var mongoArchive = new MongoArchive(ringBuff, 5000, logger);
 
 //create a connection pool
 MongoClient.connect(MONGO_URI, function(err, db) {
@@ -123,7 +123,7 @@ function sendMessage(doc){
       logger.info("Socket closed, removing client" + id);
       removeClient(id);
     }
-    if(CLIENTS[id] && CLIENTS[id]["params"]["scnls"].indexOf(doc["key"]) != -1){
+    if(CLIENTS[id] && CLIENTS[id]["params"]["scnls"].indexOf(ringBuff.makeKey(doc["key"]) != -1){
       socket.send(JSON.stringify(doc));
     }
   }
@@ -139,7 +139,7 @@ function parseParams(socket){
     var temp= params["scnls"].split(",");
     params['scnls'] =[];
     for(var i=0;i< temp.length; i++){
-      params['scnls'].push(RING_BUFF.makeKey(temp[i]));
+      params['scnls'].push(ringBuff.makeKey(temp[i]));
     }
   }
   return params;
@@ -154,8 +154,8 @@ function removeClient(id){
 function sendRing(id,socket){
   var scnls= CLIENTS[id]["params"]["scnls"];
   for(var i=0; i < scnls.length; i++){
-    if(RING_BUFF['ring'].hasOwnProperty(scnls[i])){
-      var buf = RING_BUFF['ring'][scnls[i]];
+    if(ringBuff['ring'].hasOwnProperty(scnls[i])){
+      var buf = ringBuff['ring'][scnls[i]];
       var index= buf.currentIndex + 1;
       while(index !== buf.currentIndex){
         if(index >= buf.traces.length){
