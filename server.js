@@ -11,7 +11,7 @@ var express=require('express')
     ,MongoArchive = require(__dirname + '/lib/mongoArchive') 
     ,MongoRealTime = require(__dirname + '/lib/mongoRealTime');
     
-const debug = require('debug')('quickshake');  
+const debug = require('debug')('quickshake');
 var conf = new Conf();
 var env="production"; //get this from env
 
@@ -31,9 +31,9 @@ MongoClient.connect(MONGO_URI, function(err, db) {
   if(err) throw err;  
   _db = db;
   mongoRT.database(db);
-  mongoArchive.database(db);
+  // mongoArchive.database(db);
   mongoRT.tail();
-  mongoArchive.start();
+  // mongoArchive.start();
   http.listen(conf[env].http.port, function(){
     logger.info("listening on port: " + conf[env].http.port);
   });
@@ -136,7 +136,11 @@ function parseParams(socket){
   //it was necessary to call it this way
   //since url parse does not create obj with Object.prototype as it's prototype
   if(Object.prototype.hasOwnProperty.call(params, 'scnls')){
-    params['scnls']= params["scnls"].split(",");
+    var temp= params["scnls"].split(",");
+    params['scnls'] =[];
+    for(var i=0;i< temp.length; i++){
+      params['scnls'].push(RING_BUFF.makeKey(temp[i]));
+    }
   }
   return params;
 }
