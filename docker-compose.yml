@@ -3,7 +3,7 @@
 #   container_name: quickMongo
 web:
   build: .
-  command: bash -c "cd /quickshake && npm install && source .secret.sh &&  npm start"
+  command: bash -c "cd /quickshake && npm install && source .secret.sh &&  npm start -- "
   volumes:
     - .:/quickshake
   ports:

@@ -12,6 +12,10 @@ var express=require('express')
     ,MongoRealTime = require(__dirname + '/lib/mongoRealTime');
     
 const debug = require('debug')('quickshake');
+var archive=false;
+process.argv.forEach(function (val, index, array) {
+  archive = val==="archive";
+});
 var conf = new Conf();
 var env="production"; //get this from env
 
@@ -31,9 +35,11 @@ MongoClient.connect(MONGO_URI, function(err, db) {
   if(err) throw err;  
   _db = db;
   mongoRT.database(db);
-  // mongoArchive.database(db);
   mongoRT.tail();
-  // mongoArchive.start();
+  if(archive){
+    mongoArchive.database(db);
+    mongoArchive.start();
+  }
   http.listen(conf[env].http.port, function(){
     logger.info("listening on port: " + conf[env].http.port);
   });
