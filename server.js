@@ -11,7 +11,11 @@ var express=require('express')
     ,MongoArchive = require(__dirname + '/lib/mongoArchive') 
     ,MongoRealTime = require(__dirname + '/lib/mongoRealTime');
     
-const debug = require('debug')('quickshake');  
+const debug = require('debug')('quickshake');
+var archive=false;
+process.argv.forEach(function (val, index, array) {
+  archive = val==="archive";
+});
 var conf = new Conf();
 var env="production"; //get this from env
 
@@ -22,17 +26,20 @@ logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
 
 var _db;
-var RING_BUFF = new RingBuffer(conf[env].ringBuffer.max);
-var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, RING_BUFF, logger);
-var mongoArchive = new MongoArchive(RING_BUFF, 5000, logger);
+var ringBuff = new RingBuffer(conf[env].ringBuffer.max);
+var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, ringBuff, logger);
+var mongoArchive = new MongoArchive(ringBuff, 5000, logger);
 
+//create a connection pool
 MongoClient.connect(MONGO_URI, function(err, db) {
   if(err) throw err;  
   _db = db;
   mongoRT.database(db);
-  mongoArchive.database(db);
   mongoRT.tail();
-  mongoArchive.start();
+  if(archive){
+    mongoArchive.database(db);
+    mongoArchive.start();
+  }
   http.listen(conf[env].http.port, function(){
     logger.info("listening on port: " + conf[env].http.port);
   });
@@ -55,16 +62,28 @@ app.get('/', function (req, res) {
 //GET: unique list of scnls
 //JSON response
 app.get('/scnls', function (req, res) {
-  ms.getScnls(function(){
-   res.send(res); 
+  _db.listCollections().toArray((err, collections)=>{
+    if(err) throw err;
+    var scnls=[];
+    for(var i=0;i<collections.length; i++){
+      var col=collections[i]['name'];
+      if(col != "ring"){
+        col=ringBuff.mongoKey2Ew(collections[i]["name"]);
+        scnls.push(col);
+      }
+    }
+    res.send(scnls);
   });
 });
 
 
-//oreturn document of groups with channels
-// app.get('/groups', function (req, res) {
 
-// });
+
+//return document of groups with channels
+//FIXME: this should probably be managed in mongo but not now--not now!
+app.get('/groups', function (req, res) {
+  res.send(conf.groups);
+});
 
 
 
@@ -122,7 +141,7 @@ function sendMessage(doc){
       logger.info("Socket closed, removing client" + id);
       removeClient(id);
     }
-    if(CLIENTS[id] && CLIENTS[id]["params"]["scnls"].indexOf(doc["key"]) != -1){
+    if(CLIENTS[id] && CLIENTS[id]["params"]["scnls"].indexOf(ringBuff.ewKey2Mongo(doc["key"])) != -1){
       socket.send(JSON.stringify(doc));
     }
   }
@@ -132,9 +151,14 @@ function sendMessage(doc){
 /*parse user params*/
 function parseParams(socket){
   var params = url.parse(socket.upgradeReq.url, true).query;
-  //turn scnls into array
-  if(params.hasOwnProperty("scnls")){
-    params['scnls']= params["scnls"].split(",");
+  //it was necessary to call it this way
+  //since url parse does not create obj with Object.prototype as it's prototype
+  if(Object.prototype.hasOwnProperty.call(params, 'scnls')){
+    var temp= params["scnls"].split(",");
+    params['scnls'] =[];
+    for(var i=0;i< temp.length; i++){
+      params['scnls'].push(ringBuff.ewKey2Mongo(temp[i]));
+    }
   }
   return params;
 }
@@ -148,8 +172,8 @@ function removeClient(id){
 function sendRing(id,socket){
   var scnls= CLIENTS[id]["params"]["scnls"];
   for(var i=0; i < scnls.length; i++){
-    if(RING_BUFF['ring'].hasOwnProperty(scnls[i])){
-      var buf = RING_BUFF['ring'][scnls[i]];
+    if(ringBuff['ring'].hasOwnProperty(scnls[i])){
+      var buf = ringBuff['ring'][scnls[i]];
       var index= buf.currentIndex + 1;
       while(index !== buf.currentIndex){
         if(index >= buf.traces.length){

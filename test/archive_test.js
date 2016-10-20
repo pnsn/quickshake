@@ -43,8 +43,7 @@ describe("Update archive from ringbuffer", function(){
   
 
   it("should create collection", function(){
-    mongoArchive.start();
-    // expect
+    // mongoArchive.start();
     // expect(ringbuff['ring'][validKey].traces.length).to.equal(buffMax);
     // expect(ringbuff['ring'][validKey].currentIndex).to.equal(buffMax-1);
     // ringbuff.update(new MockTrace(sta,chan,net,loc));

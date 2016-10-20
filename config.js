@@ -30,7 +30,21 @@ function Conf(){
     }
   };
   
- 
+  //temporary till we create ui to manage groups
+  this.groups={
+    supergrouper: {
+      "default": 1,
+      scnls:["TAHO.HNZ.UW.--","BABR.ENZ.UW.--","JEDS.ENZ.UW.--"]
+    },
+    grouptastic: {
+      "default": 0,
+      scnls:["TAHO.HNZ.UW.--","CORE.ENZ.UW.--","BROK.HNZ.UW.--"]
+    },
+    groupapalooza: {
+      "default": 0,
+      scnls:["BABR.ENZ.UW.--,JEDS.ENZ.UW.--"]
+    }
+  };
 };
 
 
