@@ -506,6 +506,7 @@ $(function() {
 
   //I got tired of the old names... 
   // TODO: get these from somewhere
+  
   var stationGroups = {
     "group1": {
       name: "Supergrouper",
@@ -530,6 +531,10 @@ $(function() {
     "group6":{
       name:"Groupaloo",
       scnls:['TAHO.HNZ.UW.--','BROK.HNZ.UW.--']
+    },
+    "group7":{
+      name:"TheIncredibleGroup",
+      scnls: ['BILS.HNZ.UW.--','LWCK.HNZ.UW.--','CHZZ.HNZ.UW.--','YACH.HNZ.UW.--','BROK.HNZ.UW.--']
     }
   };
 
@@ -878,6 +883,7 @@ $(function() {
       //put evid logic back in
     } else {
       //show that message Kyla
+      //what message?
     }
 
   }
