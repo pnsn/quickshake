@@ -506,37 +506,6 @@ $(function() {
 
   //I got tired of the old names... 
   // TODO: get these from somewhere
-  
-  var stationGroups = {
-    "group1": {
-      name: "Supergrouper",
-      scnls: ['TAHO.HNZ.UW.--', 'BABR.ENZ.UW.--', 'JEDS.ENZ.UW.--']
-    },
-    "group2": {
-      name: "Groupaloopa",
-      scnls: ['CORE.ENZ.UW.--', 'BABR.ENZ.UW.--', 'JEDS.ENZ.UW.--', 'BROK.HNZ.UW.--']
-    },
-    "group3": {
-      name: "Grouptastic",
-      scnls: ['TAHO.HNZ.UW.--', 'CORE.ENZ.UW.--', 'BROK.HNZ.UW.--']
-    },
-    "group4":{
-      name:"Groupy",
-      scnls:['BABR.ENZ.UW.--','JEDS.ENZ.UW.--']
-    },
-    "group5":{
-      name:"Grouper",
-      scnls:['CORE.ENZ.UW.--','BROK.HNZ.UW.--']
-    },
-    "group6":{
-      name:"Groupaloo",
-      scnls:['TAHO.HNZ.UW.--','BROK.HNZ.UW.--']
-    },
-    "group7":{
-      name:"TheIncredibleGroup",
-      scnls: ['BILS.HNZ.UW.--','LWCK.HNZ.UW.--','CHZZ.HNZ.UW.--','YACH.HNZ.UW.--','BROK.HNZ.UW.--']
-    }
-  };
 
   //Keeps track
   //TODO: fix live updating of channel order
@@ -637,6 +606,7 @@ $(function() {
     });
 
   }
+  
 
   //TODO: Edit stations in the edit station modal (add&delete)
   //Populate group groupSelector
@@ -644,10 +614,45 @@ $(function() {
   groupSelector.attr({
     'data-live-search': true, 
     'title': 'Select a group'
-  }).append($("<option data-hidden='true' data-tokens='false'> title='Select a group' value='false' "));
-  $.each(stationGroups, function(i, group) {
-    groupSelector.append($('<option value=' + group.scnls + ' id=' + group.name + ' data-subtext=' + group.scnls + '>').text(group.name));
   });
+  
+  function getGroups(_callback) {
+    $.ajax({
+      type: "GET",
+      dataType: "jsonp",
+      url: "http://web4.ess.washington.edu:8888/groups"
+    }).done(function(data) {
+      console.log(data);
+      
+      var defaultGroup = {
+        name:"",
+        scnls:[]
+      };
+      
+      groupSelector.append($("<option data-hidden='true' data-tokens='false'> title='Select a group' value='false' "));
+      $.each(data, function(key, group) {
+        groupSelector.append($('<option value=' + group.scnls + ' id=' + key + ' data-subtext=' + group.scnls + '>').text(key));
+        if(group["default"] == 1 && defaultGroup.scnls.length == 0) {
+          defaultGroup.name = key;
+          defaultGroup.scnls = group.scnls;
+        }      
+      });
+      
+      if(channels.length == 0){
+        channels = defaultGroup.scnls;
+        $("select#group-select option[id="+ defaultGroup.name +"]").attr("selected", "selected");
+        $("#group-header").text(defaultGroup.name + " (default)");
+      } 
+    
+      groupSelector.selectpicker('refresh');
+      
+      _callback();
+    }).fail(function(response){
+      console.log("I failed");
+      console.log(response);
+    });
+  }
+  
   //What does this even do???
   groupSelector.change(function() {
     channels = groupSelector.children(":selected").val().split(",");
@@ -657,7 +662,6 @@ $(function() {
       updateList(scnl);
     });
   });
-
   groupSelector.selectpicker();
 
   eventSelector.change(function(){
@@ -839,8 +843,8 @@ $(function() {
         $("select#group-select option[id="+ getUrlParam("group") +"]").attr("selected", "selected");
         $('select#group-select').selectpicker('refresh');
         $('.quickshake-warning').hide();
-        
       }
+      $("#group-header").text(getUrlParam("group"));
     }
     
     if(getUrlParam("scnls")){
@@ -848,9 +852,9 @@ $(function() {
       $('.quickshake-warning').hide();
     }
     
-    if(getUrlParam("duration")){
-      $("#duration-select").val(getUrlParam("scnls"));
-    }
+    // if(getUrlParam("duration")){
+    //   $("#duration-select").val(getUrlParam("duration"));
+    // }
 
   }
   
@@ -864,79 +868,93 @@ $(function() {
   function initialize() {
     getEvents();
     populateForm();
-    
-    var width = getValue("width") * 60;
-    quickshake = new QuickShake(width, channels);
+    getGroups(
+    function(){
+      var width = getValue("width") * 60;
+      quickshake = new QuickShake(width, channels);
 
-    if (channels.length > 0){
-      $('.quickshake-warning').hide();
-      // var evid = getValue("evid");
-      // var duration = getValue("duration");
-      // var start = getValue("start");
+      if (channels.length > 0){
+        $('.quickshake-warning').hide();
+        $('.loading').hide();
+        
+        var evid = getValue("evid");
+        var duration = getUrlParam("duration") ? getUrlParam("duration") : 10;
+        
+        var start = getValue("start");
 
-      var stations = "scnls=" + getScnls();
+        console.log("starttime: " + start);
 
+        var stations = "scnls=" + getScnls();
 
-      initializeSocket(stations);
-      quickshake.configViewer();
-
-      //put evid logic back in
-    } else {
-      //show that message Kyla
-      //what message?
+        initializeSocket(stations);
+        quickshake.configViewer();
+        controlsInit();
+        
+        //put evid logic back in
+      } else {
+        //show that message Kyla
+        //what message?
+      }
     }
+    );
 
   }
 
   initialize();
   
-  // Controls stuff
-  $("#playback-slider").slider({
-    slide: function(e, ui) {
-      if (!quickshake.realtime) {
+  $(".loading").addClass("center-block").append('<i class="fa fa-spinner fa-pulse fa-3x">');  
+  
+  // Can't load these until the quickshake is made
+  function controlsInit(){
+    // Controls stuff
+    $("#playback-slider").slider({
+      slide: function(e, ui) {
+        if (!quickshake.realtime) {
+          $("#play-button").removeClass("disabled");
+          $("#stop-button, #realtime-button").addClass("disabled");
+        }
+        quickshake.selectPlayback(e, ui);
+      }
+    });
+
+    $("#scale-slider").slider({
+      min: quickshake.scaleSliderMin, //logs
+      max: quickshake.scaleSliderMax,
+      value: quickshake.scale,
+      step: .05,
+      slide: function(e, ui) {
+        quickshake.selectScale(e, ui.value);
+      }
+    });
+
+    $("#play-button").click(function() {
+      if (!$("#play-button").hasClass("disabled")) {
+        quickshake.playScroll();
+        $("#realtime-button, #stop-button").removeClass("disabled");
+        $("#play-button").addClass("disabled");
+      }
+      return false;
+    });
+
+    $("#stop-button").click(function() {
+      if (!$("#stop-button").hasClass("disabled")) {
+        quickshake.pauseScroll();
         $("#play-button").removeClass("disabled");
         $("#stop-button, #realtime-button").addClass("disabled");
       }
-      quickshake.selectPlayback(e, ui);
-    }
-  });
+      return false;
+    });
 
-  $("#scale-slider").slider({
-    min: quickshake.scaleSliderMin, //logs
-    max: quickshake.scaleSliderMax,
-    value: quickshake.scale,
-    step: .05,
-    slide: function(e, ui) {
-      quickshake.selectScale(e, ui.value);
-    }
-  });
-
-  $("#play-button").click(function() {
-    if (!$("#play-button").hasClass("disabled")) {
-      quickshake.playScroll();
-      $("#realtime-button, #stop-button").removeClass("disabled");
-      $("#play-button").addClass("disabled");
-    }
-    return false;
-  });
-
-  $("#stop-button").click(function() {
-    if (!$("#stop-button").hasClass("disabled")) {
-      quickshake.pauseScroll();
-      $("#play-button").removeClass("disabled");
-      $("#stop-button, #realtime-button").addClass("disabled");
-    }
-    return false;
-  });
-
-  $("#realtime-button").click(function() {
-    //hide when done
-    if (!$("#realtime-button").hasClass("disabled") && !quickshake.realtime) {
-      $("#realtime-button").addClass("disabled");
-      quickshake.realtime = true;
-    }
-    return false;
-  });
+    $("#realtime-button").click(function() {
+      //hide when done
+      if (!$("#realtime-button").hasClass("disabled") && !quickshake.realtime) {
+        $("#realtime-button").addClass("disabled");
+        quickshake.realtime = true;
+      }
+      return false;
+    });
+    
+  }
 
   // Websocket stuff
 

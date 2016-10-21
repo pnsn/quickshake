@@ -149,3 +149,7 @@ ul.station-select {
 #station-sorter {
 	display: none;
 }
+
+.open-controls {
+  margin:10px;
+}

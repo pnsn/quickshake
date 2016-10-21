@@ -43,14 +43,14 @@
 </div>
 
 <!--this is broken because the logic for it was in pnsn.js -->
-<div class="loading"></div> 
+<div class="loading">
+   <img src="https://tvrecappersanonymous.files.wordpress.com/2010/02/mr-bill.jpg" height="200px"></img>
+</div> 
 
-
-
-<div id="header">This is where I'd put information...if I had it
-<button class="button btn btn-default open-controls" type="button">Update</button>
+<div id="header">Group:
+   <span id="group-header"></span>
+   <button class="button btn btn-default open-controls btn-primary" type="button">Update</button>
 </div>
-
 
 <div class="modal fade " id="controls">
   <div class="modal-dialog modal-lg">
@@ -98,13 +98,13 @@
             <input class="station-select form-control" id="start-select" placeholder="Start time" type="text"></input>
           </div>
           <div class="form-group">
-            <label for="width-select">Width:</label>
+            <!-- <label for="width-select">Width:</label>
             <select class="station-select" id="width-select">
                <option value="2">2</option>
                <option value="5">5</option>
                <option value="10">10</option>
             </select>
-            <label for="width-select"> minutes</label>
+            <label for="width-select"> minutes</label> -->
             
             <div class="quickshake-warning alert alert-danger alert-dismissable" id="evid-warning" role="alert">
                Invalid event ID. Must include network code.
