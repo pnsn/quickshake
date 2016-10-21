@@ -1,4 +1,4 @@
-var express=require('express')
+var express = require('express')
     ,app = express()
     ,http = require('http').Server(app)
     ,url = require('url')
@@ -21,7 +21,7 @@ var env="production"; //get this from env
 
 var MONGO_URI = conf[env].mongo.uri;
 
-app.use(express.static('public'));
+app.use(express['static']('public'));
 logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
 
@@ -46,11 +46,17 @@ MongoClient.connect(MONGO_URI, function(err, db) {
 });
 
 
-//http routes
-//GET available scnls
-//GET scnls by timestamp
-//GET scnls realtime  
-//GET scnls by group (maintained by admin)
+/* 
+*****HTTP ROUTES******
+GET scnls realtime  
+ /realtime?scnls=...
+GET scnls by timestamp
+/archive?starttime=[time]&duration=[duration]&scnls=...
+GET available scnls
+ /scnls
+GET scnls by group (maintained by config but will eventually have CRUD func 
+  /groups
+*/
 
 //First request
 //HTML response
@@ -80,13 +86,16 @@ app.get('/scnls', function (req, res) {
 
 
 //return document of groups with channels
-//FIXME: this should probably be managed in mongo but not now--not now!
+//FIXME: this should probably be managed in mongo and not a conf file but not now--not now!
 app.get('/groups', function (req, res) {
   res.send(conf.groups);
 });
 
 
-
+app.get("/archive", function(req, res) {
+  console.log(req.query.scnls);
+  console.log(req.query.starttime);
+});
 
 var CLIENTS={};
 var lastId=-1;
@@ -113,7 +122,7 @@ wss.on('connection', function connection(ws) {
   client = {"socket": ws, "params":{}};
   lastId++;
   var id = lastId;
-  client["params"]=parseParams(ws);
+  client["params"]=parseWsParams(ws);
   // client['mongo-listener']
   CLIENTS[id]=client;
   sendRing(id,ws);
@@ -148,8 +157,8 @@ function sendMessage(doc){
 
 }
 
-/*parse user params*/
-function parseParams(socket){
+/*parse user params from webocket connections*/
+function parseWsParams(socket){
   var params = url.parse(socket.upgradeReq.url, true).query;
   //it was necessary to call it this way
   //since url parse does not create obj with Object.prototype as it's prototype
