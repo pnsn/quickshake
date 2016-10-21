@@ -78,7 +78,7 @@ app.get('/scnls', function (req, res) {
         scnls.push(col);
       }
     }
-    res.send(scnls);
+    res.jsonp(scnls);
   });
 });
 
@@ -88,7 +88,7 @@ app.get('/scnls', function (req, res) {
 //return document of groups with channels
 //FIXME: this should probably be managed in mongo and not a conf file but not now--not now!
 app.get('/groups', function (req, res) {
-  res.send(conf.groups);
+  res.jsonp(conf.groups);
 });
 
 
