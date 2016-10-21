@@ -153,3 +153,7 @@ ul.station-select {
 .open-controls {
   margin:10px;
 }
+
+#header{
+  display:none;
+}

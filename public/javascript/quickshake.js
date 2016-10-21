@@ -876,7 +876,7 @@ $(function() {
       if (channels.length > 0){
         $('.quickshake-warning').hide();
         $('.loading').hide();
-        
+        $('#header').show();
         var evid = getValue("evid");
         var duration = getUrlParam("duration") ? getUrlParam("duration") : 10;
         
