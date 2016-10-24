@@ -93,8 +93,20 @@ app.get('/groups', function (req, res) {
 
 
 app.get("/archive", function(req, res) {
-  console.log(req.query.scnls);
-  console.log(req.query.starttime);
+  var scnls = req.query.scnls.split(",");
+ 
+  results=[];
+  // var key=ringBuff.ewKey2Mongo(scnls[0]); //temp for testing
+
+  var starttime=req.query.starttime;
+  //+10 mins
+  var endtime= starttime + (10*60*1000);
+  
+  if(req.query.scnls && req.query.starttime){
+    sendArchive(scnls, res, starttime, endtime, results);
+  }else{
+    res.status(400);
+  }
 });
 
 var CLIENTS={};
@@ -193,4 +205,20 @@ function sendRing(id,socket){
       }
     }
   }
+}
+
+//recursive function to create dynamic callback hell
+function sendArchive(scnls,res,starttime, endtime, results) {
+  if(scnls.length < 1){
+    res.jsonp(results);
+  }else{
+    var key = scnls.shift();
+    key = ringBuff.ewKey2Mongo(key);
+    var coll= _db.collection(key);
+    coll.find({"starttime": {$gt: starttime, $lt: endtime}}).toArray((err, traceBuffs)=>{
+        if (err) return console.log(err)
+        results=results.concat(traceBuffs);
+        sendArchive(scnls,res,starttime,endtime,results);
+    });
+    }
 }
