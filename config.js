@@ -32,33 +32,33 @@ function Conf(){
   
   //temporary till we create ui to manage groups
   this.groups={
-    supergrouper: {
+    "supergrouper": {
       "default": 1,
-      scnls: ["TAHO.HNZ.UW.--", "BABR.ENZ.UW.--", "JEDS.ENZ.UW.--"]
+      "scnls": ["TAHO.HNZ.UW.--", "BABR.ENZ.UW.--", "JEDS.ENZ.UW.--"]
     },
-    groupaloopa: {
+    "groupaloopa": {
       "default": 0,
-      scnls: ["CORE.ENZ.UW.--", "BABR.ENZ.UW.--", "JEDS.ENZ.UW.--", "BROK.HNZ.UW.--"]
+      "scnls": ["CORE.ENZ.UW.--", "BABR.ENZ.UW.--", "JEDS.ENZ.UW.--", "BROK.HNZ.UW.--"]
     },
-    grouptastic: {
+    "grouptastic": {
       "default": 0,
-      scnls: ["TAHO.HNZ.UW.--", "CORE.ENZ.UW.--", "BROK.HNZ.UW.--"]
+      "scnls": ["TAHO.HNZ.UW.--", "CORE.ENZ.UW.--", "BROK.HNZ.UW.--"]
     },
-    groupy:{
+    "groupy":{
       "default": 0,
-      scnls:["BABR.ENZ.UW.--","JEDS.ENZ.UW.--"]
+      "scnls":["BABR.ENZ.UW.--","JEDS.ENZ.UW.--"]
     },
-    grouper:{
+    "grouper":{
       "default": 0,
-      scnls:["CORE.ENZ.UW.--","BROK.HNZ.UW.--"]
+      "scnls":["CORE.ENZ.UW.--","BROK.HNZ.UW.--"]
     },
-    groupaloo:{
+    "groupaloo":{
       "default": 0,
-      scnls:["TAHO.HNZ.UW.--","BROK.HNZ.UW.--"]
+      "scnls":["TAHO.HNZ.UW.--","BROK.HNZ.UW.--"]
     },
-    theincrediblegroup:{
+    "theincrediblegroup":{
       "default": 0,
-      scnls: ["BILS.HNZ.UW.--","LWCK.HNZ.UW.--","CHZZ.HNZ.UW.--","YACH.HNZ.UW.--","BROK.HNZ.UW.--"]
+      "scnls": ["BILS.HNZ.UW.--","LWCK.HNZ.UW.--","CHZZ.HNZ.UW.--","YACH.HNZ.UW.--","BROK.HNZ.UW.--"]
     }
   };
 };

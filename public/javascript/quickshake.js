@@ -52,6 +52,7 @@ $(function() {
   //called when new data arrive. Functions independently from 
   // drawSignal method which is called on a sampRate interval
   QuickShake.prototype.updateBuffer = function(packet) {
+
     if (this.viewerLeftTime == null) {
       this.viewerLeftTime = this.makeTimeKey(packet.starttime);
       this.startPixOffset -= (this.sampPerSec * 4);
@@ -62,6 +63,7 @@ $(function() {
 
       // this.updateGs(this.scale);    
     }
+
     this.updatePlaybackSlider();
     //update times to track oldest and youngest data points
     if (packet.starttime < this.starttime)
@@ -70,7 +72,9 @@ $(function() {
       this.endtime = this.makeTimeKey(packet.endtime);
     //decimate data
     var _decimate = parseInt(packet.samprate / this.sampPerSec, 0);
+    
     var _t = this.makeTimeKey(packet.starttime);
+  
     //move index to correct for time offset
     var _i = parseInt(((_t - packet.starttime) * this.sampPerSec / 1000), 0);
     while (_i < packet.data.length) {
@@ -504,12 +508,9 @@ $(function() {
   var quickshake;
   var socket;
 
-  //I got tired of the old names... 
-  // TODO: get these from somewhere
-
-  //Keeps track
-  //TODO: fix live updating of channel order
+  // var channels = ["TAHO.HNZ.UW.--","BABR.ENZ.UW.--","JEDS.ENZ.UW.--"];
   var channels = [];
+  
   
   $("#start-select").datetimepicker({
     format: 'yyyy-mm-dd hh:ii:ss',
@@ -622,7 +623,7 @@ $(function() {
       dataType: "jsonp",
       url: "http://web4.ess.washington.edu:8888/groups"
     }).done(function(data) {
-      console.log(data);
+      // console.log(data);
       
       var defaultGroup = {
         name:"",
@@ -638,11 +639,14 @@ $(function() {
         }      
       });
       
-      if(channels.length == 0){
+      if(!getUrlParam("group") && channels.length == 0){
         channels = defaultGroup.scnls;
         $("select#group-select option[id="+ defaultGroup.name +"]").attr("selected", "selected");
         $("#group-header").text(defaultGroup.name + " (default)");
-      } 
+      } else if( getUrlParam("group") && channels.length == 0){
+        $("select#group-select option[id="+ getUrlParam("group") +"]").attr("selected", "selected");
+        channels = data[getUrlParam("group")] ? data[getUrlParam("group")].scnls : [];
+      }
     
       groupSelector.selectpicker('refresh');
       
@@ -839,11 +843,6 @@ $(function() {
     }
     
     if(getUrlParam("group")){
-      if($("select#group-select option[id="+ getUrlParam("group") +"]") ){
-        $("select#group-select option[id="+ getUrlParam("group") +"]").attr("selected", "selected");
-        $('select#group-select').selectpicker('refresh');
-        $('.quickshake-warning').hide();
-      }
       $("#group-header").text(getUrlParam("group"));
     }
     
@@ -852,9 +851,9 @@ $(function() {
       $('.quickshake-warning').hide();
     }
     
-    // if(getUrlParam("duration")){
-    //   $("#duration-select").val(getUrlParam("duration"));
-    // }
+    if(getUrlParam("duration")){
+      $("#duration-select").val(getUrlParam("duration"));
+    }
 
   }
   
@@ -873,23 +872,26 @@ $(function() {
       var width = getValue("width") * 60;
       quickshake = new QuickShake(width, channels);
 
+      // console.log(width)
       if (channels.length > 0){
         $('.quickshake-warning').hide();
         $('.loading').hide();
         $('#header').show();
+
         var evid = getValue("evid");
         var duration = getUrlParam("duration") ? getUrlParam("duration") : 10;
-        
+
         var start = getValue("start");
 
-        console.log("starttime: " + start);
+        // console.log("starttime: " + start)
 
         var stations = "scnls=" + getScnls();
 
         initializeSocket(stations);
+
         quickshake.configViewer();
         controlsInit();
-        
+
         //put evid logic back in
       } else {
         //show that message Kyla
