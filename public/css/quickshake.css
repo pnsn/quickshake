@@ -112,6 +112,7 @@
 
 .quickshake-warning {
   display: none;
+  margin: 10px 0px;
 }
 
 #station-select.controls {
@@ -155,5 +156,16 @@ ul.station-select {
 }
 
 #header{
+  display:none;
+  float:left;
+  width: 75%;
+  margin: 10px 10px 10px 10px;
+}
+
+#header h1 {
+  display:inline;
+}
+
+.header-info{
   display:none;
 }

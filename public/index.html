@@ -48,10 +48,13 @@
    <!-- <div w3-include-html="mrbill.html"></div> -->
 </div> 
 
-<div id="header">Group:
-   <span id="group-header"></span>
-   <button class="button btn btn-default open-controls btn-primary" type="button">Update</button>
+<div id="header">
+   <h1>Quickshake <small>by PNSN</small> </h1>
+   <div id="group-header" class="header-info">group: <span></span></div>
+   <div id="event-header" class="header-info">event: <span></span></div>
 </div>
+
+<button class="button btn btn-default open-controls btn-primary pull-right" type="button">Update</button>
 
 <div class="modal fade " id="controls">
   <div class="modal-dialog modal-lg">
@@ -71,15 +74,6 @@
             <label for="scnl-select">Enter SCNL: </label>
             <input class="form-control" id="scnl-select" placeholder="STA.CHA.NET.LOC" type="text"></input>
             <button type="button" class="button btn btn-default add-station station-select">Add</button>
-          </div>
-          
-          <div class="quickshake-warning alert alert-danger alert-dismissable" id="length-warning" role="alert">
-             No more than 6 stations can be selected.
-             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          </div>
-          <div class="quickshake-warning alert alert-danger alert-dismissable" id="scnl-warning" role="alert">
-             Invalid SCNL.
-             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
           </div>
           
           <div id="sorter-container"><ul class="station-select list-group" id="station-sorter"></ul></div>
@@ -106,13 +100,23 @@
                <option value="10">10</option>
             </select>
             <label for="width-select"> minutes</label>
+
+          </div>
             
             <div class="quickshake-warning alert alert-danger alert-dismissable" id="evid-warning" role="alert">
                Invalid event ID. Must include network code.
-               <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+               <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
-          </div>
-
+          
+            <div class="quickshake-warning alert alert-danger alert-dismissable" id="length-warning" role="alert">
+               No more than 6 stations can be selected.
+               <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            
+            <div class="quickshake-warning alert alert-danger alert-dismissable" id="scnl-warning" role="alert">
+               Invalid SCNL. Must be of form: STA.CHA.NET.LOC
+               <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
         </form>
       </div>
       <div class="modal-footer">

@@ -30,7 +30,7 @@ $(function() {
     this.scroll = null; //sets scrolling
     this.timeout = 60; //Number of minutes to keep active
     this.lineColor = "#000";
-    this.host = "ws://web4.ess.washington.edu:8888?";
+    this.host = "ws://" + path +"?";
     this.tz = "PST";
     this.channels = channels;
   };
@@ -507,16 +507,57 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
+  var path = "web4.ess.washington.edu:8888";
+  var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
 
   // var channels = ["TAHO.HNZ.UW.--","BABR.ENZ.UW.--","JEDS.ENZ.UW.--"];
   var channels = [];
   
-  
+  // Initialize UI
   $("#start-select").datetimepicker({
     format: 'yyyy-mm-dd hh:ii:ss',
     useCurrent: true
   });
+  
+  var eventSelector = $('select#event-select.station-select');
+  eventSelector.attr({
+    'data-live-search': true,
+    'disabled':'disabled',
+    'title': "No events found."
+  });
+  
 
+  //TODO: Edit stations in the edit station modal (add&delete)
+  //Populate group groupSelector
+  var groupSelector = $('select#group-select.station-select');
+  groupSelector.attr({
+    'data-live-search': true, 
+    'title': 'Select a group'
+  });
+  
+  groupSelector.selectpicker();
+
+  groupSelector.change(function() {
+    channels = groupSelector.children(":selected").val().split(",");
+    $('.quickshake-warning').hide();
+    $("ul#station-sorter.station-select li").remove();
+    $.each(channels, function(i, scnl) {
+      updateList(scnl);
+    });
+  });
+
+  eventSelector.change(function(){
+    // console.log()
+    console.log(eventSelector.children(":selected"));
+    
+    $("#evid-select").val("");
+    $("#start-select").val("");
+  
+  });
+  
+  $(".loading").addClass("center-block").append('<i class="fa fa-spinner fa-pulse fa-3x">');
+  //End UI Initializing
+  
   //helper functions
   function getUrlParam(param) {
     var pageUrl = window.location.search.substring(1);
@@ -528,13 +569,6 @@ $(function() {
       }
     }
   }
-
-  var eventSelector = $('select#event-select.station-select');
-  eventSelector.attr({
-    'data-live-search': true,
-    'disabled':'disabled',
-    'title': "No events found."
-  });
 
   //Produces a date string for the eventselector name
   function makeDate(date) {
@@ -548,14 +582,14 @@ $(function() {
     // console.log(values)
     return values[0] + "/" + values[1] + " " + values[2] + ":" + values[3];
   }
-
+  
+  var events = {};
   function getEvents() {
-    
     $.ajax({
       dataType: "json",
-      url: "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=41&maxlatitude=51&minlongitude=-129&maxlongitude=-116&minmagnitude=2"
+      url: usgsPath + "minlatitude=41&maxlatitude=51&minlongitude=-129&maxlongitude=-116&minmagnitude=2"
     }).done(function(data) {
-      var events = {};
+      
       eventSelector.append($("<optgroup label='Earthquakes' id='earthquakes-group'></optgroup>"));
       eventSelector.append($("<optgroup label='Other events' id='others-group'></optgroup>"));
       var earthquakes = $("#earthquakes-group");
@@ -608,20 +642,11 @@ $(function() {
 
   }
   
-
-  //TODO: Edit stations in the edit station modal (add&delete)
-  //Populate group groupSelector
-  var groupSelector = $('select#group-select.station-select');
-  groupSelector.attr({
-    'data-live-search': true, 
-    'title': 'Select a group'
-  });
-  
   function getGroups(_callback) {
     $.ajax({
       type: "GET",
       dataType: "jsonp",
-      url: "http://web4.ess.washington.edu:8888/groups"
+      url: "http://" + path + "/groups"
     }).done(function(data) {
       // console.log(data);
       
@@ -639,15 +664,20 @@ $(function() {
         }      
       });
       
+      $("#group-header").show();
+      
       if(!getUrlParam("group") && channels.length == 0){
         channels = defaultGroup.scnls;
         $("select#group-select option[id="+ defaultGroup.name +"]").attr("selected", "selected");
-        $("#group-header").text(defaultGroup.name + " (default)");
-      } else if( getUrlParam("group") && channels.length == 0){
+        $("#group-header span").text(defaultGroup.name + " (default)");
+      } else if( getUrlParam("group")){
+        $("#group-header span").text(getUrlParam("group"));
         $("select#group-select option[id="+ getUrlParam("group") +"]").attr("selected", "selected");
-        channels = data[getUrlParam("group")] ? data[getUrlParam("group")].scnls : [];
+        if(channels.length == 0){
+          channels = data[getUrlParam("group")] ? data[getUrlParam("group")].scnls : [];
+        }
       }
-    
+      
       groupSelector.selectpicker('refresh');
       
       _callback();
@@ -657,31 +687,46 @@ $(function() {
     });
   }
   
-  //What does this even do???
-  groupSelector.change(function() {
-    channels = groupSelector.children(":selected").val().split(",");
-    $('.quickshake-warning').hide();
-    $("ul#station-sorter.station-select li").remove();
-    $.each(channels, function(i, scnl) {
-      updateList(scnl);
-    });
+  $("[data-hide]").on("click", function(){
+      $(this).closest("." + $(this).attr("data-hide")).hide();
   });
-  groupSelector.selectpicker();
 
-  eventSelector.change(function(){
-    // console.log()
-    console.log(eventSelector.children(":selected"));
+  function getStart(evid, start, _callback){
+    var stime = start;
+    var text;
     
-    $("#evid-select").val("");
-    $("#start-select").val("");
-    
-    
-  });
+    if(events[evid]){
+      stime = stime ? stime : events[evid].starttime;
+      text = events[evid].description;
+      
+      $("#event-header span").text(text);
+      $("#event-header").show();
+      _callback(stime);
+      
+    } else {
+      $.ajax({
+        type: "GET",
+        dataType: "json",
+        url: usgsPath + "eventid=" + evid
+      }).done(function(data) {
+        stime = stime ? stime : data.properties.time;
+        text = data.properties.title;
+        
+        $("#event-header span").text(text);
+        $("#event-header").show();
+        
+        _callback(stime);
+        
+      }).fail(function(response){
+        console.log("I failed");
+        console.log(response);
+      });
+    }
+  }
   
+ //TODO: test if evid is somewhat valid (has network code)
   $("#evid-select").change(function(){
-    var net = $("#evid-select").val().charAt(0) + $("#evid-select").val().charAt(1);
-    // if(net)
-    // console.log(net)
+    $("#evid-warning").toggle($("#evid-select").val().length != 10);
   });
 
   // Returns the channels
@@ -746,9 +791,12 @@ $(function() {
     if(valid && channels.length < 6){
       updateList(newScnl);
       updateChannels();
-    } else if(channels.length >= 6){
+      $("#length-warning").hide();
+      $("#scnl-warning").hide();
+    }else if(channels.length >= 6){
       $("#length-warning").show();
-    } else {
+    }
+    if(!valid){
       $("#scnl-warning").show();
     }
     
@@ -757,8 +805,27 @@ $(function() {
   
   function updateList(scnl){
     $("ul#station-sorter.station-select").append("<li class='list-group-item' id= '" + scnl + "'>" + scnl   
-    + "<i class='fa fa-sort pull-right'></i>"
+    + "<i class='fa fa-sort pull-left'></i>" + "<i class='fa fa-trash pull-right delete' ></i>"
     +"</li>");
+  }
+  
+  $("#station-sorter").on('click', '.delete', function () {
+    removeStation($(this).parent());
+    // $(this).parent().remove(); 
+  });
+  
+  function removeStation(li){
+    var scnl = li.attr("id");
+    
+    li.remove();
+
+    updateChannels();
+
+    if(channels.length < 6) {
+      $("#scnl-warning").hide();
+    }
+    
+    
   }
   
   function updateChannels(){
@@ -817,7 +884,6 @@ $(function() {
       // $(".quickshake-warning").show();
     }
 
-    // console.log(url)
   });
 
   // End station select stuff
@@ -835,15 +901,13 @@ $(function() {
       $("#evid-select").val(evid);
     }
     
-    //TODO: USGS feed already has the time multiplied by 1000
-    //TODO: value incorrect --stuff is getting funky with the date
     if(getUrlParam("start")){
       var s = new Date(getUrlParam("start") * 1000);
       $("#start-select").val(s.getFullYear() + "-" + (s.getMonth() + 1) + "-" + s.getDate() + " " + s.getHours() + ":" + s.getMinutes() + ":" + s.getSeconds());
     }
     
     if(getUrlParam("group")){
-      $("#group-header").text(getUrlParam("group"));
+      $("#group-header span").text(getUrlParam("group"));
     }
     
     if(getUrlParam("scnls")){
@@ -861,9 +925,6 @@ $(function() {
     return $("#" + variable + "-select").val() ? $("#" + variable + "-select").val() : false;
   }
   
-  ///init stuff
-  //TODO: is this the proper way?
-  //yes, yes it is.
   function initialize() {
     getEvents();
     populateForm();
@@ -879,23 +940,44 @@ $(function() {
         $('#header').show();
 
         var evid = getValue("evid");
+        
         var duration = getUrlParam("duration") ? getUrlParam("duration") : 10;
 
         var start = getValue("start");
-
-        // console.log("starttime: " + start)
-
+        
         var stations = "scnls=" + getScnls();
 
-        initializeSocket(stations);
 
+        if(start || evid){
+          getStart(evid, start, function(s){
+            console.log(s);
+            //Get archived data here
+          });
+          
+          //FIXME: Once archive is figured out, this isn't needed
+          initializeSocket(stations);
+
+        } else {
+          initializeSocket(stations);
+        }
+        
         quickshake.configViewer();
         controlsInit();
+        
+        //FIXME: Remove this when done testing
+        // $("#controls").modal("show");
+        // $("ul#station-sorter.station-select li").remove();
+        // $.each(channels, function(i, scnl) {
+        //   updateList(scnl);
+        // });
+        // $("#station-sorter").show();
+        //FIXME: Remove that
 
-        //put evid logic back in
       } else {
         //show that message Kyla
         //what message?
+        //this really should never get caught because there is a default
+        $('.quickshake-warning').show();
       }
     }
     );
@@ -904,7 +986,7 @@ $(function() {
 
   initialize();
   
-  $(".loading").addClass("center-block").append('<i class="fa fa-spinner fa-pulse fa-3x">');  
+    
   
   // Can't load these until the quickshake is made
   function controlsInit(){
