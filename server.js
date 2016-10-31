@@ -195,13 +195,11 @@ function sendRing(id,socket){
   for(var i=0; i < scnls.length; i++){
     if(ringBuff['ring'].hasOwnProperty(scnls[i])){
       var buf = ringBuff['ring'][scnls[i]];
-      var index= buf.currentIndex + 1;
+      var index= (buf.currentIndex+1)%buf.traces.length;
       while(index !== buf.currentIndex){
-        if(index >= buf.traces.length){
-          index=0;
-          }
         socket.send(JSON.stringify(buf.traces[index]));
         index ++;
+        index = (index +1)%buf.traces.length;
       }
     }
   }
