@@ -30,7 +30,6 @@ $(function() {
     this.scroll = null; //sets scrolling
     this.timeout = 60; //Number of minutes to keep active
     this.lineColor = "#000";
-    this.host = "ws://" + path +"?";
     this.tz = "PST";
     this.channels = channels;
   };
@@ -52,7 +51,7 @@ $(function() {
   //called when new data arrive. Functions independently from 
   // drawSignal method which is called on a sampRate interval
   QuickShake.prototype.updateBuffer = function(packet) {
-
+    console.log(packet)
     if (this.viewerLeftTime == null) {
       this.viewerLeftTime = this.makeTimeKey(packet.starttime);
       this.startPixOffset -= (this.sampPerSec * 4);
@@ -507,7 +506,7 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
-  var path = "web4.ess.washington.edu:8888";
+  var path = "web4.ess.washington.edu:8888/";
   var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
 
   // var channels = ["TAHO.HNZ.UW.--","BABR.ENZ.UW.--","JEDS.ENZ.UW.--"];
@@ -646,7 +645,7 @@ $(function() {
     $.ajax({
       type: "GET",
       dataType: "jsonp",
-      url: "http://" + path + "/groups"
+      url: "http://" + path + "groups"
     }).done(function(data) {
       // console.log(data);
       
@@ -695,6 +694,9 @@ $(function() {
     var stime = start;
     var text;
     
+    if(!evid) {
+      _callback(stime);
+    }
     if(events[evid]){
       stime = stime ? stime : events[evid].starttime;
       text = events[evid].description;
@@ -947,13 +949,19 @@ $(function() {
         
         var stations = "scnls=" + getScnls();
 
-
         if(start || evid){
           getStart(evid, start, function(s){
-            console.log(s);
-            //Get archived data here
+            $.ajax({
+              type: "GET",
+              dataType: "jsonp",
+              url: "http://" + path + "archive?starttime=" + s + "&" + stations
+            }).done(function(data) {
+            
+              console.log(data);
+            }).fail(function(data) {
+              console.log(data);
+            });
           });
-          
           //FIXME: Once archive is figured out, this isn't needed
           initializeSocket(stations);
 
@@ -963,7 +971,6 @@ $(function() {
         
         quickshake.configViewer();
         controlsInit();
-        
         //FIXME: Remove this when done testing
         // $("#controls").modal("show");
         // $("ul#station-sorter.station-select li").remove();
@@ -972,21 +979,17 @@ $(function() {
         // });
         // $("#station-sorter").show();
         //FIXME: Remove that
-
       } else {
         //show that message Kyla
         //what message?
-        //this really should never get caught because there is a default
+        //this really should never get caught when there is a default
         $('.quickshake-warning').show();
       }
-    }
-    );
+    });
 
   }
 
   initialize();
-  
-    
   
   // Can't load these until the quickshake is made
   function controlsInit(){
@@ -1043,14 +1046,17 @@ $(function() {
   // Websocket stuff
 
   function initializeSocket(stations) {
+    console.log(stations)
     if (window.WebSocket) {
-      socket = new WebSocket(quickshake.host + stations);
+      socket = new WebSocket("ws://"+path+"realtime?" + stations);
+      console.log(socket)
       quickshake.setTimeout();
     };
 
     socket.onmessage = function(message, flags) {
       var packet = JSON.parse(message.data);
       quickshake.updateBuffer(packet);
+      console.log(packet)
     };
 
   }
