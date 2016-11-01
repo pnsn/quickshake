@@ -198,7 +198,6 @@ function sendRing(id,socket){
       var index= (buf.currentIndex+1)%buf.traces.length;
       while(index !== buf.currentIndex){
         socket.send(JSON.stringify(buf.traces[index]));
-        index ++;
         index = (index +1)%buf.traces.length;
       }
     }
