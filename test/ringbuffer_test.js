@@ -30,13 +30,13 @@ describe("Ringbuffer update", function(){
     expect(ringbuff['ring'][validKey].traces.length).to.equal(buffMax);
     expect(ringbuff['ring'][validKey].currentIndex).to.equal(buffMax-1);
     ringbuff.update(new MockTrace(sta,chan,net,loc));
-    expect(ringbuff['ring'][validKey].currentIndex).to.equal(0);  
+    expect(ringbuff['ring'][validKey].currentIndex).to.equal(0);
   });
-  
+
   var ewKey=new MockTrace(sta,chan,net,loc).makeEwKey();
-  var validKey= ewKey.replace(/-|\./g, "_").toLowerCase();
+  var validKey= ewKey.replace(/--|\./g, "_").toLowerCase();
   it("make valid scnl key", function(){
-    expect(ringbuff.makeKey(ewKey)).to.equal(validKey);
+    expect(ringbuff.ewKey2Mongo(ewKey)).to.equal(validKey);
   });
-  
+
 });

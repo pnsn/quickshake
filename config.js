@@ -17,7 +17,7 @@ function Conf(){
   };
   this.testing= {
     mongo:{
-      uri: "mongodb://mongo:27017",
+      uri: "mongodb://" + process.env.QUICKMONGO_PORT_27017_TCP_ADDR + ":" + process.env.QUICKMONGO_PORT_27017_TCP_PORT + "/waveforms",
       rtCollection: "ring"
     },
     
