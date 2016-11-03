@@ -18,7 +18,9 @@ const debug = require('debug')('quickshake');
 
 var archive=false;
 process.argv.forEach(function (val, index, array) {
-  var archive = (val==="archive");
+  if(val==="archive"){
+    archive=true;
+  }
 });
 const conf = new Conf();
 var env=process.env.NODE_ENV || "production"; //get this from env
@@ -137,7 +139,7 @@ mongoRT.on('error',function(err){
 
 /*ws for each  client connection*/
 wss.on('connection', function connection(ws) {
-  client = {"socket": ws, "params":{}};
+  var client = {"socket": ws, "params":{}};
   lastId++;
   var id = lastId;
   client["params"]=parseWsParams(ws);
