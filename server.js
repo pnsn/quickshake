@@ -166,7 +166,7 @@ wss.on('connection', function connection(ws) {
 //take client id and doc and send to clients
 
 function sendMessage(doc){
-  for(id in CLIENTS){
+  for(var id in CLIENTS){
     var socket = CLIENTS[id]["socket"];
     if(socket.readyState != socket.OPEN){
       logger.info("Socket closed, removing client" + id);
