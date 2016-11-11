@@ -159,6 +159,7 @@ ul.station-select {
   display:none;
   float:left;
   width: 75%;
+  height:auto;
   margin: 10px 10px 10px 10px;
 }
 

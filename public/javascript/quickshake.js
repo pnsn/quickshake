@@ -32,6 +32,8 @@ $(function() {
     this.lineColor = "#000";
     this.tz = "PST";
     this.channels = channels;
+    this.eventStart = null;
+    this.pad = 0;
   };
 
   // incoming data are appended to buf
@@ -50,10 +52,16 @@ $(function() {
   //  
   //called when new data arrive. Functions independently from 
   // drawSignal method which is called on a sampRate interval
-  QuickShake.prototype.updateBuffer = function(packet) {
-    console.log(packet)
+  QuickShake.prototype.updateBuffer = function(packet, start) {
+    // console.log(packet)
     if (this.viewerLeftTime == null) {
-      this.viewerLeftTime = this.makeTimeKey(packet.starttime);
+      if (start){ 
+        this.viewerLeftTime = this.makeTimeKey(start - this.viewerWidthSec * 1000);
+        // console.log(new Date(this.viewerLeftTime))
+        // console.log(new Date(start))
+      } else {
+        this.viewerLeftTime = this.makeTimeKey(packet.starttime);
+      }
       this.startPixOffset -= (this.sampPerSec * 4);
       this.height = this.channels.length * this.channelHeight + 44;
       this.canvasElement.height = this.height;
@@ -88,6 +96,19 @@ $(function() {
       }
     }
   };
+  
+  // Takes in array of packets from the archive and the starttime of the packets or event.
+  QuickShake.prototype.updateArchive = function(data, start) {
+    var _this = this;
+
+    _this.realtime = false;
+    _this.eventStart = start;
+    $.each(data, function(i, packet){
+      _this.updateBuffer(packet, start);
+    });
+
+
+  };
 
   QuickShake.prototype.drawSignal = function() {
     if (this.scroll) {
@@ -97,7 +118,6 @@ $(function() {
       } else {
         this.viewerLeftTime += this.refreshRate;
       }
-
 
       if (this.realtime) {
         this.adjustPlay();
@@ -111,6 +131,7 @@ $(function() {
     var cursorStop = cursor + this.viewerWidthSec * 1000;
     if (cursor < cursorStop) {
       var ctx = this.canvasElement.getContext("2d");
+;
       ctx.clearRect(0, 0, this.width - 0, this.height);
       ctx.lineWidth = this.lineWidth;
       this.drawAxes(ctx);
@@ -175,13 +196,13 @@ $(function() {
           canvasIndex++;
           cursor += this.refreshRate;
 
-        } //while
+        }//while
         ctx.stroke();
 
       }
     }
   };
-
+  
   //make a key based on new samprate that zeros out the insignificant digits. 
   //if the timestamp is less than starttime, increment by the refresh rate
   QuickShake.prototype.makeTimeKey = function(t) {
@@ -204,7 +225,7 @@ $(function() {
       right: this.width - 0.5,
       bottom: this.height - 20 - 0.5
     };
-
+    
     //some axis lines
     ctx.beginPath();
     //x-axes
@@ -239,7 +260,6 @@ $(function() {
     ctx.stroke();
     //end axis
 
-
     //plot a tick and time at all tickIntervals
     ctx.beginPath();
     ctx.font = "13px Helvetica, Arial, sans-serif";
@@ -249,7 +269,7 @@ $(function() {
     var offset = this.viewerLeftTime % this.tickInterval;
     //what is time of first tick to left  of startPixOffset
     var tickTime = this.viewerLeftTime - offset;
-
+    
     var canvasIndex = this.startPixOffset - offset / this.refreshRate;
     var pixInterval = this.tickInterval / this.refreshRate;
     var index = 0;
@@ -259,12 +279,27 @@ $(function() {
       ctx.lineTo(canvasIndex, this.height - 15);
       ctx.fillText(this.dateFormat(tickTime, "top"), canvasIndex - 23, 12); //top
       ctx.fillText(this.dateFormat(tickTime, "bottom"), canvasIndex - 23, this.height - 1); //bottom
+
       canvasIndex += pixInterval;
       tickTime += this.tickInterval;
       index++;
     }
     ctx.strokeStyle = "#CCCCCC"; //vertical time lines
     ctx.stroke();
+    
+    
+    //Draws a vertical line to mark start of event.
+    //TODO: decide if this should be over or under the wave
+    if(this.eventStart){
+      ctx.beginPath();
+      var t = (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+      ctx.moveTo(t, edge.bottom);
+      ctx.lineTo(t, edge.top);
+      ctx.strokeStyle = "#ff0000"; // axis color    
+      ctx.stroke();
+    }
+    
+    
   };
 
 
@@ -272,18 +307,19 @@ $(function() {
   //ideally we want new data written on canvas a few sampPerSec in
   //We want to avoid player constantly trying to catch up.
   QuickShake.prototype.adjustPlay = function() {
-    var pad = 0;
+    var pad = this.pad;
     var cursorOffset = (this.viewerWidthSec / 10) * this.sampPerSec;
     //i.e. how much buffer in pixels is hanging off the right side of the viewer
     //tail in px    
     var tail = this.startPixOffset + cursorOffset + (this.endtime - this.viewerLeftTime - this.viewerWidthSec * 1000) / 1000 * this.sampPerSec;
     //when we're close to cursorOffset just pad by one to avoid jerky behavior
-    if (tail > -cursorOffset && tail < cursorOffset / 2) {
+    if (this.pad == 0 && tail > -cursorOffset && tail < cursorOffset / 2) {
       pad = 1;
     } else if (tail < -cursorOffset) {
       pad - 1;
     } else if (tail > -cursorOffset / 2) {
       pad = parseInt(Math.abs(tail / 10), 0);
+      console.log(pad)
     }
     if (this.startPixOffset == 0) {
       this.viewerLeftTime += pad * this.refreshRate;
@@ -364,16 +400,21 @@ $(function() {
     this.realtime = false;
   };
 
-  QuickShake.prototype.playScroll = function() {
+  QuickShake.prototype.playScroll = function(archive) {
     _this = this;
     this.scroll = setInterval(function() {
       if (_this.buffer != null) {
-        _this.drawSignal();
+        if(archive){
+          _this.drawArchive();
+        } else {
+          _this.drawSignal();
+        }
       }
     }, this.refreshRate);
   };
 
   QuickShake.prototype.selectPlayback = function(e, ui) {
+    console.log(this.startPixOffset)
     if (this.startPixOffset == 0) {
       if (this.scroll) {
         this.pauseScroll();
@@ -455,8 +496,8 @@ $(function() {
     $(".loading").hide();
 
     $("#quick-shake-scale, #quick-shake-canvas, #quick-shake-controls").css("visibility", "visible");
-    $("#quickshake").height(window.innerHeight * .85);
-    var height = $("#quickshake").height() - 45; //banner height && controls height 
+    $("#quickshake").height(window.innerHeight * .80);
+    var height = $("#quickshake").height() - 60; //banner height && controls height 
     this.width = $("#quickshake").width();
     this.channelHeight = height / this.channels.length;
     this.height = this.channelHeight * this.channels.length + 44; //44 for top & bottom time stamps
@@ -468,17 +509,16 @@ $(function() {
     this.canvasElement.width = this.width;
     this.updateScale();
 
-    //Resizing when paused erased the canvas
-    // if(!this.scroll){
-    //   quickshake.drawSignal();
-    // }
   };
 
   var timeout;
   // Create a delay to simulate end of resizing
   $(window).resize(function() {
     clearTimeout(timeout);
-    timeout = setTimeout(quickshake.configViewer(), 500);
+    timeout = setTimeout(function(){
+      quickshake.configViewer();
+      console.log("This wouldn't go blank if you hadn't broken it Jon.")
+    }, 500);
   });
   var _this = this;
   var lastScale = _this.scale;
@@ -554,6 +594,11 @@ $(function() {
   
   });
   
+  $("#evid-select").change(function(){
+    $("#start-select").val("");
+    eventSelector.val("");
+  })
+  
   $(".loading").addClass("center-block").append('<i class="fa fa-spinner fa-pulse fa-3x">');
   //End UI Initializing
   
@@ -614,7 +659,7 @@ $(function() {
         events[feature.id] = {
           evid: feature.id,
           description: feature.properties.title,
-          starttime: parseInt(feature.properties.time, 10)/1000.0
+          starttime: parseFloat(feature.properties.time)
         };
         // console.log(events[feature.id].starttime)
       });
@@ -681,6 +726,7 @@ $(function() {
       
       _callback();
     }).fail(function(response){
+      alert("JON! WEB4 IS DOWN!");
       console.log("I failed");
       console.log(response);
     });
@@ -695,9 +741,9 @@ $(function() {
     var text;
     
     if(!evid) {
+      console.log(stime)
       _callback(stime);
-    }
-    if(events[evid]){
+    } else if(events[evid]){
       stime = stime ? stime : events[evid].starttime;
       text = events[evid].description;
       
@@ -726,13 +772,42 @@ $(function() {
     }
   }
   
+  var scnlSelector = $('select#scnl-select.station-select');
+  scnlSelector.attr({
+    'data-live-search': true, 
+    'title': 'Select scnls',
+    'multiple':true
+  });
+  
+  scnlSelector.selectpicker();
+  
+  //TODO: make a leaflet map
+  function getScnls(){
+    $.ajax({
+      type: "GET",
+      dataType: "jsonp",
+      url: "http://" + path + "scnls"
+    }).done(function(data) {
+      // scnlSelector.append($("<option data-hidden='true' data-tokens='false'> title='Select a scnl' value='false' "));
+      $.each(data, function(key, scnl) {
+        // var sta = scnl.split(".");
+        scnlSelector.append($('<option value=' + scnl + ' id=' + scnl + '>').text(scnl));
+      });
+      scnlSelector.selectpicker('refresh');
+    }).fail(function(response){
+      console.log("I failed");
+      console.log(response);
+    });
+    
+  }
+  
  //TODO: test if evid is somewhat valid (has network code)
   $("#evid-select").change(function(){
     $("#evid-warning").toggle($("#evid-select").val().length != 10);
   });
 
   // Returns the channels
-  function getScnls() {
+  function getChannels() {
     if(channels.length > 0) {
       return channels;
     } else if ($('select#group-select option:selected').length > 0 && $('select#group-select option:selected')[0].value){
@@ -777,31 +852,34 @@ $(function() {
   });
   
   $("button.add-station").click(function(e){
-    var newScnl = $("#scnl-select").val();
-    var testScnl = newScnl.split(".");
-    var valid = true;
-    if(testScnl.length == 4){
-      $.each(newScnl.split("."), function(i, val){
-        if (val.length == 0) {
-          valid = false;
-        } 
-      });
-    } else {
-      valid = false;
-    }
+    var newScnls = $("#scnl-select").val();
+    $.each(newScnls, function(i, scnl){
+      var testScnl = scnl.split(".");
+      console.log(testScnl)
+      var valid = true;
+      if(testScnl.length <= 4){ //FIXME: change to 3 when jon fixes this should be ==4
+        $.each(scnl.split("."), function(i, val){
+          if (val.length == 0) {
+            valid = false;
+          } 
+        });
+      } else {
+        valid = false;
+      }
     
-    if(valid && channels.length < 6){
-      updateList(newScnl);
-      updateChannels();
-      $("#length-warning").hide();
-      $("#scnl-warning").hide();
-    }else if(channels.length >= 6){
-      $("#length-warning").show();
-    }
-    if(!valid){
-      $("#scnl-warning").show();
-    }
-    
+      if(valid && channels.length < 6){
+        updateList(scnl);
+        updateChannels();
+        $("#length-warning").hide();
+        $("#scnl-warning").hide();
+      }else if(channels.length >= 6){
+        $("#length-warning").show();
+      }
+      if(!valid){
+        console.log(scnl)
+        $("#scnl-warning").show();
+      } 
+    });
     e.preventDefault;
   });
   
@@ -857,7 +935,7 @@ $(function() {
       }
       
       //Is there a group?
-      if ($('select#group-select option:selected').length > 0 ) {
+      if ($('select#group-select option:selected').length > 0 && $('select#group-select option:selected')[0].id.length > 0) {
         url += "group=" + $('select#group-select option:selected')[0].id + "&";
       };
       
@@ -865,14 +943,14 @@ $(function() {
       //TODO: decide on which evid overrides
       if ($('select#event-select option:selected').length > 0 && $('select#event-select option:selected')[0].value > 0) {
         url += "evid=" + $('select#event-select option:selected')[0].id + "&";
-        url += "start=" + $('select#event-select option:selected')[0].value + "&";
+        url += "start=" + $('select#event-select option:selected')[0].value * 1000 + "&";
         console.log($('select#event-select option:selected')[0].value + "&");
       } else {
         if (evid) {
           url += "evid=" + evid + "&";
         }
         if (start) {
-          url += "start=" + start + "&";
+          url += "start=" + start * 1000 + "&";
         }
       }
       
@@ -904,7 +982,8 @@ $(function() {
     }
     
     if(getUrlParam("start")){
-      var s = new Date(getUrlParam("start") * 1000);
+      var s = new Date(parseFloat(getUrlParam("start")));
+      console.log(s.getTime())
       $("#start-select").val(s.getFullYear() + "-" + (s.getMonth() + 1) + "-" + s.getDate() + " " + s.getHours() + ":" + s.getMinutes() + ":" + s.getSeconds());
     }
     
@@ -924,19 +1003,25 @@ $(function() {
   }
   
   function getValue (variable){
-    return $("#" + variable + "-select").val() ? $("#" + variable + "-select").val() : false;
+    if(variable === "start") {
+      var start = new Date($("#" + variable + "-select").val()); 
+      return start && start.getTime() ? start.getTime() : false;
+    } else {
+      return $("#" + variable + "-select").val() ? $("#" + variable + "-select").val() : false;
+    }
+    
   }
   
   function initialize() {
     getEvents();
     populateForm();
-    getGroups(
-    function(){
+    getScnls();
+    getGroups(function(){
       var width = getValue("width") * 60;
       quickshake = new QuickShake(width, channels);
 
       // console.log(width)
-      if (channels.length > 0){
+      if (channels.length > 0 && channels.length < 7){
         $('.quickshake-warning').hide();
         $('.loading').hide();
         $('#header').show();
@@ -947,23 +1032,27 @@ $(function() {
 
         var start = getValue("start");
         
-        var stations = "scnls=" + getScnls();
+        var stations = "scnls=" + getChannels();
 
         if(start || evid){
           getStart(evid, start, function(s){
+            $("#start-header span").text(new Date(s));
+            $("#start-header").show();
+            var starttime = s - 75000;
+            console.log(stations)
             $.ajax({
               type: "GET",
               dataType: "jsonp",
-              url: "http://" + path + "archive?starttime=" + s + "&" + stations
+              url: "http://" + path + "archive?starttime=" + starttime + "&" + stations
             }).done(function(data) {
-            
-              console.log(data);
+              // console.log(data[0])
+              quickshake.updateArchive(data, s);
             }).fail(function(data) {
               console.log(data);
             });
           });
           //FIXME: Once archive is figured out, this isn't needed
-          initializeSocket(stations);
+          // initializeSocket(stations);
 
         } else {
           initializeSocket(stations);
@@ -971,24 +1060,16 @@ $(function() {
         
         quickshake.configViewer();
         controlsInit();
-        //FIXME: Remove this when done testing
-        // $("#controls").modal("show");
-        // $("ul#station-sorter.station-select li").remove();
-        // $.each(channels, function(i, scnl) {
-        //   updateList(scnl);
-        // });
-        // $("#station-sorter").show();
-        //FIXME: Remove that
+
       } else {
-        //show that message Kyla
-        //what message?
-        //this really should never get caught when there is a default
         $('.quickshake-warning').show();
       }
     });
 
   }
 
+
+  //Give date in milliseconds
   initialize();
   
   // Can't load these until the quickshake is made
@@ -1031,6 +1112,18 @@ $(function() {
       }
       return false;
     });
+  
+    var pad = 1;
+    $("#fastforward-button").click(function() {
+      
+      pad = pad < 100 ? pad * 2 : 1;
+      quickshake.pad = pad;
+      quickshake.adjustPlay();
+      console.log(pad)
+      
+      
+      return false;
+    });
 
     $("#realtime-button").click(function() {
       //hide when done
@@ -1046,17 +1139,17 @@ $(function() {
   // Websocket stuff
 
   function initializeSocket(stations) {
-    console.log(stations)
+    // console.log(stations)
     if (window.WebSocket) {
-      socket = new WebSocket("ws://"+path+"realtime?" + stations);
-      console.log(socket)
+      socket = new WebSocket("ws://"+path+"?" + stations);
       quickshake.setTimeout();
     };
 
     socket.onmessage = function(message, flags) {
       var packet = JSON.parse(message.data);
-      quickshake.updateBuffer(packet);
       console.log(packet)
+      quickshake.updateBuffer(packet);
+
     };
 
   }
