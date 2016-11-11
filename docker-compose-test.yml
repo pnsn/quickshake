@@ -3,7 +3,7 @@ db:
   container_name: quickMongo
 web:
   build: .
-  command: bash -c "cd /quickshake && npm install && source .secret.sh &&  npm test"
+  command: bash -c "cd /quickshake && npm install &&  NODE_ENV=testing npm test"
   volumes:
     - .:/quickshake
   ports:
