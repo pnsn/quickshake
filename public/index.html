@@ -15,6 +15,7 @@
 
   <script src="javascript/bootstrap.min.js"></script>
   <script src="javascript/bootstrap_menu.js"></script>
+   <script src="javascript/moment.js"></script>
   <script src="javascript/bootstrap-datetimepicker.min.js"></script>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.11.0/js/bootstrap-select.min.js"></script>
   <script src="javascript/jquery.touchSwipe.min.js"></script>   
@@ -50,11 +51,12 @@
 
 <div id="header">
    <h1>Quickshake <small>by PNSN</small> </h1>
-   <div id="group-header" class="header-info">group: <span></span></div>
-   <div id="event-header" class="header-info">event: <span></span></div>
+   <div id="group-header" class="header-info">Group: <span></span></div>
+   <div id="event-header" class="header-info">Event: <span></span></div>
+   <div id="start-header" class="header-info">Start: <span></span></div>
 </div>
 
-<button class="button btn btn-default open-controls btn-primary pull-right" type="button">Update</button>
+<button class="button btn btn-default open-controls btn-primary pull-right" type="button">Edit Quickshake</button>
 
 <div class="modal fade " id="controls">
   <div class="modal-dialog modal-lg">
@@ -71,8 +73,9 @@
              <select class="station-select selectpicker" id="group-select"></select>
           </div>
           <div class="form-group pull-right">
-            <label for="scnl-select">Enter SCNL: </label>
-            <input class="form-control" id="scnl-select" placeholder="STA.CHA.NET.LOC" type="text"></input>
+            <label for="scnl-select">Add SCNLs: </label>
+            <select class="station-select selectpicker" id="scnl-select"></select>
+            <!-- <input class="form-control" id="scnl-select" placeholder="STA.CHA.NET.LOC" type="text"></input> -->
             <button type="button" class="button btn btn-default add-station station-select">Add</button>
           </div>
           
@@ -120,8 +123,8 @@
         </form>
       </div>
       <div class="modal-footer">
-         <button class="button btn btn-default update station-select" type="button">Update</button>
          <button class="btn btn-default pull-left" data-dismiss ="modal" type="button">Cancel</button>
+         <button class="button btn btn-default pull-left update station-select" type="button">Update</button>
       </div>
     </div>
   </div>
@@ -133,9 +136,10 @@
 
 <div class="col-md-12 col-xs-12" id="quick-shake-controls">
   <div class="controls col-md-4 col-xs-12 col-md-push-4" id="state-buttons">
-    <i class="fa fa-play fa-3x disabled col-xs-4" id="play-button" title="Play"></i>
-    <i class="fa fa-pause fa-3x col-xs-4" id="stop-button" title="Pause"></i>
-    <i class="fa fa-step-forward fa-3x disabled col-xs-4" id="realtime-button" title="Realtime"></i>
+    <i class="fa fa-play fa-3x disabled col-xs-3" id="play-button" title="Play"></i>
+    <i class="fa fa-pause fa-3x col-xs-3" id="stop-button" title="Pause"></i>
+    <i class="fa fa-fast-forward fa-3x col-xs-3" id="fastforward-button" title="Fast-Forward"></i>
+    <i class="fa fa-step-forward fa-3x disabled col-xs-3" id="realtime-button" title="Realtime"></i>
   </div>
   <div class="controls col-md-4 col-xs-12 col-md-pull-4" id="playback">
     <label>Shake History</label>
