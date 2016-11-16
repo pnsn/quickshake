@@ -32,7 +32,7 @@ logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
 
 var _db;
-var ringBuff = new RingBuffer(conf[env].ringBuffer.max);
+var ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
 var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, ringBuff, logger);
 var mongoArchive = new MongoArchive(ringBuff, 5000, logger);
 
