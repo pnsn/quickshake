@@ -117,13 +117,19 @@
             </div>
             
             <div class="quickshake-warning alert alert-danger alert-dismissable" id="scnl-warning" role="alert">
-               Invalid SCNL. Must be of form: STA.CHA.NET.LOC
+               Invalid SCNL.
+               <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            
+            <div class="quickshake-warning alert alert-danger alert-dismissable" id="station-warning" role="alert">
+               At least one station must be selected.
                <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
         </form>
       </div>
       <div class="modal-footer">
          <button class="btn btn-default pull-left" data-dismiss ="modal" type="button">Cancel</button>
+         <button class="btn btn-default pull-left clear-all" type="button">Clear All</button>
          <button class="button btn btn-default pull-left update station-select" type="button">Update</button>
       </div>
     </div>

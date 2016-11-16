@@ -57,8 +57,6 @@ $(function() {
     if (this.viewerLeftTime == null) {
       if (start){ 
         this.viewerLeftTime = this.makeTimeKey(start - this.viewerWidthSec * 1000);
-        // console.log(new Date(this.viewerLeftTime))
-        // console.log(new Date(start))
       } else {
         this.viewerLeftTime = this.makeTimeKey(packet.starttime);
       }
@@ -98,13 +96,13 @@ $(function() {
   };
   
   // Takes in array of packets from the archive and the starttime of the packets or event.
-  QuickShake.prototype.updateArchive = function(data, start) {
+  QuickShake.prototype.updateArchive = function(data, eventStart, packetStart) {
     var _this = this;
 
     _this.realtime = false;
-    _this.eventStart = start;
+    _this.eventStart = eventStart;
     $.each(data, function(i, packet){
-      _this.updateBuffer(packet, start);
+      _this.updateBuffer(packet, packetStart);
     });
 
 
@@ -319,7 +317,6 @@ $(function() {
       pad - 1;
     } else if (tail > -cursorOffset / 2) {
       pad = parseInt(Math.abs(tail / 10), 0);
-      console.log(pad)
     }
     if (this.startPixOffset == 0) {
       this.viewerLeftTime += pad * this.refreshRate;
@@ -517,7 +514,7 @@ $(function() {
     clearTimeout(timeout);
     timeout = setTimeout(function(){
       quickshake.configViewer();
-      console.log("This wouldn't go blank if you hadn't broken it Jon.")
+      console.log("This wouldn't go blank if you hadn't broken it Jon.");
     }, 500);
   });
   var _this = this;
@@ -571,7 +568,7 @@ $(function() {
   var groupSelector = $('select#group-select.station-select');
   groupSelector.attr({
     'data-live-search': true, 
-    'title': 'Select a group'
+    'title': 'No groups found.'
   });
   
   groupSelector.selectpicker();
@@ -699,7 +696,7 @@ $(function() {
         scnls:[]
       };
       
-      groupSelector.append($("<option data-hidden='true' data-tokens='false'> title='Select a group' value='false' "));
+      groupSelector.append($("<option data-hidden='true' data-tokens='false' title='Select a group' value='false' >"));
       $.each(data, function(key, group) {
         groupSelector.append($('<option value=' + group.scnls + ' id=' + key + ' data-subtext=' + group.scnls + '>').text(key));
         if(group["default"] == 1 && defaultGroup.scnls.length == 0) {
@@ -741,7 +738,6 @@ $(function() {
     var text;
     
     if(!evid) {
-      console.log(stime)
       _callback(stime);
     } else if(events[evid]){
       stime = stime ? stime : events[evid].starttime;
@@ -775,7 +771,7 @@ $(function() {
   var scnlSelector = $('select#scnl-select.station-select');
   scnlSelector.attr({
     'data-live-search': true, 
-    'title': 'Select scnls',
+    'title': 'No SCNLS found.',
     'multiple':true
   });
   
@@ -788,11 +784,12 @@ $(function() {
       dataType: "jsonp",
       url: "http://" + path + "scnls"
     }).done(function(data) {
-      // scnlSelector.append($("<option data-hidden='true' data-tokens='false'> title='Select a scnl' value='false' "));
+      scnlSelector.append($("<option data-hidden='true' data-tokens='false' title='Select a scnl' value='false'>"));
       $.each(data, function(key, scnl) {
         // var sta = scnl.split(".");
         scnlSelector.append($('<option value=' + scnl + ' id=' + scnl + '>').text(scnl));
       });
+      scnlSelector.selectpicker("val", 'false')
       scnlSelector.selectpicker('refresh');
     }).fail(function(response){
       console.log("I failed");
@@ -844,20 +841,12 @@ $(function() {
     $("#station-sorter").show();    
   });
   
-  $(".remove-station").click(function(e){
-
-    console.log("removeME");
-    // console.log(this.parent());
-    e.preventDefault;
-  });
-  
   $("button.add-station").click(function(e){
     var newScnls = $("#scnl-select").val();
     $.each(newScnls, function(i, scnl){
       var testScnl = scnl.split(".");
-      console.log(testScnl)
       var valid = true;
-      if(testScnl.length <= 4){ //FIXME: change to 3 when jon fixes this should be ==4
+      if(testScnl.length == 4){ //FIXME: change to 3 when jon fixes this should be ==4
         $.each(scnl.split("."), function(i, val){
           if (val.length == 0) {
             valid = false;
@@ -876,12 +865,28 @@ $(function() {
         $("#length-warning").show();
       }
       if(!valid){
-        console.log(scnl)
         $("#scnl-warning").show();
       } 
     });
     e.preventDefault;
   });
+  
+  $("button.clear-all").click(function(e){
+    var inputs = ["event", "evid", "group", "start", "scnl"];
+    $.each(inputs, function(i, val){
+      console.log(      $("#" + val + "-select").val());
+      if(val == "group" || val == "event" || val == "scnl"){
+        $("#" + val + "-select").selectpicker('val', 'false');
+      } else {
+        $("#" + val + "-select").val("");        
+      }
+    });
+    
+    $("ul#station-sorter").empty();
+    channels = [];
+    $("#station-warning").show();
+  });
+  
   
   function updateList(scnl){
     $("ul#station-sorter.station-select").append("<li class='list-group-item' id= '" + scnl + "'>" + scnl   
@@ -943,14 +948,18 @@ $(function() {
       //TODO: decide on which evid overrides
       if ($('select#event-select option:selected').length > 0 && $('select#event-select option:selected')[0].value > 0) {
         url += "evid=" + $('select#event-select option:selected')[0].id + "&";
-        url += "start=" + $('select#event-select option:selected')[0].value * 1000 + "&";
+        if(!start) {
+          url += "start=" + $('select#event-select option:selected')[0].value * 1000 + "&";
+        } else {
+          url += "start=" + start * 1000 + "&";
+        }
         console.log($('select#event-select option:selected')[0].value + "&");
       } else {
         if (evid) {
           url += "evid=" + evid + "&";
         }
         if (start) {
-          url += "start=" + start * 1000 + "&";
+          url += "start=" + start + "&";
         }
       }
       
@@ -983,7 +992,6 @@ $(function() {
     
     if(getUrlParam("start")){
       var s = new Date(parseFloat(getUrlParam("start")));
-      console.log(s.getTime())
       $("#start-select").val(s.getFullYear() + "-" + (s.getMonth() + 1) + "-" + s.getDate() + " " + s.getHours() + ":" + s.getMinutes() + ":" + s.getSeconds());
     }
     
@@ -1038,15 +1046,14 @@ $(function() {
           getStart(evid, start, function(s){
             $("#start-header span").text(new Date(s));
             $("#start-header").show();
-            var starttime = s - 75000;
-            console.log(stations)
+            var starttime = s - 12000;
             $.ajax({
               type: "GET",
               dataType: "jsonp",
               url: "http://" + path + "archive?starttime=" + starttime + "&" + stations
             }).done(function(data) {
               // console.log(data[0])
-              quickshake.updateArchive(data, s);
+              quickshake.updateArchive(data, s, starttime);
             }).fail(function(data) {
               console.log(data);
             });
@@ -1147,9 +1154,7 @@ $(function() {
 
     socket.onmessage = function(message, flags) {
       var packet = JSON.parse(message.data);
-      console.log(packet)
       quickshake.updateBuffer(packet);
-
     };
 
   }
