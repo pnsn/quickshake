@@ -580,8 +580,9 @@ $(function() {
   var eventSelector = $('select#event-select.station-select');
   eventSelector.attr({
     'data-live-search': true,
-    'disabled':'disabled',
-    'title': "No events found."
+    disabled:'disabled',
+    title: "No events found.",
+    size:'auto'
   });
   
 
@@ -590,7 +591,7 @@ $(function() {
   var groupSelector = $('select#group-select.station-select');
   groupSelector.attr({
     'data-live-search': true, 
-    'title': 'No groups found.'
+    title: 'No groups found.'
   });
   
   groupSelector.selectpicker();
@@ -791,13 +792,14 @@ $(function() {
   }
   
   var scnlSelector = $('select#scnl-select.station-select');
-  scnlSelector.attr({
-    'data-live-search': true, 
-    'title': 'No SCNLS found.',
-    'multiple':true
+
+  scnlSelector.selectpicker({
+    'data-live-search': true,
+    title: 'Select a scnl',
+    maxOptionsText: 'No more than 6 stations.',
+    size: 'auto',
+    maxOptions: 6
   });
-  
-  scnlSelector.selectpicker();
   
   //TODO: make a leaflet map
   function getScnls(){
@@ -806,16 +808,16 @@ $(function() {
       dataType: "jsonp",
       url: "http://" + path + "scnls"
     }).done(function(data) {
-      scnlSelector.append($("<option data-hidden='true' data-tokens='false' title='Select a scnl' value='false'>"));
       $.each(data, function(key, scnl) {
         // var sta = scnl.split(".");
         scnlSelector.append($('<option value=' + scnl + ' id=' + scnl + '>').text(scnl));
       });
-      scnlSelector.selectpicker("val", 'false')
       scnlSelector.selectpicker('refresh');
     }).fail(function(response){
       console.log("I failed");
       console.log(response);
+      scnlSelector.append($("<option data-hidden='true' data-tokens='false' title='No stations found.' value='false' selected>"));
+      scnlSelector.selectpicker('refresh');
     });
     
   }
@@ -846,11 +848,6 @@ $(function() {
 
   // Make the update button change color when stuff is changed
   $(".station-select").change(function() {
-    // if (channels.length > 0) {
-    //   $(".quickshake-warning").hide();
-    // } else {
-    //   $(".quickshake-warning").show();
-    // }
     $(".update.station-select").addClass("btn-primary");
   });
   
@@ -860,36 +857,43 @@ $(function() {
     $.each(channels, function(i, scnl) {
       updateList(scnl);
     });
-    $("#station-sorter").show();    
+    $("#station-sorter").show();
   });
   
   $("button.add-station").click(function(e){
     var newScnls = $("#scnl-select").val();
-    $.each(newScnls, function(i, scnl){
-      var testScnl = scnl.split(".");
-      var valid = true;
-      if(testScnl.length == 4){ //FIXME: change to 3 when jon fixes this should be ==4
-        $.each(scnl.split("."), function(i, val){
-          if (val.length == 0) {
-            valid = false;
-          } 
-        });
-      } else {
-        valid = false;
-      }
-    
-      if(valid && channels.length < 6){
-        updateList(scnl);
-        updateChannels();
-        $("#length-warning").hide();
-        $("#scnl-warning").hide();
-      }else if(channels.length >= 6){
-        $("#length-warning").show();
-      }
-      if(!valid){
-        $("#scnl-warning").show();
-      } 
-    });
+    console.log(channels)
+    if(!$(this).hasClass("disabled")){
+      $.each(newScnls, function(i, scnl){
+        var testScnl = scnl.split(".");
+        var valid = true;
+        if(testScnl.length == 4){ //FIXME: change to 3 when jon fixes this should be ==4
+          $.each(scnl.split("."), function(i, val){
+            if (val.length == 0) {
+              valid = false;
+            } 
+          });
+        } else {
+          valid = false;
+        }
+        
+        var index  = $.inArray(scnl, channels);
+        if(valid && channels.length < 6 && index == -1){
+          updateList(scnl);
+          updateChannels();
+          $("#length-warning").hide();
+          $("#scnl-warning").hide();
+        }else if(channels.length >= 6){
+          $("#length-warning").show();
+        }
+        if(!valid){
+          $("#scnl-warning").show();
+        } 
+      });
+
+      $("#scnl-select").selectpicker('val', 'false');
+    }
+
     e.preventDefault;
   });
   
@@ -918,6 +922,7 @@ $(function() {
   
   $("#station-sorter").on('click', '.delete', function () {
     removeStation($(this).parent());
+    updateScnls();
     // $(this).parent().remove(); 
   });
   
@@ -946,6 +951,36 @@ $(function() {
     }
   }
 
+  scnlSelector.on('shown.bs.select', function (e) {
+    updateScnls();
+  });
+  scnlSelector.on('hidden.bs.select', function (e) {
+    updateScnls();
+  });
+  scnlSelector.on('changed.bs.select', function (e) {
+    $("button.add-station").removeClass("disabled");
+  });
+  	
+
+  function updateScnls(){
+    var length = 6 - $("ul#station-sorter li").length;
+    if(length == 0){
+      scnlSelector.selectpicker({
+        maxOptions: 0
+      });
+      scnlSelector.attr("disabled", true);
+      $("button.add-station").addClass("disabled");
+    } else {
+      scnlSelector.selectpicker({
+        maxOptions: length
+      });
+      scnlSelector.attr("disabled", false);
+    }
+    
+    scnlSelector.selectpicker('refresh');
+    console.log(scnlSelector.selectpicker("maxOptions"))
+  }
+  
   // Update URL with correct station order and whatnot
   $("button.update.station-select").click(function() {
     //there must always be a channel array in winterfell
