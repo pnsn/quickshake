@@ -3,6 +3,11 @@
 // shake history broken sometimes for archive
 // add map
 // fix up code
+// DUDE UTC NOT LOCAL 
+// END of Date
+// Local time
+// RED LINE: 
+// --
 
 //client side of quakeShake 
 $(function() {
@@ -1116,7 +1121,7 @@ $(function() {
             }).error(function(data) {
               //fail not getting called
             }).complete(function(xhr, data){
-              if(xhr.status == 0) {
+              if(xhr.status === 0) {
                 console.log("faillll");
                 
                 $("#controls").modal("show");
@@ -1126,6 +1131,9 @@ $(function() {
                 });
                 $("#station-sorter").show();
                 $("#data-error").show();
+              } else {
+                console.log("I didn't really fail...or did I")
+                console.log(xhr.status)
               }
             });
           });
