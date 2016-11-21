@@ -1,3 +1,9 @@
+// FIXME & TODO: 
+// resizing is broken
+// shake history broken sometimes for archive
+// add map
+// fix up code
+
 //client side of quakeShake 
 $(function() {
   //initial params that should be consistent across all channels on page
@@ -33,7 +39,7 @@ $(function() {
     this.tz = "PST";
     this.channels = channels;
     this.eventStart = null;
-    this.pad = 0;
+    this.pad = null;
   };
 
   // incoming data are appended to buf
@@ -101,6 +107,7 @@ $(function() {
 
     _this.realtime = false;
     _this.eventStart = eventStart;
+    _this.pad = 0;
     $.each(data, function(i, packet){
       _this.updateBuffer(packet, packetStart);
     });
@@ -117,10 +124,13 @@ $(function() {
         this.viewerLeftTime += this.refreshRate;
       }
 
-      if (this.realtime) {
+      // if (this.realtime) {
         this.adjustPlay();
-        this.truncateBuffer();
-      }
+        if (this.realtime){
+          this.truncateBuffer();
+        }
+        
+      // }
     }
 
     // FIND MEAN AND Extreme vals
@@ -270,29 +280,34 @@ $(function() {
     
     var canvasIndex = this.startPixOffset - offset / this.refreshRate;
     var pixInterval = this.tickInterval / this.refreshRate;
+    
     var index = 0;
     while (canvasIndex < edge.right + 20) { //allow times to be drawn off of canvas
       // ctx.moveTo(canvasIndex, this.height -19);
       ctx.moveTo(canvasIndex, 20);
       ctx.lineTo(canvasIndex, this.height - 15);
+
+        
       ctx.fillText(this.dateFormat(tickTime, "top"), canvasIndex - 23, 12); //top
       ctx.fillText(this.dateFormat(tickTime, "bottom"), canvasIndex - 23, this.height - 1); //bottom
-
+      
       canvasIndex += pixInterval;
       tickTime += this.tickInterval;
       index++;
     }
+    
     ctx.strokeStyle = "#CCCCCC"; //vertical time lines
     ctx.stroke();
-    
     
     //Draws a vertical line to mark start of event.
     //TODO: decide if this should be over or under the wave
     if(this.eventStart){
       ctx.beginPath();
+      ctx.font = "13px Helvetica, Arial, sans-serif";
       var t = (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
       ctx.moveTo(t, edge.bottom);
       ctx.lineTo(t, edge.top);
+      // ctx.fillText("start", t-15, 12); 
       ctx.strokeStyle = "#ff0000"; // axis color    
       ctx.stroke();
     }
@@ -305,22 +320,26 @@ $(function() {
   //ideally we want new data written on canvas a few sampPerSec in
   //We want to avoid player constantly trying to catch up.
   QuickShake.prototype.adjustPlay = function() {
-    var pad = this.pad;
+    var pad = this.pad != null ? this.pad : 0;
     var cursorOffset = (this.viewerWidthSec / 10) * this.sampPerSec;
     //i.e. how much buffer in pixels is hanging off the right side of the viewer
     //tail in px    
     var tail = this.startPixOffset + cursorOffset + (this.endtime - this.viewerLeftTime - this.viewerWidthSec * 1000) / 1000 * this.sampPerSec;
     //when we're close to cursorOffset just pad by one to avoid jerky behavior
-    if (this.pad == 0 && tail > -cursorOffset && tail < cursorOffset / 2) {
-      pad = 1;
-    } else if (tail < -cursorOffset) {
-      pad - 1;
-    } else if (tail > -cursorOffset / 2) {
-      pad = parseInt(Math.abs(tail / 10), 0);
+    if(this.pad === null){
+      if (tail > -cursorOffset && tail < cursorOffset / 2) {
+        pad = 1;
+      } else if (tail < -cursorOffset) {
+        pad - 1;
+      } else if (tail > -cursorOffset / 2) {
+        pad = parseInt(Math.abs(tail / 10), 0);
+      }
     }
+
     if (this.startPixOffset == 0) {
       this.viewerLeftTime += pad * this.refreshRate;
     }
+    // console.log(pad)
     this.startPixOffset = Math.max(0, this.startPixOffset - pad);
 
   };
@@ -355,8 +374,10 @@ $(function() {
       var tz = "UTC";
     }
 
+    var tzStamp;
+    
+    //I'm going to be honest, this sucks
     var viewerWidthMin = this.viewerWidthSec / 60;
-
     if (60 % viewerWidthMin == 0 || viewerWidthMin % 5 == 0) {
       var isOnTime = minutes % viewerWidthMin == 0 && seconds == 0;
       var isOnHalfTime = minutes % viewerWidthMin == viewerWidthMin / 2 && seconds == 0;
@@ -492,7 +513,7 @@ $(function() {
     var offSet = 10; //Default for mobile and if there is no scale    
     $(".loading").hide();
 
-    $("#quick-shake-scale, #quick-shake-canvas, #quick-shake-controls").css("visibility", "visible");
+    $("#quick-shake-canvas, #quick-shake-controls").show();
     $("#quickshake").height(window.innerHeight * .80);
     var height = $("#quickshake").height() - 60; //banner height && controls height 
     this.width = $("#quickshake").width();
@@ -500,12 +521,12 @@ $(function() {
     this.height = this.channelHeight * this.channels.length + 44; //44 for top & bottom time stamps
     this.sampPerSec = Math.round(this.width / this.viewerWidthSec);
     this.refreshRate = Math.round(1000 / this.sampPerSec); //refresh rate in milliseconds
-    this.tickInterval = 1000 * (this.viewerWidthSec / 10);
+
+    this.tickInterval = 1000 * (this.viewerWidthSec / (this.width / 100 < 10 ? parseInt(this.width/100) : 10));
 
     this.canvasElement.height = this.height;
     this.canvasElement.width = this.width;
     this.updateScale();
-
   };
 
   var timeout;
@@ -514,6 +535,7 @@ $(function() {
     clearTimeout(timeout);
     timeout = setTimeout(function(){
       quickshake.configViewer();
+      quickshake.drawSignal();
       console.log("This wouldn't go blank if you hadn't broken it Jon.");
     }, 500);
   });
@@ -951,7 +973,7 @@ $(function() {
         if(!start) {
           url += "start=" + $('select#event-select option:selected')[0].value * 1000 + "&";
         } else {
-          url += "start=" + start * 1000 + "&";
+          url += "start=" + start + "&";
         }
         console.log($('select#event-select option:selected')[0].value + "&");
       } else {
@@ -1033,7 +1055,6 @@ $(function() {
         $('.quickshake-warning').hide();
         $('.loading').hide();
         $('#header').show();
-
         var evid = getValue("evid");
         
         var duration = getUrlParam("duration") ? getUrlParam("duration") : 10;
@@ -1050,22 +1071,37 @@ $(function() {
             $.ajax({
               type: "GET",
               dataType: "jsonp",
-              url: "http://" + path + "archive?starttime=" + starttime + "&" + stations
-            }).done(function(data) {
+              url: "http://" + path + "archive?starttime=" + starttime + "&" + stations,
+              timeout: 1000, 
+            }).success(function(data) {
               // console.log(data[0])
+              $("#fastforward-button").show();
+              quickshake.configViewer();
               quickshake.updateArchive(data, s, starttime);
-            }).fail(function(data) {
-              console.log(data);
+            }).error(function(data) {
+              //fail not getting called
+            }).complete(function(xhr, data){
+              if(xhr.status == 0) {
+                console.log("faillll");
+                
+                $("#controls").modal("show");
+                $("ul#station-sorter.station-select li").remove();
+                $.each(channels, function(i, scnl) {
+                  updateList(scnl);
+                });
+                $("#station-sorter").show();
+                $("#data-error").show();
+              }
             });
           });
-          //FIXME: Once archive is figured out, this isn't needed
-          // initializeSocket(stations);
-
+          
         } else {
+          $("#realtime-button").show();
+          quickshake.configViewer();
           initializeSocket(stations);
         }
         
-        quickshake.configViewer();
+        
         controlsInit();
 
       } else {
@@ -1105,7 +1141,7 @@ $(function() {
     $("#play-button").click(function() {
       if (!$("#play-button").hasClass("disabled")) {
         quickshake.playScroll();
-        $("#realtime-button, #stop-button").removeClass("disabled");
+        $("#realtime-button, #stop-button, #fastforward-button").removeClass("disabled");
         $("#play-button").addClass("disabled");
       }
       return false;
@@ -1115,20 +1151,16 @@ $(function() {
       if (!$("#stop-button").hasClass("disabled")) {
         quickshake.pauseScroll();
         $("#play-button").removeClass("disabled");
-        $("#stop-button, #realtime-button").addClass("disabled");
+        $("#stop-button, #realtime-button, #fastforward-button").addClass("disabled");
       }
       return false;
     });
   
-    var pad = 1;
+    var pad = quickshake.pad;
     $("#fastforward-button").click(function() {
-      
-      pad = pad < 100 ? pad * 2 : 1;
-      quickshake.pad = pad;
+      pad = pad < 4 ? pad + 1 : 0;
+      quickshake.pad = pad * 10;
       quickshake.adjustPlay();
-      console.log(pad)
-      
-      
       return false;
     });
 

@@ -103,7 +103,7 @@
 }
 
 #quick-shake-scale, #quick-shake-canvas, #quick-shake-controls {
-	visibility: hidden;
+	display:none;
 }
 
 #playback {
@@ -151,9 +151,7 @@ ul.station-select {
 	display: none;
 }
 
-.open-controls {
-  margin:10px;
-}
+
 
 #header{
   display:none;
@@ -169,4 +167,21 @@ ul.station-select {
 
 .header-info{
   display:none;
+}
+
+form button.btn {
+  margin:0 10px;
+}
+
+#realtime-button, #fastforward-button {
+  display:none;
+}
+
+.form-group.top{
+  overflow:auto;
+  width:100%;
+}
+
+.open-controls {
+  margin:10px;
 }
