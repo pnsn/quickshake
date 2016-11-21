@@ -1188,6 +1188,9 @@ $(function() {
         $("#play-button").removeClass("disabled");
         $("#stop-button, #realtime-button, #fastforward-button").addClass("disabled");
       }
+      if(quickshake.eventStart){
+        quickshake.pad = 0;
+      }     
       return false;
     });
   
