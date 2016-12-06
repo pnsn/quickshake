@@ -1,14 +1,3 @@
-// FIXME & TODO: 
-// resizing is broken
-// shake history broken sometimes for archive
-// add map
-// fix up code
-// DUDE UTC NOT LOCAL 
-// END of Date
-// Local time
-// RED LINE: 
-// --
-
 //client side of quakeShake 
 $(function() {
   //initial params that should be consistent across all channels on page
@@ -44,6 +33,7 @@ $(function() {
     this.tz = "PST";
     this.channels = channels;
     this.eventStart = null;
+    this.archive = false;
     this.pad = null;
   };
 
@@ -107,14 +97,20 @@ $(function() {
   };
   
   // Takes in array of packets from the archive and the starttime of the packets or event.
-  QuickShake.prototype.updateArchive = function(data, eventStart, packetStart) {
+  QuickShake.prototype.updateArchive = function(data, eventStart, dataStart) {
     var _this = this;
 
     _this.realtime = false;
-    _this.eventStart = eventStart;
+    _this.archive = true;
+    
+    
+    if (dataStart - eventStart != 0) {
+      _this.eventStart = eventStart;
+    } 
+      
     _this.pad = 0;
     $.each(data, function(i, packet){
-      _this.updateBuffer(packet, packetStart);
+      _this.updateBuffer(packet, dataStart);
     });
 
 
@@ -306,15 +302,37 @@ $(function() {
     
     //Draws a vertical line to mark start of event.
     //TODO: decide if this should be over or under the wave
-    if(this.eventStart){
+    if(this.archive){
+      var t;
+      // Start line
+      if(this.eventStart){
+        // console.log(this.eventStart - this.starttime)
+        ctx.beginPath();
+        t = (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+      
+        ctx.moveTo(t, edge.bottom);
+        ctx.lineTo(t, edge.top);
+      
+        ctx.strokeStyle = "#000";
+        ctx.stroke();
+        //
+      }
+
       ctx.beginPath();
-      ctx.font = "13px Helvetica, Arial, sans-serif";
-      var t = (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+      
+      t = (this.starttime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+      
       ctx.moveTo(t, edge.bottom);
       ctx.lineTo(t, edge.top);
-      // ctx.fillText("start", t-15, 12); 
+      
+      t = (this.endtime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+      ctx.moveTo(t, edge.bottom);
+      ctx.lineTo(t, edge.top);
+      
       ctx.strokeStyle = "#ff0000"; // axis color    
       ctx.stroke();
+      
+
     }
     
     
@@ -437,7 +455,7 @@ $(function() {
   };
 
   QuickShake.prototype.selectPlayback = function(e, ui) {
-    console.log(this.startPixOffset)
+    // console.log(this.startPixOffset)
     if (this.startPixOffset == 0) {
       if (this.scroll) {
         this.pauseScroll();
@@ -541,7 +559,6 @@ $(function() {
     timeout = setTimeout(function(){
       quickshake.configViewer();
       quickshake.drawSignal();
-      console.log("This wouldn't go blank if you hadn't broken it Jon.");
     }, 500);
   });
   var _this = this;
@@ -639,7 +656,7 @@ $(function() {
     }
   }
 
-  //Produces a date string for the eventselector name
+  //Produces a date string for the eventselector name 
   function makeDate(date) {
     var values = [date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()];
 
@@ -654,17 +671,22 @@ $(function() {
   
   var events = {};
   function getEvents() {
+    eventSelector
+      .append($("<optgroup label='Local Earthquakes' id='earthquakes-group'></optgroup>"))
+      .append($("<optgroup label='Other events' id='others-group'></optgroup>"))
+      .append($("<optgroup label='Teleseisms' id='teleseisms-group'></optgroup>"));
+      
+    var teleseisms = $("#teleseisms-group");
+    var earthquakes = $("#earthquakes-group");
+    var other = $("#others-group");
+    
     $.ajax({
       dataType: "json",
-      url: usgsPath + "minlatitude=41&maxlatitude=51&minlongitude=-129&maxlongitude=-116&minmagnitude=2"
+      url: usgsPath + "minlatitude=41&maxlatitude=51&minlongitude=-129&maxlongitude=-116&minmagnitude=2.5"
     }).done(function(data) {
       
-      eventSelector.append($("<optgroup label='Earthquakes' id='earthquakes-group'></optgroup>"));
-      eventSelector.append($("<optgroup label='Other events' id='others-group'></optgroup>"));
-      var earthquakes = $("#earthquakes-group");
-      var other = $("#others-group");
-
       $.each(data.features, function(i, feature) {
+        // console.log(feature)
         // console.log(i)
         var titleTokens = feature.properties.title.split(" ");
         var tokens = feature.id;
@@ -681,10 +703,12 @@ $(function() {
           other.append(append);
         }
         
+        var coords = feature.geometry.coordinates;
         events[feature.id] = {
           evid: feature.id,
           description: feature.properties.title,
-          starttime: parseFloat(feature.properties.time)
+          starttime: parseFloat(feature.properties.time),
+          coordinates: {lat: coords[0], lon: coords[1], z: coords[2]}
         };
         // console.log(events[feature.id].starttime)
       });
@@ -707,6 +731,49 @@ $(function() {
     }).fail(function(response){
       console.log("I failed");
       console.log(response);
+    });
+    
+    $.ajax({
+      dataType: "json",
+      url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"
+    }).done(function(data){
+      
+      $.each(data.features, function(i, feature) {
+        // console.log(i)
+        var titleTokens = feature.properties.title.split(" ");
+        var tokens = feature.id;
+        $.each(titleTokens, function(i, token) {
+          tokens += token;
+        });
+        var dateString = makeDate(new Date(feature.properties.time));
+        var title = dateString + " M " + feature.properties.mag;
+        var append = $("<option class='teleseism' value=" + (parseInt(feature.properties.time, 10)/1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
+        
+        if (feature.properties.type == "earthquake") {
+          teleseisms.append(append);
+        } 
+        
+
+        events[feature.id] = {
+          evid: feature.id,
+          description: feature.properties.title,
+          starttime: parseFloat(feature.properties.time),
+          geometry: feature.geometry
+        };
+        // console.log(events[feature.id].starttime)
+      });
+
+      if(getUrlParam("evid")){        
+        evid = getUrlParam("evid");
+        if($("select#event-select option[id="+ evid +"]") ){
+          $("select#event-select option[id="+ evid +"]").attr("selected", "selected");
+          $('select#event-select').selectpicker('refresh');
+        }
+      }
+      
+      $('select#event-select').selectpicker('refresh');
+    }).fail(function(response){
+      console.log("teleseisms failed")
     });
 
   }
@@ -733,14 +800,16 @@ $(function() {
         }      
       });
       
-      $("#group-header").show();
+      // $("#group-header").();
       
       if(!getUrlParam("group") && channels.length == 0){
         channels = defaultGroup.scnls;
         $("select#group-select option[id="+ defaultGroup.name +"]").attr("selected", "selected");
         $("#group-header span").text(defaultGroup.name + " (default)");
+        $("#group-header").show();
       } else if( getUrlParam("group")){
         $("#group-header span").text(getUrlParam("group"));
+        $("#group-header").show();
         $("select#group-select option[id="+ getUrlParam("group") +"]").attr("selected", "selected");
         if(channels.length == 0){
           channels = data[getUrlParam("group")] ? data[getUrlParam("group")].scnls : [];
@@ -761,7 +830,7 @@ $(function() {
       $(this).closest("." + $(this).attr("data-hide")).hide();
   });
 
-  function getStart(evid, start, _callback){
+  function getStart(evid, start, teleseism, _callback){
     var stime = start;
     var text;
     
@@ -773,8 +842,13 @@ $(function() {
       
       $("#event-header span").text(text);
       $("#event-header").show();
-      _callback(stime);
       
+      if(teleseism) {
+        _callback(getTeleseismStart(events[evid], stime));
+      } else {
+        _callback(stime);
+      }
+
     } else {
       $.ajax({
         type: "GET",
@@ -783,11 +857,15 @@ $(function() {
       }).done(function(data) {
         stime = stime ? stime : data.properties.time;
         text = data.properties.title;
-        
         $("#event-header span").text(text);
         $("#event-header").show();
         
-        _callback(stime);
+        if(teleseism) {
+          _callback(getTeleseismStart(events[evid], stime));
+        
+        } else {
+          _callback(stime);
+        }
         
       }).fail(function(response){
         console.log("I failed");
@@ -966,6 +1044,42 @@ $(function() {
     $("button.add-station").removeClass("disabled");
   });
   	
+  //Do the math, the monster math
+  function getTeleseismStart(event, start){
+    var lat1 = 47.6062; //Seattle
+    var lon1 = -122.3321;
+
+    var lat2 = event.geometry.coordinates[1];
+    var lon2 = event.geometry.coordinates[0];
+    
+    // Lets hope this works
+    var R = 6371; // Radius of the earth in km
+    var dLat = (lat2 - lat1) * Math.PI / 180;  // deg2rad below
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = 
+       0.5 - Math.cos(dLat)/2 + 
+       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+       (1 - Math.cos(dLon))/2;
+
+    var d = 2 * Math.asin(Math.sqrt(a)) * 180/Math.PI; //angular distance in degrees
+
+    distances = Object.keys(traveltimes).sort(function compare(a, b){
+      return a - b;
+    });
+    var i = 0;
+    var distance = distances[i];
+    
+    while (distance < d){
+      i++;
+      distance = parseFloat(distances[i]);
+    }
+    var distance2 = distances[i-1];
+    
+    var linDif = (traveltimes[distance] - traveltimes[distance2] ) / (distance - parseFloat(distance2));
+
+    return start + (linDif * d + traveltimes[distance2] * 1000);
+  }  
+  
 
   function updateScnls(){
     var length = 6 - $("ul#station-sorter li").length;
@@ -983,7 +1097,7 @@ $(function() {
     }
     
     scnlSelector.selectpicker('refresh');
-    console.log(scnlSelector.selectpicker("maxOptions"))
+
   }
   
   // Update URL with correct station order and whatnot
@@ -993,7 +1107,7 @@ $(function() {
       url = "?"; 
       
       var evid = getValue("evid");
-      var start = getValue("start");
+      var start = getValue("start") ? new Date(getValue("start")).getTime(): getValue("start");
       var width = getValue("width");
       var duration = getValue("duration");
       
@@ -1009,15 +1123,21 @@ $(function() {
       //Is there an event?
       //TODO: decide on which evid overrides
       if ($('select#event-select option:selected').length > 0 && $('select#event-select option:selected')[0].value > 0) {
-        url += "evid=" + $('select#event-select option:selected')[0].id + "&";
+        var option = $('select#event-select option:selected')[0];
+        url += "evid=" + option.id + "&";
         if(!start) {
-          url += "start=" + $('select#event-select option:selected')[0].value * 1000 + "&";
+          url += "start=" + option.value * 1000 + "&"; //Should be in UTC
         } else {
           url += "start=" + start + "&";
         }
-        console.log($('select#event-select option:selected')[0].value + "&");
+        
+        if($(option).hasClass("teleseism")){
+          url += "teleseism=true&"
+        }
+
+        console.log(url)
       } else {
-        if (evid) {
+        if (evid) { //TODO: handle teleseism that is manually enterred
           url += "evid=" + evid + "&";
         }
         if (start) {
@@ -1096,7 +1216,7 @@ $(function() {
         $('.loading').hide();
         $('#header').show();
         var evid = getValue("evid");
-        
+        var teleseism = getUrlParam("teleseism");
         var duration = getUrlParam("duration") ? getUrlParam("duration") : 10;
 
         var start = getValue("start");
@@ -1104,26 +1224,30 @@ $(function() {
         var stations = "scnls=" + getChannels();
 
         if(start || evid){
-          getStart(evid, start, function(s){
-            $("#start-header span").text(new Date(s));
+          getStart(evid, start, teleseism, function(eventStart){
+            $("#start-header span").text(new Date(eventStart));
             $("#start-header").show();
-            var starttime = s - 12000;
+          
+            if(teleseism) {
+              $("#teleseism-header").show();
+              $("#start-header").hide();
+            }
+            
+            var dataStart;
+            
+            dataStart = evid && !teleseism ? eventStart - 12000 : eventStart;
+
             $.ajax({
               type: "GET",
               dataType: "jsonp",
-              url: "http://" + path + "archive?starttime=" + starttime + "&" + stations,
-              timeout: 1000, 
-            }).success(function(data) {
-              // console.log(data[0])
+              url: "http://" + path + "archive?starttime=" + dataStart + "&" + stations,
+              timeout: 1000
+            }).success(function(data){
               $("#fastforward-button").show();
               quickshake.configViewer();
-              quickshake.updateArchive(data, s, starttime);
-            }).error(function(data) {
-              //fail not getting called
+              quickshake.updateArchive(data, eventStart, dataStart);
             }).complete(function(xhr, data){
-              if(xhr.status === 0) {
-                console.log("faillll");
-                
+              if(xhr.status != 200) {
                 $("#controls").modal("show");
                 $("ul#station-sorter.station-select li").remove();
                 $.each(channels, function(i, scnl) {
@@ -1132,8 +1256,7 @@ $(function() {
                 $("#station-sorter").show();
                 $("#data-error").show();
               } else {
-                console.log("I didn't really fail...or did I")
-                console.log(xhr.status)
+
               }
             });
           });
@@ -1143,8 +1266,7 @@ $(function() {
           quickshake.configViewer();
           initializeSocket(stations);
         }
-        
-        
+
         controlsInit();
 
       } else {
@@ -1187,6 +1309,9 @@ $(function() {
         $("#realtime-button, #stop-button, #fastforward-button").removeClass("disabled");
         $("#play-button").addClass("disabled");
       }
+      if(quickshake.archive){
+        quickshake.pad = 0;
+      }     
       return false;
     });
 
@@ -1196,7 +1321,7 @@ $(function() {
         $("#play-button").removeClass("disabled");
         $("#stop-button, #realtime-button, #fastforward-button").addClass("disabled");
       }
-      if(quickshake.eventStart){
+      if(quickshake.archive){
         quickshake.pad = 0;
       }     
       return false;
@@ -1207,7 +1332,9 @@ $(function() {
       pad = pad < 4 ? pad + 1 : 0;
       quickshake.pad = pad * 10;
       quickshake.adjustPlay();
+      $("#play-button").removeClass("disabled");
       return false;
+      
     });
 
     $("#realtime-button").click(function() {
