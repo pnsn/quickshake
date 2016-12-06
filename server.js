@@ -108,13 +108,17 @@ app.get("/archive", function(req, res) {
     res.status(400)
         .send("missing params starttime and or scnls"); //send 400 if missing params
   }else{
-    var endtime= starttime + (10*60*1000);
-    var results=[];
-    // var key=ringBuff.ewKey2Mongo(scnls[0]); //temp for testing
-    //+10 mins
-    logger.info("starttime: " + starttime + " endtime: " + endtime + " scnls:" + scnls);
-    sendArchive(scnls, res, starttime, endtime, results);
-    }
+    //remove any non scnl-y things
+    var clean_scnls=[];
+       for(var i=0; i< scnls.length; i++){
+         if(scnls[i].match(/.{3,4}\..{3}\..{2}\..*/)){
+           clean_scnls.push(scnls[i]);
+         }
+       }
+       var endtime= starttime + (10*60*1000);
+       var results=[];
+       logger.info("starttime: " + starttime + " endtime: " + endtime + " scnls:" + clean_scnls);
+       sendArchive(clean_scnls, res, starttime, endtime, results);
 });
 
 var CLIENTS={};
