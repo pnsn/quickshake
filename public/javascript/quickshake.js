@@ -71,6 +71,7 @@ $(function() {
     }
 
     this.updatePlaybackSlider();
+    
     //update times to track oldest and youngest data points
     if (packet.starttime < this.starttime)
       this.starttime = this.makeTimeKey(packet.starttime);
@@ -103,10 +104,13 @@ $(function() {
     _this.realtime = false;
     _this.archive = true;
     
+    this.starttime = dataStart;
     
     if (dataStart - eventStart != 0) {
       _this.eventStart = eventStart;
-    } 
+    } else {
+      _this.eventStart = dataStart;
+    }
       
     _this.pad = 0;
     $.each(data, function(i, packet){
@@ -115,7 +119,6 @@ $(function() {
 
 
   };
-
   QuickShake.prototype.drawSignal = function() {
     if (this.scroll) {
       //OFFSET at start
@@ -125,15 +128,13 @@ $(function() {
         this.viewerLeftTime += this.refreshRate;
       }
 
-      // if (this.realtime) {
         this.adjustPlay();
         if (this.realtime){
           this.truncateBuffer();
         }
-        
-      // }
-    }
 
+    }
+    this.updatePlaybackSlider();
     // FIND MEAN AND Extreme vals
     //only consider part of buffer in viewer
     var cursor = this.viewerLeftTime;
@@ -428,10 +429,20 @@ $(function() {
   //playback slider
   QuickShake.prototype.updatePlaybackSlider = function() {
     $("#playback-slider").slider("option", "max", this.endtime);
-    $("#playback-slider").slider("option", "min", this.starttime);
-    if (this.scroll) {
-      $("#playback-slider").slider("option", "value", this.viewerLeftTime);
+
+    if(this.archive){
+      $("#playback-slider").slider("option", "min", this.eventStart - 30000);
+    } else {
+      $("#playback-slider").slider("option", "min", this.starttime);
     }
+    if (this.scroll && this.archive){
+      $("#playback-slider").slider("option", "value", this.viewerLeftTime + this.viewerWidthSec * 1000);
+    } else if (this.scroll && !this.archive) {
+      $("#playback-slider").slider("option", "value", this.viewerLeftTime); 
+    }
+    
+
+    // console.log// (this.viewerLeftTime)
   };
 
   QuickShake.prototype.pauseScroll = function() {
@@ -441,15 +452,11 @@ $(function() {
     this.realtime = false;
   };
 
-  QuickShake.prototype.playScroll = function(archive) {
+  QuickShake.prototype.playScroll = function() {
     _this = this;
     this.scroll = setInterval(function() {
       if (_this.buffer != null) {
-        if(archive){
-          _this.drawArchive();
-        } else {
-          _this.drawSignal();
-        }
+        _this.drawSignal();
       }
     }, this.refreshRate);
   };
@@ -462,12 +469,14 @@ $(function() {
       }
       var val = ui.value;
       if (val > this.endtime) {
+        
         $("#playback-slider").slider("option", "value", this.viewerLeftTime);
-
+        
       } else {
         this.viewerLeftTime = this.makeTimeKey(val);
         this.drawSignal();
       }
+      
     }
   };
 
@@ -1066,6 +1075,7 @@ $(function() {
     distances = Object.keys(traveltimes).sort(function compare(a, b){
       return a - b;
     });
+    
     var i = 0;
     var distance = distances[i];
     
