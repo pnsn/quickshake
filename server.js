@@ -119,6 +119,7 @@ app.get("/archive", function(req, res) {
        var results=[];
        logger.info("starttime: " + starttime + " endtime: " + endtime + " scnls:" + clean_scnls);
        sendArchive(clean_scnls, res, starttime, endtime, results);
+    }
 });
 
 var CLIENTS={};
