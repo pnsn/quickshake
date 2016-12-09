@@ -176,8 +176,9 @@ function sendMessage(doc){
     if(socket.readyState != socket.OPEN){
       logger.info("Socket closed, removing client" + id);
       removeClient(id);
-    }
-    if(CLIENTS[id] && CLIENTS[id]["params"]["scnls"].indexOf(ringBuff.ewKey2Mongo(doc["key"])) != -1){
+    }else if(CLIENTS[id] && CLIENTS[id]["params"] && 
+            CLIENTS[id]['params']["scnls"] &&
+            CLIENTS[id]['params']["scnls"].indexOf(ringBuff.ewKey2Mongo(doc["key"])) != -1){
       socket.send(JSON.stringify(doc));
     }
   }
