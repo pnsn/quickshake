@@ -57,7 +57,7 @@ $(function() {
     // console.log(packet)
     if (this.viewerLeftTime == null) {
       if (start){ 
-        this.viewerLeftTime = this.makeTimeKey(start - this.viewerWidthSec * 900);
+        this.viewerLeftTime = this.makeTimeKey(start - this.viewerWidthSec * 1000);
       } else {
         this.viewerLeftTime = this.makeTimeKey(packet.starttime);
       }
@@ -97,27 +97,24 @@ $(function() {
   };
   
   // Takes in array of packets from the archive and the starttime of the packets or event.
-  QuickShake.prototype.updateArchive = function(data, eventStart, dataStart) {
-    var _this = this;
+  QuickShake.prototype.playArchive = function(data, eventStart, dataStart) {
 
-    _this.realtime = false;
-    _this.archive = true;
+    this.realtime = false;
+    this.archive = true;
     
     this.starttime = dataStart;
     
-    if (dataStart - eventStart != 0) {
-      _this.eventStart = eventStart;
-    } else {
-      _this.eventStart = dataStart;
-    }
-      
-    _this.pad = 0;
+    this.eventStart = dataStart - eventStart == 0 ? this.eventStart = eventStart : this.eventStart = dataStart;
+    
+    this.pad = 0;
+    
+    var _this = this;
     $.each(data, function(i, packet){
       _this.updateBuffer(packet, dataStart);
     });
 
-
   };
+  
   QuickShake.prototype.drawSignal = function() {
     if (this.scroll) {
       //OFFSET at start
@@ -127,22 +124,24 @@ $(function() {
         this.viewerLeftTime += this.refreshRate;
       }
 
-        this.adjustPlay();
-        if (this.realtime){
-          this.truncateBuffer();
-        }
-
+      this.adjustPlay();
+      
+      if (this.realtime){
+        this.truncateBuffer();
+      }
     }
     if(this.archive) {
       this.updatePlaybackSlider();
     }
+    
+    console.log("test");
+    // console.log(this.startPixOffset)
     // FIND MEAN AND Extreme vals
     //only consider part of buffer in viewer
     var cursor = this.viewerLeftTime;
     var cursorStop = cursor + this.viewerWidthSec * 1000;
     if (cursor < cursorStop) {
       var ctx = this.canvasElement.getContext("2d");
-;
       ctx.clearRect(0, 0, this.width - 0, this.height);
       ctx.lineWidth = this.lineWidth;
       this.drawAxes(ctx);
@@ -310,8 +309,7 @@ $(function() {
       if(this.eventStart){
         // console.log(this.eventStart - this.starttime)
         ctx.beginPath();
-        t = (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
-      
+        t =  (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
         ctx.moveTo(t, edge.bottom);
         ctx.lineTo(t, edge.top);
       
@@ -548,9 +546,12 @@ $(function() {
 
     $("#quick-shake-canvas, #quick-shake-controls").show();
     $("#quickshake").height(window.innerHeight * .80);
+    console.log("test");
     var height = $("#quickshake").height() - 60; //banner height && controls height 
     this.width = $("#quickshake").width();
     // this.startPixOffset = this.width;
+    console.log(this.width);
+    console.log($(window).width())
     this.channelHeight = height / this.channels.length;
     this.height = this.channelHeight * this.channels.length + 44; //44 for top & bottom time stamps
     this.sampPerSec = Math.round(this.width / this.viewerWidthSec);
@@ -1257,7 +1258,7 @@ $(function() {
             }).success(function(data){
               $("#fastforward-button").show();
               quickshake.configViewer();
-              quickshake.updateArchive(data, eventStart, dataStart);
+              quickshake.playArchive(data, eventStart, dataStart);
             }).complete(function(xhr, data){
               if(xhr.status != 200) {
                 $("#controls").modal("show");
