@@ -57,7 +57,7 @@ $(function() {
     // console.log(packet)
     if (this.viewerLeftTime == null) {
       if (start){ 
-        this.viewerLeftTime = this.makeTimeKey(start - this.viewerWidthSec * 1000);
+        this.viewerLeftTime = this.makeTimeKey(start - this.viewerWidthSec * 900);
       } else {
         this.viewerLeftTime = this.makeTimeKey(packet.starttime);
       }
@@ -92,7 +92,6 @@ $(function() {
         this.buffer[_t][packet.key] = packet.data[_i] / this.stationScalar;
         _t += this.refreshRate;
         _i += _decimate;
-
       }
     }
   };
@@ -134,7 +133,9 @@ $(function() {
         }
 
     }
-    this.updatePlaybackSlider();
+    if(this.archive) {
+      this.updatePlaybackSlider();
+    }
     // FIND MEAN AND Extreme vals
     //only consider part of buffer in viewer
     var cursor = this.viewerLeftTime;
@@ -365,7 +366,7 @@ $(function() {
     }
     // console.log(pad)
     this.startPixOffset = Math.max(0, this.startPixOffset - pad);
-
+    // this.pad = pad;
   };
 
   //trim buff when it gets wild
@@ -549,6 +550,7 @@ $(function() {
     $("#quickshake").height(window.innerHeight * .80);
     var height = $("#quickshake").height() - 60; //banner height && controls height 
     this.width = $("#quickshake").width();
+    // this.startPixOffset = this.width;
     this.channelHeight = height / this.channels.length;
     this.height = this.channelHeight * this.channels.length + 44; //44 for top & bottom time stamps
     this.sampPerSec = Math.round(this.width / this.viewerWidthSec);

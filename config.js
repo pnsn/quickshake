@@ -33,7 +33,7 @@ function Conf(){
   //temporary till we create ui to manage groups
   this.groups={
     "supergrouper": {
-      "default": 1,
+      "default": 0,
       "scnls": ["TAHO.HNZ.UW.--", "BABR.ENZ.UW.--", "JEDS.ENZ.UW.--"]
     },
     "groupaloopa": {
@@ -57,8 +57,12 @@ function Conf(){
       "scnls":["TAHO.HNZ.UW.--","BROK.HNZ.UW.--"]
     },
     "theincrediblegroup":{
-      "default": 0,
+      "default": 1,
       "scnls": ["BILS.HNZ.UW.--","LWCK.HNZ.UW.--","CHZZ.HNZ.UW.--","YACH.HNZ.UW.--","BROK.HNZ.UW.--"]
+    },
+    "short_period":{
+      "default":0,
+      "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
     }
   };
 };
