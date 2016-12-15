@@ -1246,9 +1246,7 @@ $(function() {
               $("#start-header").hide();
             }
             
-            var dataStart;
-            
-            dataStart = evid && !teleseism ? eventStart - 12000 : eventStart;
+            var dataStart = evid && !teleseism ? eventStart - 12000 : eventStart;
 
             $.ajax({
               type: "GET",
@@ -1268,8 +1266,6 @@ $(function() {
                 });
                 $("#station-sorter").show();
                 $("#data-error").show();
-              } else {
-
               }
             });
           });
