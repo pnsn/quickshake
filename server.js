@@ -115,7 +115,14 @@ app.get("/archive", function(req, res) {
            clean_scnls.push(scnls[i]);
          }
        }
-       var endtime= starttime + (10*60*1000);
+       var endtime;
+       if(req.query.endtime===undefined || 
+         parseInt(req.query.endtime,0) > (60*60*1000) || 
+         parseInt(req.query.endtime,0) < (1*60*1000)){
+            endtime= starttime + (10*60*1000);
+         }else{
+           endtime=request.endtime;
+         }
        var results=[];
        logger.info("starttime: " + starttime + " endtime: " + endtime + " scnls:" + clean_scnls);
        sendArchive(clean_scnls, res, starttime, endtime, results);
