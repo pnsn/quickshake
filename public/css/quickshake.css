@@ -149,18 +149,15 @@ ul.station-select {
 
 #station-sorter {
 	display: none;
+  margin-bottom:0;
 }
 
-
-#header{
+#header-left{
   display:none;
-  float:left;
-  width: 75%;
   height:auto;
-  margin: 10px 10px 10px 10px;
 }
 
-#header h1 {
+#header-left h1 {
   display:inline;
 }
 
@@ -180,11 +177,28 @@ form button.btn {
   overflow:auto;
   width:100%;
 }
-
+.row {
+  margin-bottom: 5px;
+}
 .open-controls {
   margin:10px;
 }
 
 #evid-select {
   width: 110px;
+}
+
+#start-select {
+  width: 170px;
+}
+
+.helpful-label .gray {
+  color: black;
+}
+.helpful-label .red {
+  color: red;
+}
+
+.modal-content {
+  overflow:scroll;
 }

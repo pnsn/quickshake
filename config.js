@@ -57,11 +57,11 @@ function Conf(){
       "scnls":["TAHO.HNZ.UW.--","BROK.HNZ.UW.--"]
     },
     "theincrediblegroup":{
-      "default": 1,
+      "default": 0,
       "scnls": ["BILS.HNZ.UW.--","LWCK.HNZ.UW.--","CHZZ.HNZ.UW.--","YACH.HNZ.UW.--","BROK.HNZ.UW.--"]
     },
     "short_period":{
-      "default":0,
+      "default":1,
       "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
     }
   };

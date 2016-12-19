@@ -1,3 +1,4 @@
+//distance in degrees: seconds
 var traveltimes = {
     0.43:     10.18,
     0.44:     10.27,
