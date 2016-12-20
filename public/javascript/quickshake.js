@@ -1180,7 +1180,7 @@ $(function() {
       url += "scnls=" + channels;
       location.search = url;
     } else {
-      // $(".quickshake-warning").show();
+      $("#station-warning").show();
     }
 
   });
@@ -1264,7 +1264,7 @@ $(function() {
               type: "GET",
               dataType: "jsonp",
               url: "http://" + path + "archive?starttime=" + dataStart + "&" + stations + "&duration=" + duration,
-              timeout: 1000
+              timeout: 1000 
             }).success(function(data){ //sometimes doesn't get called?
               $("#fastforward-button").show();
               quickshake.configViewer();

@@ -177,6 +177,12 @@ form button.btn {
   overflow:auto;
   width:100%;
 }
+
+.modal-content {
+  overflow:scroll;
+}
+
+
 .row {
   margin-bottom: 5px;
 }
@@ -199,6 +205,3 @@ form button.btn {
   color: red;
 }
 
-.modal-content {
-  overflow:scroll;
-}
