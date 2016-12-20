@@ -1264,7 +1264,7 @@ $(function() {
               type: "GET",
               dataType: "jsonp",
               url: "http://" + path + "archive?starttime=" + dataStart + "&" + stations + "&duration=" + duration,
-              timeout: 1000 
+              timeout: 2000 //gives it time to think before giving up
             }).success(function(data){ //sometimes doesn't get called?
               $("#fastforward-button").show();
               quickshake.configViewer();
