@@ -1149,7 +1149,6 @@ $(function() {
       };
       
       //Is there an event?
-      //TODO: decide on which evid overrides
       if ($('select#event-select option:selected').length > 0 && $('select#event-select option:selected')[0].value > 0) {
         var option = $('select#event-select option:selected')[0];
         url += "evid=" + option.id + "&";
@@ -1159,9 +1158,8 @@ $(function() {
           url += "start=" + start + "&";
         }
 
-        console.log(url);
       } else {
-        if (evid) { //TODO: handle teleseism that is manually enterred
+        if (evid) {
           url += "evid=" + evid + "&";
         }
         if (start) {
@@ -1182,7 +1180,7 @@ $(function() {
       url += "scnls=" + channels;
       location.search = url;
     } else {
-      // $(".quickshake-warning").show();
+      $("#station-warning").show();
     }
 
   });
@@ -1266,7 +1264,7 @@ $(function() {
               type: "GET",
               dataType: "jsonp",
               url: "http://" + path + "archive?starttime=" + dataStart + "&" + stations + "&duration=" + duration,
-              timeout: 1000
+              timeout: 2000 //gives it time to think before giving up
             }).success(function(data){ //sometimes doesn't get called?
               $("#fastforward-button").show();
               quickshake.configViewer();
