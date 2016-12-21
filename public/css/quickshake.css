@@ -57,6 +57,7 @@
 #quick-shake-controls {
 	margin-top: 10px;
 	overflow: hidden;
+  padding-bottom: 10px;
 }
 
 #quick-shake-controls i {

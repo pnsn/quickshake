@@ -36,7 +36,7 @@ $(function() {
     this.archive = false;
     this.pad = 0;
     this.test = 0;
-    this.timeHeight = 22;
+    // this.timeHeight = 22;
   };
 
   // incoming data are appended to buf
@@ -65,10 +65,7 @@ $(function() {
         this.viewerLeftTime = this.makeTimeKey(packet.starttime);
       }
       this.startPixOffset -= (this.sampPerSec * 4);
-      this.height = this.channels.length * this.channelHeight + 44;
       this.playScroll();
-
-      // this.updateGs(this.scale);    
     }
     this.updatePlaybackSlider();
     
@@ -128,32 +125,38 @@ $(function() {
       
       if (this.realtime){
         this.truncateBuffer();
+      } 
+      
+      //End of data
+      if(this.archive && this.endtime < this.viewerLeftTime){
+        this.scroll = false;
+        showControlPanel();
+        $("#data-end-warning").show();
       }
     }
-    if(this.archive) {
-      this.updatePlaybackSlider();
-    }
     
-    //End of data
-    if(this.scroll && this.archive && this.endtime < this.viewerLeftTime){
-      this.scroll = false;
-      showControlPanel();
-      $("#data-end-warning").show();
-    }
     
     // FIND MEAN AND Extreme vals
     //only consider part of buffer in viewer
     var cursor = this.viewerLeftTime;
     
-    if(this.archive){
-      var cursorStop = cursor + this.viewerWidthSec * 1000 * 0.9; //don't set this to 900
+    if(this.archive) {
+      this.updatePlaybackSlider();
+      var cursorStop = cursor + this.viewerWidthSec * 1000 * 0.9;
     } else {
       var cursorStop = cursor + this.viewerWidthSec * 1000;
     }
+    
+    //Thickness of time axis labels 
+    this.timeOffset = 13;
+    //Thickness of line labels
+    this.archiveOffset = this.archive ? 20 : 0;
+    
+    this.channelHeight = (this.height - this.timeOffset * 2 - this.archiveOffset) / this.channels.length;
 
     if (cursor < cursorStop) {
       var ctx = this.canvasElement.getContext("2d");
-      ctx.clearRect(0, 0, this.width - 0, this.height + this.timeHeight/2);
+      ctx.clearRect(0, 0, this.width, this.height);
       ctx.lineWidth = this.lineWidth;
       this.drawAxes(ctx);
 
@@ -201,7 +204,7 @@ $(function() {
             if (norm > 1)
               norm = 1;
 
-            var chanAxis = this.timeHeight + (this.channelHeight / 2) + this.channelHeight * i - 2.5; //22 is offset for header timeline.
+            var chanAxis = this.archiveOffset  + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i; //22 is offset for header timeline.
             var yval = Math.round((this.channelHeight) / 2 * norm + chanAxis);
 
             if (gap) {
@@ -222,29 +225,14 @@ $(function() {
       }
     }
   };
-  
-  //make a key based on new samprate that zeros out the insignificant digits. 
-  //if the timestamp is less than starttime, increment by the refresh rate
-  QuickShake.prototype.makeTimeKey = function(t) {
-    var _t = parseInt(t / this.refreshRate, 0) * this.refreshRate;
-    if (_t < t) {
-      _t += this.refreshRate;
-    }
-    
-    return _t;
-  };
-
 
   QuickShake.prototype.drawAxes = function(ctx) {
-    //actual edge of display (axes labels are outside of this frame)
-    //shift dimensions to straddle pixels (fixes blurry canvas appearance)
 
-    var shift = 0.5;
     var edge = {
-      left: 0 + shift,
-      top: 15 + shift,
-      right: this.width - 0.5,
-      bottom: this.height - this.timeHeight - 0.5
+      left: 0,
+      top: this.timeOffset,
+      right: this.width,
+      bottom: this.height - this.timeOffset
     };
     
     //some axis lines
@@ -272,8 +260,10 @@ $(function() {
       var channel = this.channels[i];
       var cName = channel.split(".")[0];
       var yOffset = i * this.channelHeight;
-      ctx.fillText(cName, edge.left + 10.5, this.timeHeight * 1.5 + yOffset);
-      var chanCenter = this.timeHeight + this.channelHeight / 2 + yOffset;
+      ctx.fillText(cName, edge.left + this.timeOffset, edge.top + this.archiveOffset + yOffset + this.timeOffset);
+      
+      var chanCenter = edge.top + this.archiveOffset + this.channelHeight / 2 + yOffset;
+      
       ctx.moveTo(edge.left, chanCenter);
       ctx.lineTo(edge.right, chanCenter);
     }
@@ -297,20 +287,20 @@ $(function() {
     
     var tz = String(String(new Date())).match(/\(\w{3}\)/)[0].match(/\w{3}/)[0];
     
-    ctx.fillText(tz, 1,  12);
-    ctx.fillText("UTC", 1, edge.bottom +  this.timeHeight/2);
-    ctx.fillText(tz, this.width-30,  12);
-    ctx.fillText("UTC", this.width-30, edge.bottom +  this.timeHeight/2);
+    ctx.fillText(tz, 1,  edge.top - 3);
+    ctx.fillText("UTC", 1, edge.bottom + this.timeOffset);
+    ctx.fillText(tz, edge.right - 30,  edge.top - 3);
+    ctx.fillText("UTC", edge.right - 30, edge.bottom + this.timeOffset);
     
     var index = 0;
     while (canvasIndex < edge.right + 20) { //allow times to be drawn off of canvas
       // ctx.moveTo(canvasIndex, this.height -19);
-      ctx.moveTo(canvasIndex, this.top);
-      ctx.lineTo(canvasIndex, this.bottom);
+      ctx.moveTo(canvasIndex, edge.top);
+      ctx.lineTo(canvasIndex, edge.bottom);
     
       if(canvasIndex - 23 >= 30 && canvasIndex <= this.width - 65) {
-        ctx.fillText(this.dateFormat(tickTime, "top"), canvasIndex - 23, 12); //top
-        ctx.fillText(this.dateFormat(tickTime, "bottom"), canvasIndex - 23, edge.bottom +  this.timeHeight/2); //bottom
+        ctx.fillText(this.dateFormat(tickTime, "top"), canvasIndex - 23, edge.top - 3); //top
+        ctx.fillText(this.dateFormat(tickTime, "bottom"), canvasIndex - 23, edge.bottom + this.timeOffset); //bottom
       }
 
       canvasIndex += pixInterval;
@@ -323,49 +313,42 @@ $(function() {
     
     //Draws a vertical line to mark start of event.
     if(this.archive){
-      var t;
+      
+      
+
+
+      ctx.beginPath();
+      
+      var startPosition = (this.starttime - this.viewerLeftTime) / this.refreshRate;
+      ctx.fillText("Start of Data", startPosition - 75, edge.top + this.archiveOffset / 2 + 3); //75 is offset for width of text
+      ctx.moveTo(startPosition, edge.bottom);
+      ctx.lineTo(startPosition, edge.top);
+      
+      var endPosition = (this.endtime - this.viewerLeftTime) / this.refreshRate;
+      ctx.fillText("End of Data", endPosition + 5, edge.top + this.archiveOffset / 2 + 3);
+      ctx.moveTo(endPosition, edge.bottom);
+      ctx.lineTo(endPosition, edge.top);
+      
+      ctx.strokeStyle = "#ff0000"; // axis color    
+      ctx.stroke();
+      
       // Start line
       if(this.eventStart){
         // console.log(this.eventStart - this.starttime)
         
         ctx.beginPath();
+        var eventPosition =  (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
         
-        t =  (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
-        ctx.fillText("Estimated Arrival Time", t - 135, edge.top + 15);
-        ctx.moveTo(t, edge.bottom);
-        ctx.lineTo(t, edge.top);
+        var text = eventPosition - startPosition < 100 ? "ETA" : "Estimated Arrival Time";
+        var eventOffset =   eventPosition - startPosition < 100 ? 30 : 135;
+        ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
+        ctx.moveTo(eventPosition, edge.bottom);
+        ctx.lineTo(eventPosition, edge.top);
       
         ctx.strokeStyle = "#000";
         ctx.stroke();
         //
       }
-      
-      // ctx.rotate(90*Math.PI/180)
-      //
-      // ctx.fillText("test", 200, 200);
-      
-      // ctx.rotate(270*Math.PI/180)
-      
-      ctx.beginPath();
-      
-      
-      
-      t = (this.starttime - this.viewerLeftTime) / this.refreshRate;
-      
-      if(this.test % 7 == 0){
-        // console.log(this.width*this.refreshRate)
-      }
-      ctx.fillText("Start of Data", t - 75, edge.top + 15); //75 is offset for width of text
-      ctx.moveTo(t, edge.bottom);
-      ctx.lineTo(t, edge.top);
-      
-      t = (this.endtime - this.viewerLeftTime) / this.refreshRate;
-      ctx.fillText("End of Data", t + 5, edge.top + 15);
-      ctx.moveTo(t, edge.bottom);
-      ctx.lineTo(t, edge.top);
-      
-      ctx.strokeStyle = "#ff0000"; // axis color    
-      ctx.stroke();
       
 
     }
@@ -374,6 +357,16 @@ $(function() {
     
   };
 
+  //make a key based on new samprate that zeros out the insignificant digits. 
+  //if the timestamp is less than starttime, increment by the refresh rate
+  QuickShake.prototype.makeTimeKey = function(t) {
+    var _t = parseInt(t / this.refreshRate, 0) * this.refreshRate;
+    if (_t < t) {
+      _t += this.refreshRate;
+    }
+    
+    return _t;
+  };
 
   //In realtime, we need to adjust play if data on end of buffer tails off canvas
   //ideally we want new data written on canvas a few sampPerSec in
@@ -564,15 +557,11 @@ $(function() {
     $(".loading").hide();
 
     $("#quick-shake-canvas, #quick-shake-controls").show();
-    $("#quickshake").height(window.innerHeight - $("#header-left").height() - 60);
+    $("#quickshake").height(window.innerHeight - $("#header-left").height() - $("#quick-shake-controls").height() - 20);
 
-    this.timeHeight = 44;
-
-    var height = $("#quickshake").height() - 60; 
+    this.height = $("#quickshake").height(); 
     this.width = $("#quickshake").width();
-
-    this.channelHeight = height / this.channels.length;
-    this.height = this.channelHeight * this.channels.length + this.timeHeight * 1.5 + 5; //44 for top & bottom time stamps
+    
     this.sampPerSec = Math.round(this.width / this.viewerWidthSec);
     this.refreshRate = Math.round(1000 / this.sampPerSec); //refresh rate in milliseconds
 
@@ -583,9 +572,7 @@ $(function() {
     
     this.updateScale();
     
-    console.log("width: " + this.width)
-    console.log("canvas width: " + this.canvasElement.width)
-    console.log("viewerWidth: " + this.viewerWidthSec)
+    this.playScroll();
   };
 
   var timeout;
@@ -593,6 +580,7 @@ $(function() {
   $(window).resize(function() {
     clearTimeout(timeout);
     timeout = setTimeout(function(){
+      console.log("there's something happening here")
       quickshake.configViewer();
       quickshake.drawSignal();
     }, 500);
