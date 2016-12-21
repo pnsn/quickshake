@@ -198,6 +198,10 @@ form button.btn {
   width: 170px;
 }
 
+.helpful-label {
+  display:none;
+}
+
 .helpful-label .gray {
   color: black;
 }

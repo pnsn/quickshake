@@ -34,7 +34,9 @@ $(function() {
     this.channels = channels;
     this.eventStart = null;
     this.archive = false;
-    this.pad = null;
+    this.pad = 0;
+    this.test = 0;
+    this.timeHeight = 22;
   };
 
   // incoming data are appended to buf
@@ -53,23 +55,21 @@ $(function() {
   //  
   //called when new data arrive. Functions independently from 
   // drawSignal method which is called on a sampRate interval
-  QuickShake.prototype.updateBuffer = function(packet, start) {
+  QuickShake.prototype.updateBuffer = function(packet) {
     // console.log(packet)
     if (this.viewerLeftTime == null) {
-      if (start){ 
-        this.viewerLeftTime = this.makeTimeKey(start - this.viewerWidthSec * 1000);
+      if (this.archive){ 
+        //archive requires a different left time --> .9 comes from offset
+        this.viewerLeftTime = this.makeTimeKey(this.starttime - this.viewerWidthSec * 1000 * .9);
       } else {
         this.viewerLeftTime = this.makeTimeKey(packet.starttime);
       }
       this.startPixOffset -= (this.sampPerSec * 4);
       this.height = this.channels.length * this.channelHeight + 44;
-      this.canvasElement.height = this.height;
-      this.canvasElement.width = this.width;
       this.playScroll();
 
       // this.updateGs(this.scale);    
     }
-
     this.updatePlaybackSlider();
     
     //update times to track oldest and youngest data points
@@ -102,15 +102,15 @@ $(function() {
     this.realtime = false;
     this.archive = true;
     
-    this.starttime = dataStart;
+    this.starttime = this.makeTimeKey(dataStart);
     
-    this.eventStart = dataStart - eventStart != 0 ? eventStart : dataStart;
+    this.eventStart = dataStart - eventStart != 0 ? this.makeTimeKey(eventStart) : this.makeTimeKey(dataStart);
     
     this.pad = 0;
     
     var _this = this;
     $.each(data, function(i, packet){
-      _this.updateBuffer(packet, dataStart);
+      _this.updateBuffer(packet, this.starttime);
     });
 
   };
@@ -134,21 +134,26 @@ $(function() {
       this.updatePlaybackSlider();
     }
     
+    //End of data
     if(this.scroll && this.archive && this.endtime < this.viewerLeftTime){
       this.scroll = false;
       showControlPanel();
       $("#data-end-warning").show();
     }
     
-    // console.log("test");
-    // console.log(this.startPixOffset)
     // FIND MEAN AND Extreme vals
     //only consider part of buffer in viewer
     var cursor = this.viewerLeftTime;
-    var cursorStop = cursor + this.viewerWidthSec * 1000;
+    
+    if(this.archive){
+      var cursorStop = cursor + this.viewerWidthSec * 1000 * 0.9; //don't set this to 900
+    } else {
+      var cursorStop = cursor + this.viewerWidthSec * 1000;
+    }
+
     if (cursor < cursorStop) {
       var ctx = this.canvasElement.getContext("2d");
-      ctx.clearRect(0, 0, this.width - 0, this.height);
+      ctx.clearRect(0, 0, this.width - 0, this.height + this.timeHeight/2);
       ctx.lineWidth = this.lineWidth;
       this.drawAxes(ctx);
 
@@ -157,7 +162,6 @@ $(function() {
       for (var i = 0; i < this.channels.length; i++) {
         var channel = this.channels[i];
         cursor = this.viewerLeftTime; //start back at left on each iteration through this.channels
-
 
         //find mean
         var sum = 0;
@@ -197,7 +201,7 @@ $(function() {
             if (norm > 1)
               norm = 1;
 
-            var chanAxis = 22 + (this.channelHeight / 2) + this.channelHeight * i; //22 is offset for header timeline.
+            var chanAxis = this.timeHeight + (this.channelHeight / 2) + this.channelHeight * i - 2.5; //22 is offset for header timeline.
             var yval = Math.round((this.channelHeight) / 2 * norm + chanAxis);
 
             if (gap) {
@@ -226,6 +230,7 @@ $(function() {
     if (_t < t) {
       _t += this.refreshRate;
     }
+    
     return _t;
   };
 
@@ -237,9 +242,9 @@ $(function() {
     var shift = 0.5;
     var edge = {
       left: 0 + shift,
-      top: 20 + shift,
+      top: 15 + shift,
       right: this.width - 0.5,
-      bottom: this.height - 20 - 0.5
+      bottom: this.height - this.timeHeight - 0.5
     };
     
     //some axis lines
@@ -267,8 +272,8 @@ $(function() {
       var channel = this.channels[i];
       var cName = channel.split(".")[0];
       var yOffset = i * this.channelHeight;
-      ctx.fillText(cName, edge.left + 10.5, 40.5 + yOffset);
-      var chanCenter = 22 + this.channelHeight / 2 + yOffset;
+      ctx.fillText(cName, edge.left + 10.5, this.timeHeight * 1.5 + yOffset);
+      var chanCenter = this.timeHeight + this.channelHeight / 2 + yOffset;
       ctx.moveTo(edge.left, chanCenter);
       ctx.lineTo(edge.right, chanCenter);
     }
@@ -293,19 +298,19 @@ $(function() {
     var tz = String(String(new Date())).match(/\(\w{3}\)/)[0].match(/\w{3}/)[0];
     
     ctx.fillText(tz, 1,  12);
-    ctx.fillText("UTC", 1, this.height - 1);
+    ctx.fillText("UTC", 1, edge.bottom +  this.timeHeight/2);
     ctx.fillText(tz, this.width-30,  12);
-    ctx.fillText("UTC", this.width-30, this.height - 1);
+    ctx.fillText("UTC", this.width-30, edge.bottom +  this.timeHeight/2);
     
     var index = 0;
     while (canvasIndex < edge.right + 20) { //allow times to be drawn off of canvas
       // ctx.moveTo(canvasIndex, this.height -19);
-      ctx.moveTo(canvasIndex, 20);
-      ctx.lineTo(canvasIndex, this.height - 15);
+      ctx.moveTo(canvasIndex, this.top);
+      ctx.lineTo(canvasIndex, this.bottom);
     
       if(canvasIndex - 23 >= 30 && canvasIndex <= this.width - 65) {
-        ctx.fillText(this.dateFormat(tickTime), canvasIndex - 23, 12); //top
-        ctx.fillText(this.dateFormat(tickTime), canvasIndex - 23, this.height - 1); //bottom
+        ctx.fillText(this.dateFormat(tickTime, "top"), canvasIndex - 23, 12); //top
+        ctx.fillText(this.dateFormat(tickTime, "bottom"), canvasIndex - 23, edge.bottom +  this.timeHeight/2); //bottom
       }
 
       canvasIndex += pixInterval;
@@ -322,8 +327,11 @@ $(function() {
       // Start line
       if(this.eventStart){
         // console.log(this.eventStart - this.starttime)
+        
         ctx.beginPath();
+        
         t =  (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+        ctx.fillText("Estimated Arrival Time", t - 135, edge.top + 15);
         ctx.moveTo(t, edge.bottom);
         ctx.lineTo(t, edge.top);
       
@@ -340,12 +348,19 @@ $(function() {
       
       ctx.beginPath();
       
-      t = (this.starttime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
       
+      
+      t = (this.starttime - this.viewerLeftTime) / this.refreshRate;
+      
+      if(this.test % 7 == 0){
+        // console.log(this.width*this.refreshRate)
+      }
+      ctx.fillText("Start of Data", t - 75, edge.top + 15); //75 is offset for width of text
       ctx.moveTo(t, edge.bottom);
       ctx.lineTo(t, edge.top);
       
-      t = (this.endtime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+      t = (this.endtime - this.viewerLeftTime) / this.refreshRate;
+      ctx.fillText("End of Data", t + 5, edge.top + 15);
       ctx.moveTo(t, edge.bottom);
       ctx.lineTo(t, edge.top);
       
@@ -355,6 +370,7 @@ $(function() {
 
     }
     
+    this.test++;
     
   };
 
@@ -363,13 +379,14 @@ $(function() {
   //ideally we want new data written on canvas a few sampPerSec in
   //We want to avoid player constantly trying to catch up.
   QuickShake.prototype.adjustPlay = function() {
-    var pad = this.pad != null ? this.pad : 0;
+    var pad = this.pad;
     var cursorOffset = (this.viewerWidthSec / 10) * this.sampPerSec;
+
     //i.e. how much buffer in pixels is hanging off the right side of the viewer
     //tail in px    
     var tail = this.startPixOffset + cursorOffset + (this.endtime - this.viewerLeftTime - this.viewerWidthSec * 1000) / 1000 * this.sampPerSec;
     //when we're close to cursorOffset just pad by one to avoid jerky behavior
-    if(this.pad === null){
+    if(!this.archive){
       if (tail > -cursorOffset && tail < cursorOffset / 2) {
         pad = 1;
       } else if (tail < -cursorOffset) {
@@ -382,9 +399,9 @@ $(function() {
     if (this.startPixOffset == 0) {
       this.viewerLeftTime += pad * this.refreshRate;
     }
-    // console.log(pad)
+    
     this.startPixOffset = Math.max(0, this.startPixOffset - pad);
-    // this.pad = pad;
+    
   };
 
   //trim buff when it gets wild
@@ -399,7 +416,6 @@ $(function() {
     }
 
   };
-
 
   //accept milliseconds and return data string of format HH:MM:SS in UTC or local
   QuickShake.prototype.dateFormat = function(milliseconds, position) {
@@ -548,15 +564,15 @@ $(function() {
     $(".loading").hide();
 
     $("#quick-shake-canvas, #quick-shake-controls").show();
-    $("#quickshake").height(window.innerHeight * .80);
-    console.log("test");
-    var height = $("#quickshake").height() - 60; //banner height && controls height 
+    $("#quickshake").height(window.innerHeight - $("#header-left").height() - 60);
+
+    this.timeHeight = 44;
+
+    var height = $("#quickshake").height() - 60; 
     this.width = $("#quickshake").width();
-    // this.startPixOffset = this.width;
-    console.log(this.width);
-    console.log($(window).width());
+
     this.channelHeight = height / this.channels.length;
-    this.height = this.channelHeight * this.channels.length + 44; //44 for top & bottom time stamps
+    this.height = this.channelHeight * this.channels.length + this.timeHeight * 1.5 + 5; //44 for top & bottom time stamps
     this.sampPerSec = Math.round(this.width / this.viewerWidthSec);
     this.refreshRate = Math.round(1000 / this.sampPerSec); //refresh rate in milliseconds
 
@@ -564,7 +580,12 @@ $(function() {
 
     this.canvasElement.height = this.height;
     this.canvasElement.width = this.width;
+    
     this.updateScale();
+    
+    console.log("width: " + this.width)
+    console.log("canvas width: " + this.canvasElement.width)
+    console.log("viewerWidth: " + this.viewerWidthSec)
   };
 
   var timeout;
@@ -604,12 +625,14 @@ $(function() {
   var socket;
   var path = "web4.ess.washington.edu:8888/";
   var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
-  var bounds = {
+  //set the restrictions for local earthquakes
+  var bounds = { 
     bottom:40.5,
     top:52,
     left:-130,
     right:-115,
-    mag:2.5};
+    mag:2.5
+  };
 
   // var channels = ["TAHO.HNZ.UW.--","BABR.ENZ.UW.--","JEDS.ENZ.UW.--"];
   var channels = [];
@@ -999,7 +1022,7 @@ $(function() {
   });
   
   $("button.clear-all").click(function(e){
-    var inputs = ["event", "evid", "group", "start", "scnl"];
+    var inputs = ["event", "evid", "group", "start", "scnl", "duration"];
     $.each(inputs, function(i, val){
       console.log(      $("#" + val + "-select").val());
       if(val == "group" || val == "event" || val == "scnl"){
@@ -1266,7 +1289,9 @@ $(function() {
               url: "http://" + path + "archive?starttime=" + dataStart + "&" + stations + "&duration=" + duration,
               timeout: 2000 //gives it time to think before giving up
             }).success(function(data){ //sometimes doesn't get called?
+              console.log("success!");
               $("#fastforward-button").show();
+              // $(".helpful-label").show();
               quickshake.configViewer();
               quickshake.playArchive(data, eventStart, dataStart);
             }).complete(function(xhr, data){
