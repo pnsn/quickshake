@@ -1,6 +1,6 @@
 'use strict';
 /*jslint node: true */
-
+const compression = require('compression');
 const express = require('express');
 const app = express();
 const http = require('http').Server(app);
@@ -16,20 +16,24 @@ const MongoRealTime = require(__dirname + '/lib/mongoRealTime');
     
 const debug = require('debug')('quickshake');
 
-var archive=false;
-process.argv.forEach(function (val, index, array) {
-  if(val==="archive"){
-    archive=true;
-  }
-});
-const conf = new Conf();
-var env=process.env.NODE_ENV || "production"; //get this from env
 
+const conf = new Conf();
+
+// var archive=false;
+// process.argv.forEach(function (val, index, array) {
+//   if(val==="archive"){
+//     archive=true;
+//   }
+// });
+var env=process.env.NODE_ENV || "production"; //get this from env
+var archive = env==="production";
+  
 var MONGO_URI = conf[env].mongo.uri;
 exports.app=app; //for integration testing
 app.use(express['static']('public'));
 logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
+app.use(compression());
 
 var _db;
 var ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
@@ -97,7 +101,7 @@ app.get('/groups', function (req, res) {
   res.jsonp(conf.groups);
 });
 
-//with scnl(s) and startime return tracebufs
+//with scnl(s) and starttime return tracebufs
 //return 400 if missing either param
 //return 404 if no data
 app.get("/archive", function(req, res) {
@@ -116,13 +120,13 @@ app.get("/archive", function(req, res) {
          }
        }
        var duration;
-       
+      
        if(req.query.duration===undefined || 
            parseInt(req.query.duration,0) > (60*60*1000) || 
            parseInt(req.query.duration,0) < (1*60*1000)){
-         endtime= starttime + (10*60*1000);
+         duration= starttime + (10*60*1000);
        }else{
-         endtime=startime + req.query.duration;
+         duration=starttime + parseInt(req.query.duration,0);
        }
        var results=[];
        logger.info("starttime: " + starttime + " endtime: " + endtime + " scnls:" + clean_scnls);
@@ -142,7 +146,6 @@ mongoRT.on('message', sendMessage);
 mongoRT.on('close', function(doc){
   logger.info('closing message');
 });
-
 mongoRT.on('error',function(err){
   logger.error(err);
 });
@@ -246,7 +249,7 @@ function sendArchive(scnls,res,starttime, endtime, results) {
     key = ringBuff.ewKey2Mongo(key);
     var coll= _db.collection(key);
     coll.find( {"starttime": {$gte: starttime, $lte: endtime}} ).toArray(function(err, tracebuffs){
-        if (err) return loggger.error(err);
+        if (err) return loggger.error( f);
         results=results.concat(tracebuffs);
         sendArchive(scnls,res,starttime,endtime,results);
     });
