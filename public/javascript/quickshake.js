@@ -35,7 +35,7 @@ $(function() {
     this.eventStart = null;
     this.archive = false;
     this.pad = 0;
-    this.test = Date.now();
+    this.archiveOffset = 0.9; //fractional offset from left side for drawing archive data
   };
 
   // incoming data are appended to buf
@@ -57,8 +57,7 @@ $(function() {
   QuickShake.prototype.updateBuffer = function(packet) {
     if (this.viewerLeftTime === null) {
       if (this.archive) {
-        //archive requires a different left time --> .9 comes from offset
-        this.viewerLeftTime = this.makeTimeKey(this.starttime - this.viewerWidthSec * 1000 * .9);
+        this.viewerLeftTime = this.makeTimeKey(this.starttime - this.viewerWidthSec * 1000 * this.archiveOffset);
       } else {
         this.viewerLeftTime = this.makeTimeKey(packet.starttime);
       }
@@ -137,16 +136,15 @@ $(function() {
 
     // FIND MEAN AND Extreme vals
     //only consider part of buffer in viewer
-    var cursor = this.viewerLeftTime;
-    var cursorStop;
+    var cursor, cursorStop;
     if (this.archive && this.scroll) {
       this.updatePlaybackSlider();
-      cursorStop = cursor + this.viewerWidthSec * 1000;
+      cursor = this.viewerLeftTime;
+      cursorStop = cursor + this.viewerWidthSec * 1000 * this.archiveOffset;
       
-      console.log("viewWidthSec: " + this.viewerWidthSec);
-      console.log("sampPerSec: " + this.sampPerSec);
-      console.log("this.width: " + this.width)
+      // console.log(cursorStop - cursor)
     } else {
+      cursor = this.viewerLeftTime;
       cursorStop = cursor + this.viewerWidthSec * 1000;
     }
 
@@ -439,7 +437,6 @@ $(function() {
 
   //playback slider
   QuickShake.prototype.updatePlaybackSlider = function() {
-
     if (this.archive) {
       $("#playback-slider").slider("option", "max", this.endtime + this.viewerWidthSec * 1000);
       $("#playback-slider").slider("option", "min", this.starttime - this.viewerWidthSec * 1000);
@@ -447,6 +444,7 @@ $(function() {
       $("#playback-slider").slider("option", "max", this.endtime);
       $("#playback-slider").slider("option", "min", this.starttime);
     }
+    
     if (this.scroll && this.archive) {
       $("#playback-slider").slider("option", "value", this.viewerLeftTime + this.viewerWidthSec * 1000);
     } else if (this.scroll && !this.archive) {
@@ -467,12 +465,7 @@ $(function() {
     var d;
     if(!this.scroll){
       this.scroll = setInterval(function() {
-        // d = Date.now();
-        // console.log(d-_this.test)
-        // _this.test = d;
         if (!$.isEmptyObject(_this.buffer) && _this.scroll) {
-
-          // console.log(this.test)
           _this.drawSignal();
         }
       }, this.refreshRate);
@@ -481,20 +474,17 @@ $(function() {
   };
 
   QuickShake.prototype.selectPlayback = function(e, ui) {
-    if (this.startPixOffset == 0) {
-      if (this.scroll) {
-        this.pauseScroll();
-      }
-      var val = ui.value;
-      if (val > this.endtime) {
+    if (this.scroll) {
+      this.pauseScroll();
+    }
+    var val = ui.value;
+    if (val > this.endtime) {
 
-        $("#playback-slider").slider("option", "value", this.viewerLeftTime);
+      $("#playback-slider").slider("option", "value", this.viewerLeftTime);
 
-      } else {
-        this.viewerLeftTime = this.makeTimeKey(val);
-        this.drawSignal();
-      }
-
+    } else {
+      this.viewerLeftTime = this.makeTimeKey(val);
+      this.drawSignal();
     }
   };
 
@@ -570,6 +560,7 @@ $(function() {
     this.width = $("#quickshake").width();
 
     this.sampPerSec = Math.round(this.width / this.viewerWidthSec);
+    this.viewerWidthSec = this.width / this.sampPerSec; //actual width in Sec due to rounding
     this.refreshRate = Math.round(1000 / this.sampPerSec); //refresh rate in milliseconds
 
     this.tickInterval = 1000 * (this.viewerWidthSec / (this.width / 100 < 10 ? parseInt(this.width / 100, 10) : 10));
