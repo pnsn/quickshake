@@ -35,8 +35,7 @@ $(function() {
     this.eventStart = null;
     this.archive = false;
     this.pad = 0;
-    this.test = 0;
-    // this.timeHeight = 22;
+    this.test = Date.now();
   };
 
   // incoming data are appended to buf
@@ -56,9 +55,8 @@ $(function() {
   //called when new data arrive. Functions independently from 
   // drawSignal method which is called on a sampRate interval
   QuickShake.prototype.updateBuffer = function(packet) {
-    // console.log(packet)
-    if (this.viewerLeftTime == null) {
-      if (this.archive){ 
+    if (this.viewerLeftTime === null) {
+      if (this.archive) {
         //archive requires a different left time --> .9 comes from offset
         this.viewerLeftTime = this.makeTimeKey(this.starttime - this.viewerWidthSec * 1000 * .9);
       } else {
@@ -68,7 +66,7 @@ $(function() {
       this.playScroll();
     }
     this.updatePlaybackSlider();
-    
+
     //update times to track oldest and youngest data points
     if (packet.starttime < this.starttime)
       this.starttime = this.makeTimeKey(packet.starttime);
@@ -76,9 +74,9 @@ $(function() {
       this.endtime = this.makeTimeKey(packet.endtime);
     //decimate data
     var _decimate = parseInt(packet.samprate / this.sampPerSec, 0);
-    
+
     var _t = this.makeTimeKey(packet.starttime);
-  
+
     //move index to correct for time offset
     var _i = parseInt(((_t - packet.starttime) * this.sampPerSec / 1000), 0);
     while (_i < packet.data.length) {
@@ -91,27 +89,28 @@ $(function() {
         _i += _decimate;
       }
     }
-  };
   
+  };
+
   // Takes in array of packets from the archive and the starttime of the packets or event.
   QuickShake.prototype.playArchive = function(data, eventStart, dataStart) {
 
     this.realtime = false;
     this.archive = true;
-    
+
     this.starttime = this.makeTimeKey(dataStart);
-    
+
     this.eventStart = dataStart - eventStart != 0 ? this.makeTimeKey(eventStart) : this.makeTimeKey(dataStart);
-    
+
     this.pad = 0;
-    
+
     var _this = this;
-    $.each(data, function(i, packet){
+    $.each(data, function(i, packet) {
       _this.updateBuffer(packet, this.starttime);
     });
 
   };
-  
+
   QuickShake.prototype.drawSignal = function() {
     if (this.scroll) {
       //OFFSET at start
@@ -122,50 +121,55 @@ $(function() {
       }
 
       this.adjustPlay();
-      
-      if (this.realtime){
+
+      if (this.realtime) {
         this.truncateBuffer();
-      } 
-      
+      }
+
       //End of data
-      if(this.archive && this.endtime < this.viewerLeftTime){
-        this.scroll = false;
+      if (this.archive && this.endtime < this.viewerLeftTime) {
+        clearInterval(this.scroll);
+        this.pauseScroll();
         showControlPanel();
         $("#data-end-warning").show();
       }
     }
-    
-    
+
     // FIND MEAN AND Extreme vals
     //only consider part of buffer in viewer
     var cursor = this.viewerLeftTime;
-    
-    if(this.archive) {
+    var cursorStop;
+    if (this.archive && this.scroll) {
       this.updatePlaybackSlider();
-      var cursorStop = cursor + this.viewerWidthSec * 1000 * 0.9;
+      cursorStop = cursor + this.viewerWidthSec * 1000;
+      
+      console.log("viewWidthSec: " + this.viewerWidthSec);
+      console.log("sampPerSec: " + this.sampPerSec);
+      console.log("this.width: " + this.width)
     } else {
-      var cursorStop = cursor + this.viewerWidthSec * 1000;
+      cursorStop = cursor + this.viewerWidthSec * 1000;
     }
-    
+
     //Thickness of time axis labels 
     this.timeOffset = 13;
     //Thickness of line labels
-    this.archiveOffset = this.archive ? 20 : 0;
-    
+    this.archiveOffset = this.archive ? 20 : 1;
+
     this.channelHeight = (this.height - this.timeOffset * 2 - this.archiveOffset) / this.channels.length;
 
     if (cursor < cursorStop) {
+      
       var ctx = this.canvasElement.getContext("2d");
       ctx.clearRect(0, 0, this.width, this.height);
       ctx.lineWidth = this.lineWidth;
       this.drawAxes(ctx);
 
       ctx.beginPath();
+      
       //iterate through all this.channels and draw
       for (var i = 0; i < this.channels.length; i++) {
         var channel = this.channels[i];
         cursor = this.viewerLeftTime; //start back at left on each iteration through this.channels
-
         //find mean
         var sum = 0;
         //use full array for ave an max
@@ -181,8 +185,7 @@ $(function() {
           time += this.refreshRate;
         }
         var mean = sum / count;
-
-
+        
         ctx.strokeStyle = this.lineColor;
 
         //Draw!! from left to write
@@ -194,6 +197,8 @@ $(function() {
         var gap = true;
         // draw Always start from viewerLeftTime and go one canvas width
         count = 0;
+        // console.log("cursor: " + cursor, "cursorStop: " + cursorStop)
+
         while (cursor <= cursorStop) {
           if (this.buffer[cursor] && this.buffer[cursor][channel]) {
             var val = this.buffer[cursor][channel];
@@ -204,7 +209,7 @@ $(function() {
             if (norm > 1)
               norm = 1;
 
-            var chanAxis = this.archiveOffset  + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i; //22 is offset for header timeline.
+            var chanAxis = this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i; //22 is offset for header timeline.
             var yval = Math.round((this.channelHeight) / 2 * norm + chanAxis);
 
             if (gap) {
@@ -219,7 +224,7 @@ $(function() {
           canvasIndex++;
           cursor += this.refreshRate;
 
-        }//while
+        } //while
         ctx.stroke();
 
       }
@@ -234,7 +239,7 @@ $(function() {
       right: this.width,
       bottom: this.height - this.timeOffset
     };
-    
+
     //some axis lines
     ctx.beginPath();
     //x-axes
@@ -261,9 +266,9 @@ $(function() {
       var cName = channel.split(".")[0];
       var yOffset = i * this.channelHeight;
       ctx.fillText(cName, edge.left + this.timeOffset, edge.top + this.archiveOffset + yOffset + this.timeOffset);
-      
+
       var chanCenter = edge.top + this.archiveOffset + this.channelHeight / 2 + yOffset;
-      
+
       ctx.moveTo(edge.left, chanCenter);
       ctx.lineTo(edge.right, chanCenter);
     }
@@ -280,25 +285,25 @@ $(function() {
     var offset = this.viewerLeftTime % this.tickInterval;
     //what is time of first tick to left  of startPixOffset
     var tickTime = this.viewerLeftTime - offset;
-    
+
     var canvasIndex = this.startPixOffset - offset / this.refreshRate;
     var pixInterval = this.tickInterval / this.refreshRate;
-    
-    
+
+
     var tz = String(String(new Date())).match(/\(\w{3}\)/)[0].match(/\w{3}/)[0];
-    
-    ctx.fillText(tz, 1,  edge.top - 3);
+
+    ctx.fillText(tz, 1, edge.top - 3);
     ctx.fillText("UTC", 1, edge.bottom + this.timeOffset);
-    ctx.fillText(tz, edge.right - 30,  edge.top - 3);
+    ctx.fillText(tz, edge.right - 30, edge.top - 3);
     ctx.fillText("UTC", edge.right - 30, edge.bottom + this.timeOffset);
-    
+
     var index = 0;
     while (canvasIndex < edge.right + 20) { //allow times to be drawn off of canvas
       // ctx.moveTo(canvasIndex, this.height -19);
       ctx.moveTo(canvasIndex, edge.top);
       ctx.lineTo(canvasIndex, edge.bottom);
-    
-      if(canvasIndex - 23 >= 30 && canvasIndex <= this.width - 65) {
+
+      if (canvasIndex - 23 >= 30 && canvasIndex <= this.width - 65) {
         ctx.fillText(this.dateFormat(tickTime, "top"), canvasIndex - 23, edge.top - 3); //top
         ctx.fillText(this.dateFormat(tickTime, "bottom"), canvasIndex - 23, edge.bottom + this.timeOffset); //bottom
       }
@@ -307,54 +312,45 @@ $(function() {
       tickTime += this.tickInterval;
       index++;
     }
-    
+
     ctx.strokeStyle = "#CCCCCC"; //vertical time lines
     ctx.stroke();
-    
+
     //Draws a vertical line to mark start of event.
-    if(this.archive){
-      
-      
-
-
+    if (this.archive) {
+      // console.log("archive?")
       ctx.beginPath();
-      
+
       var startPosition = (this.starttime - this.viewerLeftTime) / this.refreshRate;
       ctx.fillText("Start of Data", startPosition - 75, edge.top + this.archiveOffset / 2 + 3); //75 is offset for width of text
       ctx.moveTo(startPosition, edge.bottom);
       ctx.lineTo(startPosition, edge.top);
-      
+
       var endPosition = (this.endtime - this.viewerLeftTime) / this.refreshRate;
       ctx.fillText("End of Data", endPosition + 5, edge.top + this.archiveOffset / 2 + 3);
       ctx.moveTo(endPosition, edge.bottom);
       ctx.lineTo(endPosition, edge.top);
-      
+
       ctx.strokeStyle = "#ff0000"; // axis color    
       ctx.stroke();
-      
+
       // Start line
-      if(this.eventStart){
-        // console.log(this.eventStart - this.starttime)
-        
+      if (this.eventStart) {
         ctx.beginPath();
-        var eventPosition =  (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
-        
+        var eventPosition = (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+
         var text = eventPosition - startPosition < 100 ? "ETA" : "Estimated Arrival Time";
-        var eventOffset =   eventPosition - startPosition < 100 ? 30 : 135;
+        var eventOffset = eventPosition - startPosition < 100 ? 30 : 135;
         ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
         ctx.moveTo(eventPosition, edge.bottom);
         ctx.lineTo(eventPosition, edge.top);
-      
+
         ctx.strokeStyle = "#000";
         ctx.stroke();
         //
       }
-      
-
     }
-    
-    this.test++;
-    
+
   };
 
   //make a key based on new samprate that zeros out the insignificant digits. 
@@ -364,7 +360,7 @@ $(function() {
     if (_t < t) {
       _t += this.refreshRate;
     }
-    
+
     return _t;
   };
 
@@ -374,31 +370,37 @@ $(function() {
   QuickShake.prototype.adjustPlay = function() {
     var pad = this.pad;
     var cursorOffset = (this.viewerWidthSec / 10) * this.sampPerSec;
-
     //i.e. how much buffer in pixels is hanging off the right side of the viewer
     //tail in px    
     var tail = this.startPixOffset + cursorOffset + (this.endtime - this.viewerLeftTime - this.viewerWidthSec * 1000) / 1000 * this.sampPerSec;
     //when we're close to cursorOffset just pad by one to avoid jerky behavior
-    if(!this.archive){
+    if (!this.archive) {
       if (tail > -cursorOffset && tail < cursorOffset / 2) {
-        pad = 1;
+        pad = -1;
       } else if (tail < -cursorOffset) {
         pad - 1;
       } else if (tail > -cursorOffset / 2) {
         pad = parseInt(Math.abs(tail / 10), 0);
       }
     }
+    
+     if (this.startPixOffset == 0) {
+       if(pad >= 0){
+         this.viewerLeftTime += pad * this.refreshRate;
+       } else {
+         this.viewerLeftTime += this.refreshRate;
+       }
+       
+     } 
+     
+     this.startPixOffset = Math.max(0, this.startPixOffset - pad);
+   
 
-    if (this.startPixOffset == 0) {
-      this.viewerLeftTime += pad * this.refreshRate;
-    }
-    
-    this.startPixOffset = Math.max(0, this.startPixOffset - pad);
-    
   };
 
   //trim buff when it gets wild
   QuickShake.prototype.truncateBuffer = function() {
+
     if ((this.endtime - this.starttime) > 15 * this.viewerWidthSec * 1000) {
       var time = this.starttime;
       while (time < this.starttime + 10 * this.viewerWidthSec * 1000) {
@@ -438,22 +440,19 @@ $(function() {
   //playback slider
   QuickShake.prototype.updatePlaybackSlider = function() {
 
-
-    if(this.archive){
-          $("#playback-slider").slider("option", "max", this.endtime + this.viewerWidthSec * 1000);
+    if (this.archive) {
+      $("#playback-slider").slider("option", "max", this.endtime + this.viewerWidthSec * 1000);
       $("#playback-slider").slider("option", "min", this.starttime - this.viewerWidthSec * 1000);
     } else {
       $("#playback-slider").slider("option", "max", this.endtime);
       $("#playback-slider").slider("option", "min", this.starttime);
     }
-    if (this.scroll && this.archive){
+    if (this.scroll && this.archive) {
       $("#playback-slider").slider("option", "value", this.viewerLeftTime + this.viewerWidthSec * 1000);
     } else if (this.scroll && !this.archive) {
-      $("#playback-slider").slider("option", "value", this.viewerLeftTime); 
+      $("#playback-slider").slider("option", "value", this.viewerLeftTime);
     }
-    
 
-    // console.log// (this.viewerLeftTime)
   };
 
   QuickShake.prototype.pauseScroll = function() {
@@ -465,29 +464,37 @@ $(function() {
 
   QuickShake.prototype.playScroll = function() {
     _this = this;
-    this.scroll = setInterval(function() {
-      if (_this.buffer != null) {
-        _this.drawSignal();
-      }
-    }, this.refreshRate);
+    var d;
+    if(!this.scroll){
+      this.scroll = setInterval(function() {
+        // d = Date.now();
+        // console.log(d-_this.test)
+        // _this.test = d;
+        if (!$.isEmptyObject(_this.buffer) && _this.scroll) {
+
+          // console.log(this.test)
+          _this.drawSignal();
+        }
+      }, this.refreshRate);
+    }
+
   };
 
   QuickShake.prototype.selectPlayback = function(e, ui) {
-    // console.log(this.startPixOffset)
     if (this.startPixOffset == 0) {
       if (this.scroll) {
         this.pauseScroll();
       }
       var val = ui.value;
       if (val > this.endtime) {
-        
+
         $("#playback-slider").slider("option", "value", this.viewerLeftTime);
-        
+
       } else {
         this.viewerLeftTime = this.makeTimeKey(val);
         this.drawSignal();
       }
-      
+
     }
   };
 
@@ -559,28 +566,26 @@ $(function() {
     $("#quick-shake-canvas, #quick-shake-controls").show();
     $("#quickshake").height(window.innerHeight - $("#header-left").height() - $("#quick-shake-controls").height() - 20);
 
-    this.height = $("#quickshake").height(); 
+    this.height = $("#quickshake").height();
     this.width = $("#quickshake").width();
-    
+
     this.sampPerSec = Math.round(this.width / this.viewerWidthSec);
     this.refreshRate = Math.round(1000 / this.sampPerSec); //refresh rate in milliseconds
 
-    this.tickInterval = 1000 * (this.viewerWidthSec / (this.width / 100 < 10 ? parseInt(this.width/100, 10) : 10));
+    this.tickInterval = 1000 * (this.viewerWidthSec / (this.width / 100 < 10 ? parseInt(this.width / 100, 10) : 10));
 
     this.canvasElement.height = this.height;
     this.canvasElement.width = this.width;
-    
+
     this.updateScale();
-    
-    this.playScroll();
   };
 
   var timeout;
   // Create a delay to simulate end of resizing
   $(window).resize(function() {
     clearTimeout(timeout);
-    timeout = setTimeout(function(){
-      console.log("there's something happening here")
+    timeout = setTimeout(function() {
+      console.log('time')
       quickshake.configViewer();
       quickshake.drawSignal();
     }, 500);
@@ -614,41 +619,41 @@ $(function() {
   var path = "web4.ess.washington.edu:8888/";
   var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
   //set the restrictions for local earthquakes
-  var bounds = { 
-    bottom:40.5,
-    top:52,
-    left:-130,
-    right:-115,
-    mag:2.5
+  var bounds = {
+    bottom: 40.5,
+    top: 52,
+    left: -130,
+    right: -115,
+    mag: 2.5
   };
 
   // var channels = ["TAHO.HNZ.UW.--","BABR.ENZ.UW.--","JEDS.ENZ.UW.--"];
   var channels = [];
-  
+
   // Initialize UI
   $("#start-select").datetimepicker({
     format: 'yyyy-mm-dd hh:ii:ss',
     useCurrent: true
   });
-  
+
   var eventSelector = $('select#event-select.station-select');
   eventSelector.attr({
     'data-live-search': true,
-    disabled:'disabled',
+    disabled: 'disabled',
     title: "No events found.",
     'data-container': 'body',
-    'data-size':10
+    'data-size': 10
   });
-  
+
   //Populate group groupSelector
   var groupSelector = $('select#group-select.station-select');
   groupSelector.attr({
-    'data-live-search': true, 
+    'data-live-search': true,
     title: 'No groups found.',
     // 'data-container': '.modal-content',
-    'data-size':10
+    'data-size': 10
   });
-  
+
   var scnlSelector = $('select#scnl-select.station-select');
   scnlSelector.selectpicker({
     'data-live-search': true,
@@ -656,9 +661,9 @@ $(function() {
     maxOptionsText: 'No more than 6 stations.',
     maxOptions: 6,
     // 'data-container': '.modal-content',
-    'size':10
+    'size': 10
   });
-  
+
   $(".selectpicker").selectpicker();
 
   groupSelector.change(function() {
@@ -670,23 +675,23 @@ $(function() {
     });
   });
 
-  eventSelector.change(function(){
+  eventSelector.change(function() {
     // console.log()
     console.log(eventSelector.children(":selected"));
-    
+
     $("#evid-select").val("");
     $("#start-select").val("");
-  
+
   });
-  
-  $("#evid-select").change(function(){
+
+  $("#evid-select").change(function() {
     $("#start-select").val("");
     eventSelector.val("");
   });
-  
+
   $(".loading").addClass("center-block").append('<i class="fa fa-spinner fa-pulse fa-3x">');
   //End UI Initializing
-  
+
   //helper functions
   function getUrlParam(param) {
     var pageUrl = window.location.search.substring(1);
@@ -711,23 +716,24 @@ $(function() {
     // console.log(values)
     return values[0] + "/" + values[1] + " " + values[2] + ":" + values[3];
   }
-  
+
   var events = {};
+
   function getEvents() {
     eventSelector
       .append($("<optgroup label='Local Earthquakes' id='earthquakes-group'></optgroup>"))
       .append($("<optgroup label='Other events' id='others-group'></optgroup>"))
       .append($("<optgroup label='Significant Global Events' id='significant-group'></optgroup>"));
-      
+
     var significant = $("#significant-group");
     var earthquakes = $("#earthquakes-group");
     var other = $("#others-group");
-    
+
     $.ajax({
       dataType: "json",
-      url: usgsPath + "minlatitude="+ bounds.bottom + "&maxlatitude=" + bounds.top + "&minlongitude=" + bounds.left + "&maxlongitude=" + bounds.right + "&minmagnitude=" + bounds.mag
+      url: usgsPath + "minlatitude=" + bounds.bottom + "&maxlatitude=" + bounds.top + "&minlongitude=" + bounds.left + "&maxlongitude=" + bounds.right + "&minmagnitude=" + bounds.mag
     }).done(function(data) {
-      
+
       $.each(data.features, function(i, feature) {
         // console.log(feature)
         // console.log(i)
@@ -738,14 +744,14 @@ $(function() {
         });
         var dateString = makeDate(new Date(feature.properties.time));
         var title = dateString + " M " + feature.properties.mag;
-        var append = $("<option value=" + (parseInt(feature.properties.time, 10)/1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
-        
+        var append = $("<option value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
+
         if (feature.properties.type == "earthquake") {
           earthquakes.append(append);
         } else {
           other.append(append);
         }
-        
+
         var coords = feature.geometry.coordinates;
         events[feature.id] = {
           evid: feature.id,
@@ -755,32 +761,32 @@ $(function() {
         };
         // console.log(events[feature.id].starttime)
       });
-      
-      if (data.features.length > 0 ){
+
+      if (data.features.length > 0) {
         eventSelector.removeAttr('disabled');
         eventSelector.append($("<option data-hidden='true' data-tokens='false' selected value='false'>").text("Select an event"));
       } else {
         console.log("wtf");
       }
-      
-      if(getUrlParam("evid")){        
+
+      if (getUrlParam("evid")) {
         evid = getUrlParam("evid");
-        if($("select#event-select option[id="+ evid +"]") ){
-          $("select#event-select option[id="+ evid +"]").attr("selected", "selected");
+        if ($("select#event-select option[id=" + evid + "]")) {
+          $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
           $('select#event-select').selectpicker('refresh');
         }
       }
       $('select#event-select').selectpicker('refresh');
-    }).fail(function(response){
+    }).fail(function(response) {
       console.log("I failed");
       console.log(response);
     });
-    
+
     $.ajax({
       dataType: "json",
       url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"
-    }).done(function(data){
-      
+    }).done(function(data) {
+
       $.each(data.features, function(i, feature) {
         // console.log(i)
         var titleTokens = feature.properties.title.split(" ");
@@ -790,12 +796,12 @@ $(function() {
         });
         var dateString = makeDate(new Date(feature.properties.time));
         var title = dateString + " M " + feature.properties.mag;
-        var append = $("<option class='significant' value=" + (parseInt(feature.properties.time, 10)/1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
-        
+        var append = $("<option class='significant' value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
+
         if (feature.properties.type == "earthquake") {
           significant.append(append);
-        } 
-        
+        }
+
         events[feature.id] = {
           evid: feature.id,
           description: feature.properties.title,
@@ -805,21 +811,21 @@ $(function() {
         // console.log(events[feature.id].starttime)
       });
 
-      if(getUrlParam("evid")){        
+      if (getUrlParam("evid")) {
         evid = getUrlParam("evid");
-        if($("select#event-select option[id="+ evid +"]") ){
-          $("select#event-select option[id="+ evid +"]").attr("selected", "selected");
+        if ($("select#event-select option[id=" + evid + "]")) {
+          $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
           $('select#event-select').selectpicker('refresh');
         }
       }
-      
+
       $('select#event-select').selectpicker('refresh');
-    }).fail(function(response){
+    }).fail(function(response) {
       console.log("teleseisms failed");
     });
 
   }
-  
+
   function getGroups(_callback) {
     $.ajax({
       type: "GET",
@@ -827,67 +833,67 @@ $(function() {
       url: "http://" + path + "groups"
     }).done(function(data) {
       // console.log(data);
-      
+
       var defaultGroup = {
-        name:"",
-        scnls:[]
+        name: "",
+        scnls: []
       };
-      
+
       groupSelector.append($("<option data-hidden='true' data-tokens='false' title='Select a group' value='false' >"));
       $.each(data, function(key, group) {
         groupSelector.append($('<option value=' + group.scnls + ' id=' + key + ' data-subtext=' + group.scnls + '>').text(key));
-        if(group["default"] == 1 && defaultGroup.scnls.length == 0) {
+        if (group["default"] == 1 && defaultGroup.scnls.length == 0) {
           defaultGroup.name = key;
           defaultGroup.scnls = group.scnls;
-        }      
+        }
       });
-      
+
       // $("#group-header").();
-      
-      if(!getUrlParam("group") && channels.length == 0){
+
+      if (!getUrlParam("group") && channels.length == 0) {
         channels = defaultGroup.scnls;
-        $("select#group-select option[id="+ defaultGroup.name +"]").attr("selected", "selected");
-        $("#group-header span").text(defaultGroup.name + " (default)");
+        $("select#group-select option[id=" + defaultGroup.name + "]").attr("selected", "selected");
+        $("#group-header span").text(defaultGroup.name.replace("_", " ") + " (default)");
         $("#group-header").show();
-      } else if( getUrlParam("group")){
-        $("#group-header span").text(getUrlParam("group"));
+      } else if (getUrlParam("group")) {
+        $("#group-header span").text(getUrlParam("group").replace("_", " "));
         $("#group-header").show();
-        $("select#group-select option[id="+ getUrlParam("group") +"]").attr("selected", "selected");
-        if(channels.length == 0){
+        $("select#group-select option[id=" + getUrlParam("group") + "]").attr("selected", "selected");
+        if (channels.length == 0) {
           channels = data[getUrlParam("group")] ? data[getUrlParam("group")].scnls : [];
         }
       }
-      
+
       groupSelector.selectpicker('refresh');
-      
+
       _callback();
-    }).fail(function(response){
+    }).fail(function(response) {
       alert("JON! WEB4 IS DOWN!");
       console.log("I failed");
       console.log(response);
     });
   }
-  
-  $("[data-hide]").on("click", function(){
-      $(this).closest("." + $(this).attr("data-hide")).hide();
+
+  $("[data-hide]").on("click", function() {
+    $(this).closest("." + $(this).attr("data-hide")).hide();
   });
 
   //Get start time for event
-  function getStart(evid, start, _callback){
+  function getStart(evid, start, _callback) {
     var stime = start;
     var text;
-    
-    if(!evid) {
+
+    if (!evid) {
       _callback(stime);
-    } else if(events[evid]){
+    } else if (events[evid]) {
       stime = stime ? stime : events[evid].starttime;
       text = events[evid].description;
-      
+
       $("#event-header span").text(text);
-      $("#event-header").show();  
-      
+      $("#event-header").show();
+
       _callback(getStartOffset(events[evid], stime));
-      
+
     } else {
       $.ajax({
         type: "GET",
@@ -898,27 +904,27 @@ $(function() {
         text = data.properties.title;
         $("#event-header span").text(text);
         $("#event-header").show();
-        
+
         event = {
           evid: data.id,
           description: data.properties.title,
           starttime: parseFloat(data.properties.time),
           geometry: data.geometry
         };
-        
+
         console.log(event);
-        
+
         _callback(getStartOffset(event, stime));
-        
-      }).fail(function(response){
+
+      }).fail(function(response) {
         console.log("I failed");
         console.log(response);
       });
     }
   }
-  
+
   //TODO: make a leaflet map
-  function getScnls(){
+  function getScnls() {
     $.ajax({
       type: "GET",
       dataType: "jsonp",
@@ -929,26 +935,26 @@ $(function() {
         scnlSelector.append($('<option value=' + scnl + ' id=' + scnl + '>').text(scnl));
       });
       scnlSelector.selectpicker('refresh');
-    }).fail(function(response){
+    }).fail(function(response) {
       console.log("I failed");
       console.log(response);
       scnlSelector.append($("<option data-hidden='true' data-tokens='false' title='No stations found.' value='false' selected>"));
       scnlSelector.selectpicker('refresh');
     });
-    
+
   }
-  
- //TODO: test if evid is somewhat valid (has network code)
-  $("#evid-select").change(function(){
+
+  //TODO: test if evid is somewhat valid (has network code)
+  $("#evid-select").change(function() {
     $("#evid-warning").toggle($("#evid-select").val().length != 10);
     //add test for ww########
   });
 
   // Returns the channels
   function getChannels() {
-    if(channels.length > 0) {
+    if (channels.length > 0) {
       return channels;
-    } else if ($('select#group-select option:selected').length > 0 && $('select#group-select option:selected')[0].value){
+    } else if ($('select#group-select option:selected').length > 0 && $('select#group-select option:selected')[0].value) {
       channels = $('select#group-select option:selected').first().val().split(",");
       return channels;
     } else {
@@ -967,40 +973,40 @@ $(function() {
   $(".station-select").change(function() {
     $(".update.station-select").addClass("btn-primary");
   });
-  
-  $("button.open-controls").click(function(){
+
+  $("button.open-controls").click(function() {
     showControlPanel();
   });
-  
-  $("button.add-station").click(function(e){
+
+  $("button.add-station").click(function(e) {
     var newScnls = $("#scnl-select").val();
     console.log(channels);
-    if(!$(this).hasClass("disabled")){
-      $.each(newScnls, function(i, scnl){
+    if (!$(this).hasClass("disabled")) {
+      $.each(newScnls, function(i, scnl) {
         var testScnl = scnl.split(".");
         var valid = true;
-        if(testScnl.length == 4){ //FIXME: change to 3 when jon fixes this should be ==4
-          $.each(scnl.split("."), function(i, val){
+        if (testScnl.length == 4) { //FIXME: change to 3 when jon fixes this should be ==4
+          $.each(scnl.split("."), function(i, val) {
             if (val.length == 0) {
               valid = false;
-            } 
+            }
           });
         } else {
           valid = false;
         }
-        
-        var index  = $.inArray(scnl, channels);
-        if(valid && channels.length < 6 && index == -1){
+
+        var index = $.inArray(scnl, channels);
+        if (valid && channels.length < 6 && index == -1) {
           updateList(scnl);
           updateChannels();
           $("#length-warning").hide();
           $("#scnl-warning").hide();
-        }else if(channels.length >= 6){
+        } else if (channels.length >= 6) {
           $("#length-warning").show();
         }
-        if(!valid){
+        if (!valid) {
           $("#scnl-warning").show();
-        } 
+        }
       });
 
       $("#scnl-select").selectpicker('val', 'false');
@@ -1008,51 +1014,51 @@ $(function() {
 
     e.preventDefault;
   });
-  
-  $("button.clear-all").click(function(e){
+
+  $("button.clear-all").click(function(e) {
     var inputs = ["event", "evid", "group", "start", "scnl", "duration"];
-    $.each(inputs, function(i, val){
-      console.log(      $("#" + val + "-select").val());
-      if(val == "group" || val == "event" || val == "scnl"){
+    $.each(inputs, function(i, val) {
+      console.log($("#" + val + "-select").val());
+      if (val == "group" || val == "event" || val == "scnl") {
         $("#" + val + "-select").selectpicker('val', 'false');
       } else {
-        $("#" + val + "-select").val("");        
+        $("#" + val + "-select").val("");
       }
     });
-    
+
     $("ul#station-sorter").empty();
     channels = [];
     $("#station-warning").show();
   });
-  
-  
-  function updateList(scnl){
-    $("ul#station-sorter.station-select").append("<li class='list-group-item' id= '" + scnl + "'>" + scnl   
-    + "<i class='fa fa-sort pull-left'></i>" + "<i class='fa fa-trash pull-right delete' ></i>"
-    +"</li>");
+
+
+  function updateList(scnl) {
+    $("ul#station-sorter.station-select").append("<li class='list-group-item' id= '" + scnl + "'>" + scnl +
+      "<i class='fa fa-sort pull-left'></i>" + "<i class='fa fa-trash pull-right delete' ></i>" +
+      "</li>");
   }
-  
-  $("#station-sorter").on('click', '.delete', function () {
+
+  $("#station-sorter").on('click', '.delete', function() {
     removeStation($(this).parent());
     updateScnls();
     // $(this).parent().remove(); 
   });
-  
-  function removeStation(li){
+
+  function removeStation(li) {
     var scnl = li.attr("id");
-    
+
     li.remove();
 
     updateChannels();
 
-    if(channels.length < 6) {
+    if (channels.length < 6) {
       $("#scnl-warning").hide();
     }
-    
-    
+
+
   }
-  
-  function updateChannels(){
+
+  function updateChannels() {
     channels = [];
     var ids = $("ul#station-sorter").sortable("toArray");
     $.each(ids, function(i, id) {
@@ -1063,66 +1069,65 @@ $(function() {
     }
   }
 
-  scnlSelector.on('shown.bs.select', function (e) {
+  scnlSelector.on('shown.bs.select', function(e) {
     updateScnls();
   });
-  scnlSelector.on('hidden.bs.select', function (e) {
+  scnlSelector.on('hidden.bs.select', function(e) {
     updateScnls();
   });
-  scnlSelector.on('changed.bs.select', function (e) {
+  scnlSelector.on('changed.bs.select', function(e) {
     $("button.add-station").removeClass("disabled");
   });
-  	
+
   //Do the math, the monster math
-  function getStartOffset(event, start){
-    var lat1 = (bounds.top - bounds.bottom)/2 + bounds.bottom ; //center of bounding box
-    var lon1 = (bounds.left - bounds.right)/2 + bounds.right;
+  function getStartOffset(event, start) {
+    var lat1 = (bounds.top - bounds.bottom) / 2 + bounds.bottom; //center of bounding box
+    var lon1 = (bounds.left - bounds.right) / 2 + bounds.right;
 
     var lat2 = event.geometry.coordinates[1];
     var lon2 = event.geometry.coordinates[0];
-    
+
     // Lets hope this works
     var R = 6371; // Radius of the earth in km
-    var dLat = (lat2 - lat1) * Math.PI / 180;  // deg2rad below
+    var dLat = (lat2 - lat1) * Math.PI / 180; // deg2rad below
     var dLon = (lon2 - lon1) * Math.PI / 180;
-    var a = 
-       0.5 - Math.cos(dLat)/2 + 
-       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-       (1 - Math.cos(dLon))/2;
+    var a =
+      0.5 - Math.cos(dLat) / 2 +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      (1 - Math.cos(dLon)) / 2;
 
-    var d = 2 * Math.asin(Math.sqrt(a)) * 180/Math.PI; //angular distance in degrees
+    var d = 2 * Math.asin(Math.sqrt(a)) * 180 / Math.PI; //angular distance in degrees
 
-    distances = Object.keys(traveltimes).sort(function compare(a, b){
+    distances = Object.keys(traveltimes).sort(function compare(a, b) {
       return a - b;
     });
-    
+
     var i = 0;
     var distance = distances[i];
-    
-    while (distance < d){
+
+    while (distance < d) {
       i++;
       distance = parseFloat(distances[i]);
     }
-    
-    if(distances[i-1]){
-      var distance2 = distances[i-1];
-    
-      var linDif = (traveltimes[distance] - traveltimes[distance2] ) / (distance - parseFloat(distance2));
+
+    if (distances[i - 1]) {
+      var distance2 = distances[i - 1];
+
+      var linDif = (traveltimes[distance] - traveltimes[distance2]) / (distance - parseFloat(distance2));
       return start + (linDif * d + traveltimes[distance2] * 1000);
-      
+
       $("#offset-header").show();
       $("#start-header").hide();
-      
+
     } else {
       return start;
-    } 
+    }
 
-  }  
-  
+  }
 
-  function updateScnls(){
+  function updateScnls() {
     var length = 6 - $("ul#station-sorter li").length;
-    if(length == 0){
+    if (length == 0) {
       scnlSelector.selectpicker({
         maxOptions: 0
       });
@@ -1134,36 +1139,36 @@ $(function() {
       });
       scnlSelector.attr("disabled", false);
     }
-    
+
     scnlSelector.selectpicker('refresh');
 
   }
-  
+
   // Update URL with correct station order and whatnot
   $("button.update.station-select").click(function() {
     //there must always be a channel array in winterfell
     if (channels.length > 0) {
-      url = "?"; 
-      
+      url = "?";
+
       var evid = getValue("evid");
-      var start = getValue("start") ? new Date(getValue("start")).getTime(): getValue("start");
+      var start = getValue("start") ? new Date(getValue("start")).getTime() : getValue("start");
       var width = getValue("width");
       var duration = getValue("duration");
-      
+
       if (getUrlParam('timeout') == 'false') {
         url += "timeout=false&";
       }
-      
+
       //Is there a group?
       if ($('select#group-select option:selected').length > 0 && $('select#group-select option:selected')[0].id.length > 0) {
         url += "group=" + $('select#group-select option:selected')[0].id + "&";
       };
-      
+
       //Is there an event?
       if ($('select#event-select option:selected').length > 0 && $('select#event-select option:selected')[0].value > 0) {
         var option = $('select#event-select option:selected')[0];
         url += "evid=" + option.id + "&";
-        if(!start) {
+        if (!start) {
           url += "start=" + option.value * 1000 + "&"; //Should be in UTC
         } else {
           url += "start=" + start + "&";
@@ -1177,12 +1182,12 @@ $(function() {
           url += "start=" + start + "&";
         }
       }
-      
+
       if (width) {
         url += "width=" + width + "&";
       }
-      
-      if(duration) {
+
+      if (duration) {
         if (width) {
           url += "duration=" + duration + "&";
         }
@@ -1199,98 +1204,99 @@ $(function() {
   // End station select stuff
 
   //Populate form with URL values, doesn't handle lack of value
-  function populateForm(){
-    
-    if(getUrlParam("width")){
-      $("#width-select option[value="+ getUrlParam("width") +"]").attr("selected", "selected");
+  function populateForm() {
+
+    if (getUrlParam("width")) { //right now only the selected options are allowed
+      $("#width-select option[value=" + getUrlParam("width") + "]").attr("selected", "selected");
       $("#width-select").selectpicker('refresh');
     }
-    
-    if(getUrlParam("evid")){
+
+    if (getUrlParam("evid")) {
       evid = getUrlParam("evid");
       $("#evid-select").val(evid);
     }
-    
-    if(getUrlParam("start")){
+
+    if (getUrlParam("start")) {
       var s = new Date(parseFloat(getUrlParam("start")));
       $("#start-select").val(s.getFullYear() + "-" + (s.getMonth() + 1) + "-" + s.getDate() + " " + s.getHours() + ":" + s.getMinutes() + ":" + s.getSeconds());
     }
-    
-    if(getUrlParam("group")){
+
+    if (getUrlParam("group")) {
       $("#group-header span").text(getUrlParam("group"));
     }
-    
-    if(getUrlParam("scnls")){
-      channels=getUrlParam("scnls").split(",");
+
+    if (getUrlParam("scnls")) {
+      channels = getUrlParam("scnls").split(",");
       $('.quickshake-warning').hide();
     }
-    
-    if(getUrlParam("duration")){
-      $("#duration-select option[value='"+ getUrlParam("duration") +"']").attr("selected", "selected");
+
+    if (getUrlParam("duration")) {
+      $("#duration-select option[value='" + getUrlParam("duration") + "']").attr("selected", "selected");
       $("#duration-select").selectpicker('refresh');
     }
 
   }
-  
-  function getValue (variable){
-    if(variable === "start") {
-      var start = new Date($("#" + variable + "-select").val()); 
+
+  function getValue(variable) {
+    if (variable === "start") {
+      var start = new Date($("#" + variable + "-select").val());
       return start && start.getTime() ? start.getTime() : false;
     } else {
       return $("#" + variable + "-select").val() ? $("#" + variable + "-select").val() : false;
     }
-    
+
   }
-  
+
   function initialize() {
     getEvents();
     populateForm();
     getScnls();
-    getGroups(function(){
+    getGroups(function() {
       var width = getValue("width") * 60;
       quickshake = new QuickShake(width, channels);
 
       // console.log(width)
-      if (channels.length > 0 && channels.length < 7){
+      if (channels.length > 0 && channels.length < 7) {
         $('.quickshake-warning').hide();
         $('.loading').hide();
         $('#header-left').show();
         var evid = getValue("evid");
-      
+
         var duration = getValue("duration") ? getValue("duration") : 10;
 
         var start = getValue("start");
-        
+
         var stations = "scnls=" + getChannels();
 
-        if(start || evid){
-          getStart(evid, start, function(eventStart){
+        if (start || evid) {
+          getStart(evid, start, function(eventStart) {
             $("#start-header span").text(new Date(eventStart));
             $("#start-header").show();
-          
+
             var dataStart = eventStart - 30000;
             duration = duration * 60 * 1000;
-            
+
             $.ajax({
               type: "GET",
               dataType: "jsonp",
               url: "http://" + path + "archive?starttime=" + dataStart + "&" + stations + "&duration=" + duration,
-              timeout: 2000 //gives it time to think before giving up
-            }).success(function(data){ //sometimes doesn't get called?
+              timeout: 4000 //gives it time to think before giving up
+              //Drawing speed is varying with amountof data
+            }).success(function(data) { //sometimes doesn't get called?
               console.log("success!");
               $("#fastforward-button").show();
               // $(".helpful-label").show();
               quickshake.configViewer();
               quickshake.playArchive(data, eventStart, dataStart);
-            }).complete(function(xhr, data){
-              if(xhr.status != 200) { //In case it fails
+            }).complete(function(xhr, data) {
+              if (xhr.status != 200) { //In case it fails
                 showControlPanel();
                 $("#station-sorter").show();
                 $("#data-error").show();
               }
             });
           });
-          
+
         } else {
           $("#realtime-button").show();
           quickshake.configViewer();
@@ -1305,8 +1311,8 @@ $(function() {
     });
 
   }
-  
-  function showControlPanel(){
+
+  function showControlPanel() {
     $("#controls").modal("show");
     $("ul#station-sorter.station-select li").remove();
     $.each(channels, function(i, scnl) {
@@ -1316,12 +1322,11 @@ $(function() {
     updateScnls();
   }
 
-
   //Give date in milliseconds
   initialize();
-  
+
   // Can't load these until the quickshake is made
-  function controlsInit(){
+  function controlsInit() {
     // Controls stuff
     $("#playback-slider").slider({
       slide: function(e, ui) {
@@ -1349,9 +1354,9 @@ $(function() {
         $("#realtime-button, #stop-button, #fastforward-button").removeClass("disabled");
         $("#play-button").addClass("disabled");
       }
-      if(quickshake.archive){
+      if (quickshake.archive) {
         quickshake.pad = 0;
-      }     
+      }
       return false;
     });
 
@@ -1361,12 +1366,12 @@ $(function() {
         $("#play-button").removeClass("disabled");
         $("#stop-button, #realtime-button, #fastforward-button").addClass("disabled");
       }
-      if(quickshake.archive){
+      if (quickshake.archive) {
         quickshake.pad = 0;
-      }     
+      }
       return false;
     });
-  
+
     var pad = quickshake.pad;
     $("#fastforward-button").click(function() {
       pad = pad < 4 ? pad + 1 : 0;
@@ -1374,7 +1379,7 @@ $(function() {
       quickshake.adjustPlay();
       $("#play-button").removeClass("disabled");
       return false;
-      
+
     });
 
     $("#realtime-button").click(function() {
@@ -1385,7 +1390,7 @@ $(function() {
       }
       return false;
     });
-    
+
   }
 
   // Websocket stuff
@@ -1393,7 +1398,7 @@ $(function() {
   function initializeSocket(stations) {
     // console.log(stations)
     if (window.WebSocket) {
-      socket = new WebSocket("ws://"+path+"?" + stations);
+      socket = new WebSocket("ws://" + path + "?" + stations);
       quickshake.setTimeout();
     };
 
