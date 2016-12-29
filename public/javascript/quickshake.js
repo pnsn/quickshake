@@ -35,7 +35,7 @@ $(function() {
     this.eventStart = null;
     this.archive = false;
     this.pad = 0;
-    this.archiveOffset = 0.9; //fractional offset from left side for drawing archive data
+    this.archiveOffset = 0; //offset for line labels in archive
   };
 
   // incoming data are appended to buf
@@ -57,7 +57,7 @@ $(function() {
   QuickShake.prototype.updateBuffer = function(packet) {
     if (this.viewerLeftTime === null) {
       if (this.archive) {
-        this.viewerLeftTime = this.makeTimeKey(this.starttime - this.viewerWidthSec * 1000 * this.archiveOffset);
+        this.viewerLeftTime = this.makeTimeKey(this.starttime - this.viewerWidthSec * 1000 * 0.9);
       } else {
         this.viewerLeftTime = this.makeTimeKey(packet.starttime);
       }
@@ -140,7 +140,7 @@ $(function() {
     if (this.archive && this.scroll) {
       this.updatePlaybackSlider();
       cursor = this.viewerLeftTime;
-      cursorStop = cursor + this.viewerWidthSec * 1000 * this.archiveOffset;
+      cursorStop = cursor + this.viewerWidthSec * 1000 * 0.9;
       
       // console.log(cursorStop - cursor)
     } else {
