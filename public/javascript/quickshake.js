@@ -609,7 +609,7 @@ $(function() {
   var socket;
   var path = "web4.ess.washington.edu:8888/";
   var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
-  //set the restrictions for local earthquakes
+  //set the area restrictions for local earthquakes
   var bounds = {
     bottom: 40.5,
     top: 52,
@@ -617,8 +617,7 @@ $(function() {
     right: -115,
     mag: 2.5
   };
-
-  // var channels = ["TAHO.HNZ.UW.--","BABR.ENZ.UW.--","JEDS.ENZ.UW.--"];
+  
   var channels = [];
 
   // Initialize UI
@@ -632,7 +631,6 @@ $(function() {
     'data-live-search': true,
     disabled: 'disabled',
     title: "No events found.",
-    'data-container': 'body',
     'data-size': 10
   });
 
@@ -641,7 +639,6 @@ $(function() {
   groupSelector.attr({
     'data-live-search': true,
     title: 'No groups found.',
-    // 'data-container': '.modal-content',
     'data-size': 10
   });
 
@@ -651,7 +648,6 @@ $(function() {
     title: 'Select a scnl',
     maxOptionsText: 'No more than 6 stations.',
     maxOptions: 6,
-    // 'data-container': '.modal-content',
     'size': 10
   });
 
@@ -667,9 +663,6 @@ $(function() {
   });
 
   eventSelector.change(function() {
-    // console.log()
-    console.log(eventSelector.children(":selected"));
-
     $("#evid-select").val("");
     $("#start-select").val("");
 
@@ -823,7 +816,6 @@ $(function() {
       dataType: "jsonp",
       url: "http://" + path + "groups"
     }).done(function(data) {
-      // console.log(data);
 
       var defaultGroup = {
         name: "",
@@ -832,15 +824,13 @@ $(function() {
 
       groupSelector.append($("<option data-hidden='true' data-tokens='false' title='Select a group' value='false' >"));
       $.each(data, function(key, group) {
-        groupSelector.append($('<option value=' + group.scnls + ' id=' + key + ' data-subtext=' + group.scnls + '>').text(key));
+        groupSelector.append($('<option value=' + group.scnls + ' id=' + key + ' data-subtext=' + group.scnls + '>').text(key.replace("_", " ")));
         if (group["default"] == 1 && defaultGroup.scnls.length == 0) {
           defaultGroup.name = key;
           defaultGroup.scnls = group.scnls;
         }
       });
-
-      // $("#group-header").();
-
+      
       if (!getUrlParam("group") && channels.length == 0) {
         channels = defaultGroup.scnls;
         $("select#group-select option[id=" + defaultGroup.name + "]").attr("selected", "selected");

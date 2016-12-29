@@ -180,9 +180,8 @@ form button.btn {
 }
 
 .modal-content {
-  overflow:scroll;
+/*  overflow:scroll;*/
 }
-
 
 .row {
   margin-bottom: 5px;
@@ -197,16 +196,5 @@ form button.btn {
 
 #start-select {
   width: 170px;
-}
-
-.helpful-label {
-  display:none;
-}
-
-.helpful-label .gray {
-  color: black;
-}
-.helpful-label .red {
-  color: red;
 }
 
