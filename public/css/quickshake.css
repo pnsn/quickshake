@@ -1,16 +1,12 @@
-#header {
-  height: 75px;
-}
 
 #sorter-container {
   margin: 5px 0px;
-/*  min-height: 150px;*/
 }
 
 #quickshake {
 	height: 100%;
 	width: 100%;
-	min-height: 500px;
+	min-height: 300px;
 }
 
 #quick-shake-CMS {
@@ -179,10 +175,6 @@ form button.btn {
   width:100%;
 }
 
-.modal-content {
-/*  overflow:scroll;*/
-}
-
 .row {
   margin-bottom: 5px;
 }
@@ -198,3 +190,7 @@ form button.btn {
   width: 170px;
 }
 
+#header {
+  margin-bottom: 5px;
+  overflow:auto;
+}

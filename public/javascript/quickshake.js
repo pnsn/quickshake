@@ -554,8 +554,8 @@ $(function() {
     $(".loading").hide();
 
     $("#quick-shake-canvas, #quick-shake-controls").show();
-    $("#quickshake").height(window.innerHeight - $("#header-left").height() - $("#quick-shake-controls").height() - 20);
-
+    $("#quickshake").height(window.innerHeight - $("#header").height() - $("#quick-shake-controls").height() - 20);
+    console.log(window.innerHeight, $("#header").height(), $("#quick-shake-controls").height(), $("#quickshake").height())
     this.height = $("#quickshake").height();
     this.width = $("#quickshake").width();
 
