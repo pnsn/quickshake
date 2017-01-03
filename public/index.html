@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>QuickShake</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.4/css/bootstrap-select.min.css">
@@ -44,18 +45,16 @@
       <img src="https://tvrecappersanonymous.files.wordpress.com/2010/02/mr-bill.jpg"></img>
       <!-- <div w3-include-html="mrbill.html"></div> -->
     </div>
-    <div id="header-left" class="col-xs-12 col-sm-9 col-md-10">
-      <h1>Quickshake <small>by PNSN</small> </h1>
-      <div id="group-header" class="header-info">Group: <span></span></div>
-      <div id="event-header" class="header-info">Event: <span></span></div>
-      <div id="start-header" class="header-info">Event start time: <span></span></div>
-      <div id="teleseism-header" class="header-info">A new starttime has been calculated to reflect travel time.</div>
-    </div>
-    <div id="header-right" class="col-xs-12 col-sm-3 col-md-2">
-      <button class="button btn btn-default open-controls btn-primary " type="button">Edit Quickshake</button>
-      <div class=" helpful-label">
-        <div class="red">Red: Bounds of data.</div>
-        <div class="gray"> Black: Estimated arrival.</div>
+    <div id="header">
+      <div id="header-left" class="col-xs-12 col-sm-12 col-md-10">
+        <h1>Quickshake <small>by PNSN</small> </h1>
+        <div id="group-header" class="header-info">Group: <span></span></div>
+        <div id="event-header" class="header-info">Event: <span></span></div>
+        <div id="start-header" class="header-info">Event start time: <span></span></div>
+        <div id="teleseism-header" class="header-info">A new starttime has been calculated to reflect travel time.</div>
+      </div>
+      <div id="header-right" class="col-xs-12 col-sm-12col-md-2">
+        <button class="button btn btn-default open-controls btn-primary " type="button">Edit Quickshake</button>
       </div>
     </div>
     <div class="modal fade " id="controls">
@@ -172,7 +171,7 @@
         <div id="playback-slider"></div>
       </div>
       <div class="controls col-md-4 col-xs-12" id="scale">
-        <label>Scale (%g)</label>
+        <label>Scale</label>
         <div id="scale-slider"></div>
       </div>
     </div>
