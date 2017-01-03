@@ -30,6 +30,23 @@ function Conf(){
     }
   };
   
+  this.development= {
+    mongo:{
+      uri: "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWD + "@" 
+              + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" + "waveforms"
+              + "?authMechanism=DEFAULT" + "&authSource=admin",
+      rtCollection: "ring"
+    },
+    
+    http:{
+      port: 8888
+    },
+  //the number of tracebuffs to keep in the buffer for each scnl
+    ringBuffer: {
+      max: 800 
+    }
+  };
+  
   //temporary till we create ui to manage groups
   this.groups={
     "supergrouper": {

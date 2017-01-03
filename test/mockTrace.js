@@ -17,7 +17,11 @@ function MockTrace(sta,chan,net,loc){
 
 //return a key as would be found in EW RING (all upcase with '-' deliminators)
 MockTrace.prototype.makeEwKey=function(){
-  return this.sta + "-" + this.chan + "-" + this.net + "-" + this.loc;
+  return this.sta.toUpperCase() + "." + this.chan.toUpperCase() + "." + this.net.toUpperCase() + "." + this.loc.toUpperCase();
+};
+
+MockTrace.prototype.makeMongoCollectionKey=function(){
+  return this.sta.toLowerCase() + "_" + this.chan.toLowerCase() + "_" + this.net.toLowerCase() + "_" + (this.loc==="--"? "__" : this.loc.toLowerCase());
 };
 
 module.exports = MockTrace;

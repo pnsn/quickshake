@@ -618,6 +618,7 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
+  // var path = "localdocker:8888/";
   var path = "web4.ess.washington.edu:8888/";
   var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
   //set the area restrictions for local earthquakes
