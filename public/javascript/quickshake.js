@@ -99,9 +99,6 @@ $(function() {
 
     this.starttime = dataStart;
     this.eventStart = dataStart - eventStart != 0 ? this.makeTimeKey(eventStart) : this.makeTimeKey(dataStart);
-
-    console.log(new Date(this.starttime), new Date(this.eventStart))
-
     this.pad = 0;
 
     var _this = this;
@@ -368,7 +365,7 @@ $(function() {
       ctx.stroke();
     }
     
-  }
+  };
 
   //make a key based on new samprate that zeros out the insignificant digits. 
   //if the timestamp is less than starttime, increment by the refresh rate
@@ -574,7 +571,7 @@ $(function() {
 
     $("#quickshake-canvas").show();
     $("#quickshake").height(window.innerHeight - $("#header").height() - 40);
-    console.log(window.innerHeight, $("#header").height(), $("#quickshake-controls").height(), $("#quickshake").height())
+
     this.height = $("#quickshake").height();
     this.width = $("#quickshake").width();
 
@@ -594,7 +591,6 @@ $(function() {
   QuickShake.prototype.resizeViewer = function(width){
     var _this = this;
     var oldLeftTime = _this.viewerLeftTime;
-    console.log("hi")
     clearTimeout(timeout);
     timeout = setTimeout(function() {
       _this.configViewer();
@@ -690,7 +686,6 @@ $(function() {
   eventSelector.change(function() {
     $("#evid-select").val("");
     $("#start-select").val("");
-
   });
 
   $("#evid-select").change(function() {
@@ -1148,7 +1143,7 @@ $(function() {
 
       $("#toggle-controls").click(function(){
         clearTimeout(timeout);
-      })
+      });
 
       var timeout = window.setTimeout(function(){
         $("#hide-controls, #show-controls, #toggle-controls, #quickshake-controls").toggleClass("closed");
