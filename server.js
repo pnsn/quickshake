@@ -1,6 +1,6 @@
 'use strict';
 /*jslint node: true */
-const compression = require('compression');
+// const compression = require('compression');
 const express = require('express');
 const app = express();
 const http = require('http').Server(app);
@@ -11,7 +11,6 @@ const logger = require('winston');
 const Conf = require("./config.js");
 const MongoClient  = require('mongodb').MongoClient;
 const RingBuffer = require(__dirname + '/lib/ringBuffer');
-const MongoArchive = require(__dirname + '/lib/mongoArchive');
 const MongoRealTime = require(__dirname + '/lib/mongoRealTime');
     
 const debug = require('debug')('quickshake');
@@ -19,26 +18,18 @@ const debug = require('debug')('quickshake');
 
 const conf = new Conf();
 
-// var archive=false;
-// process.argv.forEach(function (val, index, array) {
-//   if(val==="archive"){
-//     archive=true;
-//   }
-// });
-var env=process.env.NODE_ENV || "production"; //get this from env
-var archive = env==="production";
+var env=process.env.NODE_ENV || "development"; //get this from env
   
 var MONGO_URI = conf[env].mongo.uri;
 exports.app=app; //for integration testing
 app.use(express['static']('public'));
 logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
-app.use(compression());
+// app.use(compression());
 
 var _db;
 var ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
 var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, ringBuff, logger);
-var mongoArchive = new MongoArchive(ringBuff, 5000, logger);
 
 //create a connection pool
 MongoClient.connect(MONGO_URI, function(err, db) {
@@ -46,10 +37,6 @@ MongoClient.connect(MONGO_URI, function(err, db) {
   _db = db;
   mongoRT.database(db);
   mongoRT.tail();
-  if(archive){
-    mongoArchive.database(db);
-    mongoArchive.start();
-  }
   http.listen(conf[env].http.port, function(){
     logger.info("listening on port: " + conf[env].http.port);
   });
@@ -107,6 +94,8 @@ app.get('/groups', function (req, res) {
 app.get("/archive", function(req, res) {
   logger.info("path: /archive, ?query=" + req.query);
   var starttime=parseInt(req.query.starttime,0);
+  var endtime;
+  
   var scnls = req.query.scnls === undefined ? null : req.query.scnls.split(",");
   if(scnls===null || starttime===null){
     res.status(400)
@@ -114,24 +103,23 @@ app.get("/archive", function(req, res) {
   }else{
     //remove any non scnl-y things
     var clean_scnls=[];
-       for(var i=0; i< scnls.length; i++){
-         if(scnls[i].match(/.{3,4}\..{3}\..{2}\..*/)){
-           clean_scnls.push(scnls[i]);
-         }
-       }
-       var duration;
-      
-       if(req.query.duration===undefined || 
-           parseInt(req.query.duration,0) > (60*60*1000) || 
-           parseInt(req.query.duration,0) < (1*60*1000)){
-         duration= starttime + (10*60*1000);
-       }else{
-         duration=starttime + parseInt(req.query.duration,0);
-       }
-       var results=[];
-       logger.info("starttime: " + starttime + " endtime: " + endtime + " scnls:" + clean_scnls);
-       sendArchive(clean_scnls, res, starttime, endtime, results);
+    for(var i=0; i< scnls.length; i++){
+      if(scnls[i].match(/.{3,4}\..{3}\..{2}\..*/)){
+        clean_scnls.push(scnls[i]);
+      }
     }
+      
+     if(req.query.duration===undefined || 
+         parseInt(req.query.duration,0) > (60*60*1000) || 
+         parseInt(req.query.duration,0) < (1*60*1000)){
+       endtime= starttime + (10*60*1000);
+     }else{
+       endtime=starttime + parseInt(req.query.duration,0);
+     }
+     var results=[];
+     logger.info("starttime: " + starttime + " endtime: " + endtime + " scnls:" + clean_scnls);
+     sendArchive(clean_scnls, res, starttime, endtime, results);
+  }
 });
 
 var CLIENTS={};

@@ -2,7 +2,6 @@
 // var assert = require('assert')
 'use strict';
 
-const Conf = require("../config.js");
 const expect  = require("chai").expect;
 const MockTrace =  require("./mockTrace.js");
 const chai = require('chai');
@@ -14,17 +13,8 @@ var fixtures = require('pow-mongodb-fixtures').connect('waveforms', {
   host: process.env.QUICKMONGO_PORT_27017_TCP_ADDR, 
   port: process.env.QUICKMONGO_PORT_27017_TCP_PORT
 });
-  
-
-fixtures.clearAllAndLoad("./fixtures/waveforms.js", function(err){
-  if(err) console.log("ERRR = " + err);
-});
-
 
 chai.use(chaiHttp);
-
-
-
 
 //create a connection pool
 before(function(){
@@ -32,7 +22,6 @@ before(function(){
     if(err) console.log("ERRR = " + err);
   });
 });
-
 
 
      
@@ -43,7 +32,7 @@ describe('/GET groups', function(){
           .end(function(err, res){
               res.should.have.status(200);
               res.body.should.be.a('object');
-              Object.keys(res.body).length.should.be.eql(7);
+              Object.keys(res.body).length.should.be.eql(8);
             done();
           });
     });

@@ -1,13 +1,10 @@
 //test cases for mongoserver prototype
 // var assert = require('assert')
-var Conf = require("../config.js")
-  ,expect  = require("chai").expect
+var expect  = require("chai").expect
   ,RingBuffer = require("../lib/ringBuffer.js")
   ,MockTrace =  require("./mockTrace.js");
 
 
-
-var conf = new Conf();
 var buffMax=6;
 var ringbuff;
 var sta="SHIT";
@@ -34,7 +31,7 @@ describe("Ringbuffer update", function(){
   });
 
   var ewKey=new MockTrace(sta,chan,net,loc).makeEwKey();
-  var validKey= ewKey.replace(/--|\./g, "_").toLowerCase();
+  var validKey= ewKey.replace(/-|\./g, "_").toLowerCase();
   it("make valid scnl key", function(){
     expect(ringbuff.ewKey2Mongo(ewKey)).to.equal(validKey);
   });
