@@ -78,8 +78,12 @@ function Conf(){
       "scnls": ["BILS.HNZ.UW.--","LWCK.HNZ.UW.--","CHZZ.HNZ.UW.--","YACH.HNZ.UW.--","BROK.HNZ.UW.--"]
     },
     "short_period":{
-      "default":1,
+      "default":0,
       "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
+    },
+    "hawks":{
+      "default":1,
+      "scnls": ["HWK1.HNZ.UW.--", "HWK1.HNN.UW.--", "HWK1.HNE.UW.--"]
     }
   };
 };

@@ -200,7 +200,7 @@ form button.btn {
 }
 
 #toggle-controls{
-  border-top: 1px solid black;
+  border-top: 1px solid #777;
   border-bottom: 1px solid #777;
   color: #107a10;
   margin-bottom:0px;
