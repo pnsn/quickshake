@@ -204,6 +204,10 @@ form button.btn {
   border-bottom: 1px solid #777;
   color: #107a10;
   margin-bottom:0px;
+  height:28px;
+  font-size: 18px;
+  border-top-right-radius: 10px;
+  border-top-left-radius: 10px;
 }
 
 #toggle-controls div {
@@ -243,3 +247,7 @@ form button.btn {
   text-overflow: ellipsis;
 }
 
+.btn-primary {
+  border-color : #107a10;
+  background-color: #107a10;
+}

@@ -601,20 +601,20 @@ $(function() {
     }, 500);
   };
 
-  var _this = this;
-  var lastScale = _this.scale;
-  $("#quickshake-canvas").swipe({
-    pinchStatus: function(event, phase, direction, distance, duration, fingerCount, pinchScale) {
-      // Make sure it is actually a two finger scale and not a tap
-      if (distance > 0 && fingerCount > 1) {
-        quickshake.selectScale(event, lastScale + parseFloat(pinchScale) - 1);
-      }
-      //Save value of scale at the end to use as baseline
-      if (phase === $.fn.swipe.phases.PHASE_END || phase === $.fn.swipe.phases.PHASE_CANCEL) {
-        lastScale = quickshake.scale;
-      }
-    }
-  });
+  // var _this = this;
+  // var lastScale = _this.scale;
+  // $("#quickshake-canvas").swipe({
+  //   pinchStatus: function(event, phase, direction, distance, duration, fingerCount, pinchScale) {
+  //     // Make sure it is actually a two finger scale and not a tap
+  //     if (distance > 0 && fingerCount > 1) {
+  //       quickshake.selectScale(event, lastScale + parseFloat(pinchScale) - 1);
+  //     }
+  //     //Save value of scale at the end to use as baseline
+  //     if (phase === $.fn.swipe.phases.PHASE_END || phase === $.fn.swipe.phases.PHASE_CANCEL) {
+  //       lastScale = quickshake.scale;
+  //     }
+  //   }
+  // });
 
   /*****End QuickShake prototype 
    *
@@ -1141,13 +1141,12 @@ $(function() {
       var width = getValue("width") * 60;
       quickshake = new QuickShake(width, channels);
 
-      $("#toggle-controls").click(function(){
+      $("#controls-container").click(function(){
         clearTimeout(timeout);
       });
 
       var timeout = window.setTimeout(function(){
         $("#hide-controls, #show-controls, #toggle-controls, #quickshake-controls").toggleClass("closed");
-
       }, 5000);
       
       if (channels.length > 0 && channels.length < 7) {
