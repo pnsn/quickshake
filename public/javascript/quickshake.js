@@ -18,7 +18,7 @@ $(function() {
     this.endtime = 0;
     this.startPixOffset = this.width; //starttime pixelOffset
     this.viewerLeftTime = null; // track the time of the last time frame(left side of canvas this will be incremented each interval)
-    this.canvasElement = document.getElementById("quick-shake-canvas");
+    this.canvasElement = document.getElementById("quickshake-canvas");
     this.localTime = true;
     this.stationScalar = 3.207930 * Math.pow(10, 5) * 9.8; // count/scalar => %g
     //log values
@@ -108,7 +108,6 @@ $(function() {
     $.each(data, function(i, packet) {
       _this.updateBuffer(packet);
     });
-
   };
 
   QuickShake.prototype.drawSignal = function() {
@@ -160,7 +159,7 @@ $(function() {
       ctx.clearRect(0, 0, this.width, this.height);
       ctx.lineWidth = this.lineWidth;
       this.drawAxes(ctx);
-
+      this.drawAnnotations(ctx);
       ctx.beginPath();
       
       //iterate through all this.channels and draw
@@ -229,7 +228,6 @@ $(function() {
   };
 
   QuickShake.prototype.drawAxes = function(ctx) {
-
     var edge = {
       left: 0,
       top: this.timeOffset,
@@ -312,6 +310,16 @@ $(function() {
 
     ctx.strokeStyle = "#CCCCCC"; //vertical time lines
     ctx.stroke();
+  };
+  
+  //Plot any annotations
+  QuickShake.prototype.drawAnnotations = function(ctx){
+    var edge = {
+      left: 0,
+      top: this.timeOffset,
+      right: this.width,
+      bottom: this.height - this.timeOffset
+    };
 
     //Draws a vertical line to mark start of event.
     if (this.archive) {
@@ -335,20 +343,32 @@ $(function() {
       if (this.eventStart) {
         ctx.beginPath();
         var eventPosition = (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
-
-        var text = this.width < 570 ? "ETA" : "Estimated Arrival Time";
-        var eventOffset = this.width < 570 ? 30 : 135;
+        var text = this.width < 570 || (eventPosition - startPosition) < 135 ? "ETA" : "Estimated Arrival Time";
+        var eventOffset = this.width < 570 || (eventPosition - startPosition) < 135 ? 25 : 135;
         ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
         ctx.moveTo(eventPosition, edge.bottom);
         ctx.lineTo(eventPosition, edge.top);
-
         ctx.strokeStyle = "#000";
         ctx.stroke();
-        //
       }
     }
-
-  };
+    
+    //for live: grab events within "length of buffer" to live
+    //for archive: grab events within start to end
+    //plot for archive and live, if possible
+    if(this.annotations) {
+      ctx.beginPath();
+      $.each(this.annotations, function(i, annotation){
+        var position = (annotation.time - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+        ctx.fillText(annotation.description, position - 75, edge.top + this.archiveOffset / 2 + 3); //75 is offset for width of text
+        ctx.moveTo(position, edge.bottom);
+        ctx.lineTo(position, edge.top);
+      });
+      ctx.strokeStyle = "#000";
+      ctx.stroke();
+    }
+    
+  }
 
   //make a key based on new samprate that zeros out the insignificant digits. 
   //if the timestamp is less than starttime, increment by the refresh rate
@@ -496,7 +516,7 @@ $(function() {
 
       var maxTime = this.timeout + 5; //minute (time to )
       var minTime = this.timeout; //minute
-      var timeAlert = $("#quick-shake-timeout");
+      var timeAlert = $("#quickshake-timeout");
 
       function timerIncrement() {
         if (maxTime - idleTime > 1) {
@@ -537,7 +557,7 @@ $(function() {
   };
 
   QuickShake.prototype.updateScale = function() {
-    $("#quick-shake-scale").css("height", this.channelHeight / 2);
+    $("#quickshake-scale").css("height", this.channelHeight / 2);
     var scale = Math.pow(10, -this.scale); //3 sig. digits
     if (scale < 0.000099) {
       scale = scale.toExponential(2);
@@ -552,9 +572,9 @@ $(function() {
     var offSet = 10; //Default for mobile and if there is no scale    
     $(".loading").hide();
 
-    $("#quick-shake-canvas, #quick-shake-controls").show();
-    $("#quickshake").height(window.innerHeight - $("#header").height() - $("#quick-shake-controls").height() - 20);
-    console.log(window.innerHeight, $("#header").height(), $("#quick-shake-controls").height(), $("#quickshake").height())
+    $("#quickshake-canvas").show();
+    $("#quickshake").height(window.innerHeight - $("#header").height() - 40);
+    console.log(window.innerHeight, $("#header").height(), $("#quickshake-controls").height(), $("#quickshake").height())
     this.height = $("#quickshake").height();
     this.width = $("#quickshake").width();
 
@@ -577,24 +597,17 @@ $(function() {
     console.log("hi")
     clearTimeout(timeout);
     timeout = setTimeout(function() {
-      
-      // console.log(oldWidth - _this.width)
       _this.configViewer();
       _this.drawSignal();
       console.log(new Date(oldLeftTime), new Date(_this.viewerLeftTime))
       this.viewerLeftTime = (width - _this.width)/_this.sampPerSec * 1000
       console.log(new Date(oldLeftTime), new Date(_this.viewerLeftTime))
-      // _this.viewerLeftTime = oldLeftTime - ;
-      // oldLeftTime = _this.viewerleftTime;
     }, 500);
   };
-  
-  
-  
 
   var _this = this;
   var lastScale = _this.scale;
-  $("#quick-shake-canvas").swipe({
+  $("#quickshake-canvas").swipe({
     pinchStatus: function(event, phase, direction, distance, duration, fingerCount, pinchScale) {
       // Make sure it is actually a two finger scale and not a tap
       if (distance > 0 && fingerCount > 1) {
@@ -715,6 +728,7 @@ $(function() {
 
   var events = {};
 
+//change the event options
   function getEvents() {
     eventSelector
       .append($("<optgroup label='Local Earthquakes' id='earthquakes-group'></optgroup>"))
@@ -731,8 +745,6 @@ $(function() {
     }).done(function(data) {
 
       $.each(data.features, function(i, feature) {
-        // console.log(feature)
-        // console.log(i)
         var titleTokens = feature.properties.title.split(" ");
         var tokens = feature.id;
         $.each(titleTokens, function(i, token) {
@@ -774,50 +786,8 @@ $(function() {
       }
       $('select#event-select').selectpicker('refresh');
     }).fail(function(response) {
-      console.log("I failed");
+      console.log("Event request failed");
       console.log(response);
-    });
-
-    $.ajax({
-      dataType: "json",
-      url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"
-    }).done(function(data) {
-
-      $.each(data.features, function(i, feature) {
-        // console.log(i)
-        var titleTokens = feature.properties.title.split(" ");
-        var tokens = feature.id;
-        $.each(titleTokens, function(i, token) {
-          tokens += token;
-        });
-        var dateString = makeDate(new Date(feature.properties.time));
-        var title = dateString + " M " + feature.properties.mag;
-        var append = $("<option class='significant' value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
-
-        if (feature.properties.type == "earthquake") {
-          significant.append(append);
-        }
-
-        events[feature.id] = {
-          evid: feature.id,
-          description: feature.properties.title,
-          starttime: parseFloat(feature.properties.time),
-          geometry: feature.geometry
-        };
-        // console.log(events[feature.id].starttime)
-      });
-
-      if (getUrlParam("evid")) {
-        evid = getUrlParam("evid");
-        if ($("select#event-select option[id=" + evid + "]")) {
-          $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
-          $('select#event-select').selectpicker('refresh');
-        }
-      }
-
-      $('select#event-select').selectpicker('refresh');
-    }).fail(function(response) {
-      console.log("teleseisms failed");
     });
 
   }
@@ -861,8 +831,7 @@ $(function() {
 
       _callback();
     }).fail(function(response) {
-      alert("JON! WEB4 IS DOWN!");
-      console.log("I failed");
+      console.log("Group select failed");
       console.log(response);
     });
   }
@@ -870,6 +839,30 @@ $(function() {
   $("[data-hide]").on("click", function() {
     $(this).closest("." + $(this).attr("data-hide")).hide();
   });
+  
+  $("#toggle-controls").click(function(){
+    $("#hide-controls, #show-controls, #toggle-controls, #quickshake-controls").toggleClass("closed");
+  });
+  
+  // pnsn.org/annotations?start= &end=
+  // if live: send in length of buffer & current time
+  // if archive: send in data start and end
+  function getAnnotations(start, end){
+    if(start && end) {
+      $.ajax({
+        type: "GET",
+        dataType: "jsonp",
+        url: "http://" + path + "annotations"
+      }).done(function(data) {
+      }).fail(function(response) {
+        console.log("I failed");
+        console.log(response);
+      });
+    } else {
+      //live shit
+    }
+
+  }
 
   //Get start time for event
   function getStart(evid, start, _callback) {
@@ -885,7 +878,7 @@ $(function() {
       $("#event-header span").text(text);
       $("#event-header").show();
 
-      _callback(getStartOffset(events[evid], stime));
+      _callback(stime);
 
     } else {
       $.ajax({
@@ -905,9 +898,7 @@ $(function() {
           geometry: data.geometry
         };
 
-        console.log(event);
-
-        _callback(getStartOffset(event, stime));
+        _callback(stime);
 
       }).fail(function(response) {
         console.log("I failed");
@@ -971,45 +962,8 @@ $(function() {
     showControlPanel();
   });
 
-  $("button.add-station").click(function(e) {
-    var newScnls = $("#scnl-select").val();
-    console.log(channels);
-    if (!$(this).hasClass("disabled")) {
-      $.each(newScnls, function(i, scnl) {
-        var testScnl = scnl.split(".");
-        var valid = true;
-        if (testScnl.length == 4) { //FIXME: change to 3 when jon fixes this should be ==4
-          $.each(scnl.split("."), function(i, val) {
-            if (val.length == 0) {
-              valid = false;
-            }
-          });
-        } else {
-          valid = false;
-        }
-
-        var index = $.inArray(scnl, channels);
-        if (valid && channels.length < 6 && index == -1) {
-          updateList(scnl);
-          updateChannels();
-          $("#length-warning").hide();
-          $("#scnl-warning").hide();
-        } else if (channels.length >= 6) {
-          $("#length-warning").show();
-        }
-        if (!valid) {
-          $("#scnl-warning").show();
-        }
-      });
-
-      $("#scnl-select").selectpicker('val', 'false');
-    }
-
-    e.preventDefault;
-  });
-
   $("button.clear-all").click(function(e) {
-    var inputs = ["event", "evid", "group", "start", "scnl", "duration"];
+    var inputs = ["event", "evid", "start", "duration"];
     $.each(inputs, function(i, val) {
       console.log($("#" + val + "-select").val());
       if (val == "group" || val == "event" || val == "scnl") {
@@ -1018,23 +972,16 @@ $(function() {
         $("#" + val + "-select").val("");
       }
     });
-
-    $("ul#station-sorter").empty();
-    channels = [];
-    $("#station-warning").show();
   });
-
 
   function updateList(scnl) {
     $("ul#station-sorter.station-select").append("<li class='list-group-item' id= '" + scnl + "'>" + scnl +
-      "<i class='fa fa-sort pull-left'></i>" + "<i class='fa fa-trash pull-right delete' ></i>" +
-      "</li>");
+      "<i class='fa fa-sort pull-left'></i>" + "</li>");
   }
 
   $("#station-sorter").on('click', '.delete', function() {
     removeStation($(this).parent());
     updateScnls();
-    // $(this).parent().remove(); 
   });
 
   function removeStation(li) {
@@ -1047,8 +994,6 @@ $(function() {
     if (channels.length < 6) {
       $("#scnl-warning").hide();
     }
-
-
   }
 
   function updateChannels() {
@@ -1071,52 +1016,6 @@ $(function() {
   scnlSelector.on('changed.bs.select', function(e) {
     $("button.add-station").removeClass("disabled");
   });
-
-  //Do the math, the monster math
-  function getStartOffset(event, start) {
-    var lat1 = (bounds.top - bounds.bottom) / 2 + bounds.bottom; //center of bounding box
-    var lon1 = (bounds.left - bounds.right) / 2 + bounds.right;
-
-    var lat2 = event.geometry.coordinates[1];
-    var lon2 = event.geometry.coordinates[0];
-
-    // Lets hope this works
-    var R = 6371; // Radius of the earth in km
-    var dLat = (lat2 - lat1) * Math.PI / 180; // deg2rad below
-    var dLon = (lon2 - lon1) * Math.PI / 180;
-    var a =
-      0.5 - Math.cos(dLat) / 2 +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      (1 - Math.cos(dLon)) / 2;
-
-    var d = 2 * Math.asin(Math.sqrt(a)) * 180 / Math.PI; //angular distance in degrees
-
-    distances = Object.keys(traveltimes).sort(function compare(a, b) {
-      return a - b;
-    });
-
-    var i = 0;
-    var distance = distances[i];
-
-    while (distance < d) {
-      i++;
-      distance = parseFloat(distances[i]);
-    }
-
-    if (distances[i - 1]) {
-      var distance2 = distances[i - 1];
-
-      var linDif = (traveltimes[distance] - traveltimes[distance2]) / (distance - parseFloat(distance2));
-      return start + (linDif * d + traveltimes[distance2] * 1000);
-
-      $("#offset-header").show();
-      $("#start-header").hide();
-
-    } else {
-      return start;
-    }
-
-  }
 
   function updateScnls() {
     var length = 6 - $("ul#station-sorter li").length;
@@ -1155,7 +1054,7 @@ $(function() {
       //Is there a group?
       if ($('select#group-select option:selected').length > 0 && $('select#group-select option:selected')[0].id.length > 0) {
         url += "group=" + $('select#group-select option:selected')[0].id + "&";
-      };
+      }
 
       //Is there an event?
       if ($('select#event-select option:selected').length > 0 && $('select#event-select option:selected')[0].value > 0) {
@@ -1176,8 +1075,9 @@ $(function() {
         }
       }
 
-      if (width) {
-        url += "width=" + width + "&";
+      //Is there a width?
+      if ($('select#width-select option:selected').length > 0) {
+        url += "width=" + $('select#width-select option:selected')[0].value + "&";
       }
 
       if (duration) {
@@ -1198,7 +1098,6 @@ $(function() {
 
   //Populate form with URL values, doesn't handle lack of value
   function populateForm() {
-
     if (getUrlParam("width")) { //right now only the selected options are allowed
       $("#width-select option[value=" + getUrlParam("width") + "]").attr("selected", "selected");
       $("#width-select").selectpicker('refresh');
@@ -1227,7 +1126,6 @@ $(function() {
       $("#duration-select option[value='" + getUrlParam("duration") + "']").attr("selected", "selected");
       $("#duration-select").selectpicker('refresh');
     }
-
   }
 
   function getValue(variable) {
@@ -1248,7 +1146,15 @@ $(function() {
       var width = getValue("width") * 60;
       quickshake = new QuickShake(width, channels);
 
-      // console.log(width)
+      $("#toggle-controls").click(function(){
+        clearTimeout(timeout);
+      })
+
+      var timeout = window.setTimeout(function(){
+        $("#hide-controls, #show-controls, #toggle-controls, #quickshake-controls").toggleClass("closed");
+
+      }, 5000);
+      
       if (channels.length > 0 && channels.length < 7) {
         $('.quickshake-warning').hide();
         $('.loading').hide();
@@ -1260,19 +1166,19 @@ $(function() {
         var start = getValue("start");
 
         var stations = "scnls=" + getChannels();
-
+ 
         if (start || evid) {
           getStart(evid, start, function(eventStart) {
             $("#start-header span").text(new Date(eventStart));
             $("#start-header").show();
 
             var dataStart = eventStart - 30000;
-            duration = duration * 60 * 1000;
-
+            endtime = dataStart + 5 * 60 * 1000;
+            getAnnotations(dataStart, endtime);
             $.ajax({
               type: "GET",
               dataType: "jsonp",
-              url: "http://" + path + "archive?starttime=" + dataStart + "&" + stations + "&duration=" + duration,
+              url: "http://" + path + "archive?starttime=" + dataStart + "&" + stations + "&endtime=" + endtime,
               timeout: 4000 //gives it time to think before giving up
               //Drawing speed is varying with amountof data
             }).success(function(data) { //sometimes doesn't get called?

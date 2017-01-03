@@ -32,7 +32,7 @@
     ga('send', 'pageview');
 
   </script>
-    <div class="modal fade" id="quick-shake-timeout">
+    <div class="modal fade" id="quickshake-timeout">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -52,19 +52,16 @@
     </div>
     <!--this is broken because the logic for it was in pnsn.js -->
     <div class="loading">
-      <img src="https://tvrecappersanonymous.files.wordpress.com/2010/02/mr-bill.jpg"></img>
-      <!-- <div w3-include-html="mrbill.html"></div> -->
     </div>
     <div id="header">
       <div id="header-left" class="col-xs-10">
         <h1>Quickshake <small>by PNSN</small> </h1>
-        <div id="group-header" class="header-info">Group: <span></span></div>
+        <div id="game-header" class="header-info">Detriot Lions @ Seattle Seahawks</div>
         <div id="event-header" class="header-info">Event: <span></span></div>
-        <div id="start-header" class="header-info">Event start time: <span></span></div>
-        <div id="teleseism-header" class="header-info">A new starttime has been calculated to reflect travel time.</div>
       </div>
       <div id="header-right" class="col-xs-2">
-        <button class="button btn btn-default open-controls btn-primary pull-right" type="button">Configure</button>
+        <button class="hidden-xs button btn btn-default open-controls btn-primary pull-right" type="button">Configure</button>
+        <button class="visible-xs button btn btn-default open-controls btn-primary pull-right" type="button">Edit</button>
       </div>
     </div>
     <div class="modal fade " id="controls">
@@ -78,77 +75,41 @@
           <div class="modal-body">
             <form class="form-inline" role="form">
               <div class="row">
-                <div class="form-group col-xs-12 col-sm-5">
-                  <label> Select group: </label>
-                  <select class="station-select selectpicker" id="group-select"></select>
+                <div class= "col-xs-12">
+                  <div class="form-group ">
+                    <label>Event:</label>
+                    <select class="station-select selectpicker form-control" data-width="fit" id="event-select"></select>
+                  </div>
                 </div>
-                <div class="form-group col-xs-12 col-sm-7">
-                  <label for="scnl-select">Add SCNLs: </label>
-                  <select class="station-select selectpicker" id="scnl-select" multiple></select>
-                  <button type="button" class="button btn btn-default add-station station-select disabled">Add</button>
-                </div>
+              </div>
+              <div class="row">
+
                 <div class="col-xs-12">
                   <div id="sorter-container">
                     <ul class="station-select list-group" id="station-sorter"></ul>
                   </div>
                 </div>
               </div>
+
               <div class="row">
-                <div class= "col-xs-12 col-sm-4">
-                  <div class="form-group ">
-                    <label>Event:</label>
-                    <select class="station-select selectpicker form-control" data-width="fit" id="event-select"></select>
-                  </div>
-                </div>
-                <div class="form-group col-xs-12 col-sm-3">
-                  <label for="evid-select">Evid:</label>
-                  <input class="station-select form-control" id="evid-select" placeholder="Evid" type="text"></input>
-                </div>
-                <div class="form-group col-xs-12 col-sm-5">
+                <div class="form-group col-xs-12 col-sm-6">
                   <label for="starttime">Start time (Local): </label>
                   <input class="station-select form-control" id="start-select" placeholder="Start time" type="text"></input>
                 </div>
-              </div>
-              <div class="row">
                 <div class="form-group col-xs-12 col-sm-6">
                   <label>Viewer Width:</label>
                   <select class="station-select selectpicker form-control" data-width="fit" id="width-select">
+                    <option value="1">1</option>
                     <option value="2">2</option>
                     <option value="5">5</option>
                     <option value="10">10</option>
                   </select>
                   <label> minutes</label>
                 </div>
-                <div class="form-group col-xs-12 col-sm-6">
-                  <label >Event duration:</label>
-                  <select class="station-select selectpicker form-control" data-width="fit" id="duration-select">
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="30">30</option>
-                    <option value="60">60</option>
-                  </select>
-                  <label > minutes</label>
-                </div>
               </div>
             </form>
             <div class="quickshake-warning alert alert-danger alert-dismissable" id="data-error" role="alert">
               No data for that start time. 
-              <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            </div>
-            <div class="quickshake-warning alert alert-danger alert-dismissable" id="evid-warning" role="alert">
-              Invalid event ID. Must include network code.
-              <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            </div>
-            <div class="quickshake-warning alert alert-danger alert-dismissable" id="length-warning" role="alert">
-              No more than 6 stations can be selected.
-              <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            </div>
-            <div class="quickshake-warning alert alert-danger alert-dismissable" id="scnl-warning" role="alert">
-              Invalid SCNL.
-              <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            </div>
-            <div class="quickshake-warning alert alert-danger alert-dismissable" id="station-warning" role="alert">
-              At least one station must be selected.
               <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="quickshake-warning alert alert-info alert-dismissable" id="data-end-warning" role="alert">
@@ -165,25 +126,28 @@
       </div>
     </div>
     <div id="quickshake" class="col-md-12 col-xs-12 full-height">
-      <canvas id="quick-shake-canvas"></canvas>
-    </div>
-    <div class="col-md-12 col-xs-12" id="quick-shake-controls">
-      <div class="controls col-md-4 col-xs-12 col-md-push-4" id="state-buttons">
-        <i class="fa fa-play fa-3x disabled col-xs-4" id="play-button" title="Play"></i>
-        <i class="fa fa-pause fa-3x col-xs-4" id="stop-button" title="Pause"></i>
-        <div class="col-xs-4">
-          <i class="fa fa-fast-forward fa-3x col-xs-12" id="fastforward-button" title="Fast-Forward"></i>
-          <i class="fa fa-step-forward fa-3x disabled col-xs-12" id="realtime-button" title="Realtime"></i>
+      <canvas id="quickshake-canvas"></canvas>
+    </div> 
+    <div id="controls-container" class="col-xs-12">
+      <div class="row" id="toggle-controls"> <div id="show-controls" class="center-block text-center"> <i class="fa fa-angle-double-up"> </i> Show Controls <i class="fa fa-angle-double-up"> </i></div> <div id="hide-controls" class="closed center-block text-center"> <i class="fa fa-angle-double-down"> </i> Hide Controls <i class="fa fa-angle-double-down"> </i></div>  </div>
+      <div class="row " id="quickshake-controls">
+        <div class="controls col-md-4 col-xs-12 col-md-push-4" id="state-buttons">
+          <i class="fa fa-play fa-3x disabled col-xs-4" id="play-button" title="Play"></i>
+          <i class="fa fa-pause fa-3x col-xs-4" id="stop-button" title="Pause"></i>
+          <div class="col-xs-4">
+            <i class="fa fa-fast-forward fa-3x col-xs-12" id="fastforward-button" title="Fast-Forward"></i>
+            <i class="fa fa-step-forward fa-3x disabled col-xs-12" id="realtime-button" title="Realtime"></i>
+          </div>
+        </div>
+        <div class="controls col-md-4 col-xs-12 col-md-pull-4" id="playback">
+          <label>Shake History</label>
+          <div id="playback-slider"></div>
+        </div>
+        <div class="controls col-md-4 col-xs-12" id="scale">
+          <label>Scale</label>
+          <div id="scale-slider"></div>
         </div>
       </div>
-      <div class="controls col-md-4 col-xs-12 col-md-pull-4" id="playback">
-        <label>Shake History</label>
-        <div id="playback-slider"></div>
-      </div>
-      <div class="controls col-md-4 col-xs-12" id="scale">
-        <label>Scale</label>
-        <div id="scale-slider"></div>
-      </div>
-    </div>
+  </div>
   </body>
 </html>

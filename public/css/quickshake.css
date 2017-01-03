@@ -9,7 +9,7 @@
 	min-height: 300px;
 }
 
-#quick-shake-CMS {
+#quickshake-CMS {
 	clear: both;
 }
 
@@ -17,15 +17,15 @@
 	margin-top: 10px;
 }
 
-#quick-shake-logo {
+#quickshake-logo {
 	float: left;
 }
 
-#quick-shake-logo img {
+#quickshake-logo img {
 	height: 80px;
 }
 
-#quick-shake-header {
+#quickshake-header {
 	font-size: 36px;
 	font-weight: 300;
 	color: black;
@@ -33,45 +33,45 @@
 	margin-top: 20px;
 }
 
-#quick-shake-timeout {
+#quickshake-timeout {
 	background-color: white;
 	opacity: 0.9;
 	text-align: center;
 	color: #565656;
 }
 
-#quick-shake-timeout p {
+#quickshake-timeout p {
 	margin-bottom: 5px;
 }
 
-#quick-shake-canvas {
+#quickshake-canvas {
 	display: block;
 	margin-left: auto;
 	margin-right: auto;
 }
 
-#quick-shake-controls {
+#quickshake-controls {
 	margin-top: 10px;
 	overflow: hidden;
   padding-bottom: 10px;
 }
 
-#quick-shake-controls i {
+#quickshake-controls i {
 	text-align: center;
 	color: #107a10;
 }
 
-#quick-shake-controls #state-buttons > i {
+#quickshake-controls #state-buttons > i {
 	display: inline-block;
 	margin-left: auto;
 	margin-right: auto;
 }
 
-#quick-shake-controls .disabled {
+#quickshake-controls .disabled {
 	opacity: 0.4;
 }
 
-#quick-shake-controls .ui-state-default, #quick-shake-controls .ui-widget-content .ui-state-default, #quick-shake-controls .ui-widget-header .ui-state-default {
+#quickshake-controls .ui-state-default, #quickshake-controls .ui-widget-content .ui-state-default, #quickshake-controls .ui-widget-header .ui-state-default {
 	background: #107a10 !important;
 	border: none !important;
 	border-radius: 50%;
@@ -81,7 +81,7 @@
 	border-radius: 10px;
 }
 
-#quick-shake-scale {
+#quickshake-scale {
 	position: absolute;
 	left: 0px;
 	display: inline-block;
@@ -89,17 +89,17 @@
 	border-right: solid #888888 2px;
 }
 
-#quick-shake-scale #top {
+#quickshake-scale #top {
 	top: 0px;
 	right: 1px;
 }
 
-#quick-shake-scale #bottom {
+#quickshake-scale #bottom {
 	bottom: 0px;
 	right: 3px;
 }
 
-#quick-shake-scale, #quick-shake-canvas, #quick-shake-controls {
+#quickshake-scale, #quickshake-canvas {
 	display:none;
 }
 
@@ -193,4 +193,42 @@ form button.btn {
 #header {
   margin-bottom: 5px;
   overflow:auto;
+}
+
+#game-header {
+  display: block;
+}
+
+#toggle-controls{
+  border-top: 1px solid black;
+  border-bottom: 1px solid #777;
+  color: #107a10;
+  margin-bottom:0px;
+}
+
+#toggle-controls div {
+  display:none;
+}
+
+#quickshake-controls {
+  padding-top: 4px;
+}
+
+#controls-container{
+  position:absolute;
+  bottom:0;
+  background-color: white;
+  display: block;
+}
+
+#toggle-controls.closed {
+  display:block;
+}
+
+#toggle-controls div.closed {
+  display:block;
+}
+
+#quickshake-controls.closed {
+  display:none;
 }
