@@ -97,20 +97,22 @@ $(function() {
     this.realtime = false;
     this.archive = true;
 
-    this.starttime = this.makeTimeKey(dataStart);
-
+    this.starttime = dataStart;
     this.eventStart = dataStart - eventStart != 0 ? this.makeTimeKey(eventStart) : this.makeTimeKey(dataStart);
+
+    console.log(new Date(this.starttime), new Date(this.eventStart))
 
     this.pad = 0;
 
     var _this = this;
     $.each(data, function(i, packet) {
-      _this.updateBuffer(packet, this.starttime);
+      _this.updateBuffer(packet);
     });
 
   };
 
   QuickShake.prototype.drawSignal = function() {
+    // console.log(new Date(this.viewerLeftTime))
     if (this.scroll) {
       //OFFSET at start
       if (this.startPixOffset > 0) {
@@ -119,13 +121,12 @@ $(function() {
         this.viewerLeftTime += this.refreshRate;
       }
 
-      this.adjustPlay();
-
       if (this.realtime) {
+        this.adjustPlay();
         this.truncateBuffer();
-      }
+      } 
 
-      //End of data
+      //End of data -> stop playing and open controls
       if (this.archive && this.endtime < this.viewerLeftTime) {
         clearInterval(this.scroll);
         this.pauseScroll();
@@ -141,8 +142,6 @@ $(function() {
       this.updatePlaybackSlider();
       cursor = this.viewerLeftTime;
       cursorStop = cursor + this.viewerWidthSec * 1000 * 0.9;
-      
-      // console.log(cursorStop - cursor)
     } else {
       cursor = this.viewerLeftTime;
       cursorStop = cursor + this.viewerWidthSec * 1000;
@@ -206,7 +205,7 @@ $(function() {
               norm = -1;
             if (norm > 1)
               norm = 1;
-
+            // console.log(canvasIndex)
             var chanAxis = this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i; //22 is offset for header timeline.
             var yval = Math.round((this.channelHeight) / 2 * norm + chanAxis);
 
@@ -319,12 +318,12 @@ $(function() {
       // console.log("archive?")
       ctx.beginPath();
 
-      var startPosition = (this.starttime - this.viewerLeftTime) / this.refreshRate;
+      var startPosition = (this.starttime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
       ctx.fillText("Start of Data", startPosition - 75, edge.top + this.archiveOffset / 2 + 3); //75 is offset for width of text
       ctx.moveTo(startPosition, edge.bottom);
       ctx.lineTo(startPosition, edge.top);
 
-      var endPosition = (this.endtime - this.viewerLeftTime) / this.refreshRate;
+      var endPosition = (this.endtime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
       ctx.fillText("End of Data", endPosition + 5, edge.top + this.archiveOffset / 2 + 3);
       ctx.moveTo(endPosition, edge.bottom);
       ctx.lineTo(endPosition, edge.top);
@@ -337,8 +336,8 @@ $(function() {
         ctx.beginPath();
         var eventPosition = (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
 
-        var text = eventPosition - startPosition < 100 ? "ETA" : "Estimated Arrival Time";
-        var eventOffset = eventPosition - startPosition < 100 ? 30 : 135;
+        var text = this.width < 570 ? "ETA" : "Estimated Arrival Time";
+        var eventOffset = this.width < 570 ? 30 : 135;
         ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
         ctx.moveTo(eventPosition, edge.bottom);
         ctx.lineTo(eventPosition, edge.top);
@@ -572,26 +571,38 @@ $(function() {
   };
 
   var timeout;
-  // Create a delay to simulate end of resizing
-  $(window).resize(function() {
+  QuickShake.prototype.resizeViewer = function(width){
+    var _this = this;
+    var oldLeftTime = _this.viewerLeftTime;
+    console.log("hi")
     clearTimeout(timeout);
     timeout = setTimeout(function() {
-      console.log('time')
-      quickshake.configViewer();
-      quickshake.drawSignal();
+      
+      // console.log(oldWidth - _this.width)
+      _this.configViewer();
+      _this.drawSignal();
+      console.log(new Date(oldLeftTime), new Date(_this.viewerLeftTime))
+      this.viewerLeftTime = (width - _this.width)/_this.sampPerSec * 1000
+      console.log(new Date(oldLeftTime), new Date(_this.viewerLeftTime))
+      // _this.viewerLeftTime = oldLeftTime - ;
+      // oldLeftTime = _this.viewerleftTime;
     }, 500);
-  });
+  };
+  
+  
+  
+
   var _this = this;
   var lastScale = _this.scale;
   $("#quick-shake-canvas").swipe({
     pinchStatus: function(event, phase, direction, distance, duration, fingerCount, pinchScale) {
       // Make sure it is actually a two finger scale and not a tap
       if (distance > 0 && fingerCount > 1) {
-        _this.selectScale(event, lastScale + parseFloat(pinchScale) - 1);
+        quickshake.selectScale(event, lastScale + parseFloat(pinchScale) - 1);
       }
       //Save value of scale at the end to use as baseline
       if (phase === $.fn.swipe.phases.PHASE_END || phase === $.fn.swipe.phases.PHASE_CANCEL) {
-        lastScale = _this.scale;
+        lastScale = quickshake.scale;
       }
     }
   });
@@ -1308,6 +1319,11 @@ $(function() {
 
   // Can't load these until the quickshake is made
   function controlsInit() {
+    var oldWidth = quickshake.width;
+    $(window).resize(function(){
+      quickshake.resizeViewer(oldWidth);
+      oldWidth = quickshake.width;
+    });
     // Controls stuff
     $("#playback-slider").slider({
       slide: function(e, ui) {
