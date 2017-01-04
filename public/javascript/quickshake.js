@@ -23,8 +23,8 @@ $(function() {
     this.stationScalar = 3.207930 * Math.pow(10, 5) * 9.8; // count/scalar => %g
     //log values
     this.scale = 4; //starting scale slide value 
-    this.scaleSliderMin = 2.5;
-    this.scaleSliderMax = 6;
+    this.scaleSliderMin = 1;
+    this.scaleSliderMax = 5;
     //end log values
     this.realtime = true; //realtime will fast forward if tail of buffer gets too long.
     this.scroll = null; //sets scrolling
@@ -843,12 +843,19 @@ $(function() {
   // if live: send in length of buffer & current time
   // if archive: send in data start and end
   function getAnnotations(start, end){
+    var annotations = [];
     if(start && end) {
       $.ajax({
         type: "GET",
         dataType: "jsonp",
         url: "http://" + path + "annotations"
       }).done(function(data) {
+        // annotations.push({
+        //   id:
+        //   description:
+        //   starttime:
+        // }); //from date string to starttime
+        
       }).fail(function(response) {
         console.log("I failed");
         console.log(response);
@@ -1141,13 +1148,17 @@ $(function() {
       var width = getValue("width") * 60;
       quickshake = new QuickShake(width, channels);
 
-      $("#controls-container").click(function(){
-        clearTimeout(timeout);
-      });
-
       var timeout = window.setTimeout(function(){
         $("#hide-controls, #show-controls, #toggle-controls, #quickshake-controls").toggleClass("closed");
       }, 5000);
+      
+      $("#controls-container div").click(function(){
+        console.log("clear")
+        clearTimeout(timeout);
+        timeout = null;
+      });
+
+
       
       if (channels.length > 0 && channels.length < 7) {
         $('.quickshake-warning').hide();
