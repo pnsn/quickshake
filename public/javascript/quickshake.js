@@ -665,14 +665,14 @@ $(function() {
   var groupSelector = $('select#group-select.station-select');
   groupSelector.attr({
     'data-live-search': true,
-    title: 'No groups found.',
+    title: 'Select a group.',
     'data-size': 10
   });
 
   var scnlSelector = $('select#scnl-select.station-select');
   scnlSelector.selectpicker({
     'data-live-search': true,
-    title: 'Select a scnl',
+    title: 'Select a scnl.',
     maxOptionsText: 'No more than 6 stations.',
     maxOptions: 6,
     'size': 10
@@ -793,32 +793,42 @@ $(function() {
       annotEnd = end;
     }
 
+    var evid = getUrlParam("evid");
+
+    
+
     $.ajax({
       type: "GET",
       dataType: "jsonp",
       url: "http://www.pnsn.org/annotations?starttime=" + annotStart + "&endtime="+ annotEnd + "&category=Seahawk"
     }).success(function(data) { //sometimes doesn't get called?
-
+      var annot = quickshake.annotations;
+      eventSelector.append($("<option data-hidden='true' data-tokens='false' title='Select an event.' value='false' selected>"));
       $.each(data, function(i, annotation){
-
-        if (eventSelector.find('#HAWK' + i).length <= 0) {
+        if (eventSelector.find('#HAWK' + annotation.id).length <= 0) {
           var d = new Date(annotation.datetime);
+          
           annotations.push({
-            id:"HAWK" + i,
+            id:"HAWK" + annotation.id,
             description: annotation.name,
             starttime: d.getTime()
           });
         
           var text = annotation.comment.replace(/<\/*\w>/g,"");
-        
-          var append = $("<option value=" + d.getTime() / 1000 + " data id=HAWK" + i + " title='" + annotation.name + "'>").text(text);
-          
+                    
+          var append = $("<option value=" + d.getTime() / 1000 + " data id=HAWK" + annotation.id + " title='" + text + "'>").text(text);
+
+          if("HAWK" + annotation.id === evid){
+            append.attr("selected", "selected");
+            $("#event-header span").text(text);
+            $("#event-header ").show();
+          }
           eventSelector.append(append);
         } 
       });
-
-
-      eventSelector.append($("<option data-hidden='true' data-tokens='false' title='Select an event.' value='false' selected>"));
+      
+      quickshake.annotations = annotations;
+      
       
       eventSelector.attr({
         disabled: false,
@@ -827,7 +837,7 @@ $(function() {
       
       eventSelector.selectpicker('refresh');
       
-      quickshake.annotations = annotations;
+      // quickshake.annotations = annotations;
     }).complete(function(xhr, data) {
       if (xhr.status != 200) { //In case it fails
         console.log("oh no")
@@ -1154,11 +1164,12 @@ $(function() {
         var t = new Date();
         getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime());
         var interval = setInterval(function(){
-          getAnnotations(t.getTime() - 60*60*1000, t.getTime());
+          getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime());
         }, 60000);
         
         var start = getUrlParam("start");
         var evid = getUrlParam("evid");
+
         var stations = "scnls=" + getChannels();
  
         if (start || evid) {
@@ -1168,9 +1179,7 @@ $(function() {
 
             var dataStart = eventStart - 30000;
             endtime = dataStart + 5 * 60 * 1000;
-            
 
-            
             $.ajax({
               type: "GET",
               dataType: "jsonp",
