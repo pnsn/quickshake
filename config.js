@@ -81,15 +81,15 @@ function Conf(){
     //   "default":0,
     //   "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
     // },
-    "Z Channels":{
+    "Z_Channels":{
       "default":1,
       "scnls": ["HWK1.HNZ.UW.--", "HWK2.HNZ.UW.--", "HWK3.HNZ.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "HWK6.HNZ.UW.--"]
     },
-    "E Channels":{
+    "E_Channels":{
       "default":0,
       "scnls": ["HWK1.HNE.UW.--", "HWK2.HNE.UW.--", "HWK3.HNE.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "HWK6.HNZ.UW.--"]
     },
-    "N Channels":{
+    "N_Channels":{
       "default":0,
       "scnls": ["HWK1.HNN.UW.--", "HWK2.HNN.UW.--", "HWK3.HNN.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "HWK6.HNZ.UW.--"]
     },
