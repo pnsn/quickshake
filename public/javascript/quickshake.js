@@ -282,7 +282,7 @@ $(function() {
     var pixInterval = this.tickInterval / this.refreshRate;
 
     var date = String(new Date() + "").match(/\(.+\)/)[0];
-    var tz = date.match(/\w{3}/) ? date.match(/\w{3}/)[0] : date.match(/\b(\w)/).join('');
+    var tz = date.match(/\b(\w)/).length > 2 ? date.match(/\b(\w)/).join('') :  date.match(/\w{3}/)[0];
     
     ctx.fillText(tz, 1, edge.top - 3);
     ctx.fillText("UTC", 1, edge.bottom + this.timeOffset);
