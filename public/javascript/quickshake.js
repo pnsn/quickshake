@@ -281,9 +281,9 @@ $(function() {
     var canvasIndex = this.startPixOffset - offset / this.refreshRate;
     var pixInterval = this.tickInterval / this.refreshRate;
 
-
-    var tz = String(String(new Date())).match(/\(\w{3}\)/)[0].match(/\w{3}/)[0];
-
+    var date = new Date() + "";
+    var tz = date.match(/\(\w{3}\)/)[0].match(/\w{3}/)[0];
+    
     ctx.fillText(tz, 1, edge.top - 3);
     ctx.fillText("UTC", 1, edge.bottom + this.timeOffset);
     ctx.fillText(tz, edge.right - 30, edge.top - 3);
