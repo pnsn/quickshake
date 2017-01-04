@@ -12,7 +12,7 @@ function Conf(){
     },
   //the number of tracebuffs to keep in the buffer for each scnl
     ringBuffer: {
-      max: 800 
+      max: 2048
     }
   };
   this.testing= {
@@ -26,7 +26,7 @@ function Conf(){
     },
   //the number of tracebuffs to keep in the buffer for each scnl
     ringBuffer: {
-      max: 800 
+      max: 2048 
     }
   };
   
@@ -43,7 +43,7 @@ function Conf(){
     },
   //the number of tracebuffs to keep in the buffer for each scnl
     ringBuffer: {
-      max: 800 
+      max: 2048 
     }
   };
   
@@ -92,7 +92,7 @@ function Conf(){
     "N_Channels":{
       "default":0,
       "scnls": ["HWK1.HNN.UW.--", "HWK2.HNN.UW.--", "HWK3.HNN.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "HWK6.HNZ.UW.--"]
-    },
+    }
     
   };
 };
