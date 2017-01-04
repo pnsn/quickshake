@@ -570,7 +570,7 @@ $(function() {
     $(".loading").hide();
 
     $("#quickshake-canvas").show();
-    $("#quickshake").height(window.innerHeight - $("#header").height() - 40);
+    $("#quickshake").height(window.innerHeight - $("#header").height() - 10 - $("#controls-container").height());
 
     this.height = $("#quickshake").height();
     this.width = $("#quickshake").width();
@@ -835,10 +835,6 @@ $(function() {
     $(this).closest("." + $(this).attr("data-hide")).hide();
   });
   
-  $("#toggle-controls").click(function(){
-    $("#hide-controls, #show-controls, #toggle-controls, #quickshake-controls").toggleClass("closed");
-  });
-  
   // pnsn.org/annotations?start= &end=
   // if live: send in length of buffer & current time
   // if archive: send in data start and end
@@ -978,7 +974,8 @@ $(function() {
 
   function updateList(scnl) {
     $("ul#station-sorter.station-select").append("<li class='list-group-item' id= '" + scnl + "'>" + scnl +
-      "<i class='fa fa-sort pull-left'></i>" + "</li>");
+    "<i class='fa fa-sort pull-left'></i>" + "<i class='fa fa-trash pull-right delete' ></i>" + 
+    "</li>"); 
   }
 
   $("#station-sorter").on('click', '.delete', function() {
@@ -1140,6 +1137,12 @@ $(function() {
 
   }
 
+  function toggleControls(quickshake){
+    $("#hide-controls, #show-controls, #toggle-controls, #quickshake-controls").toggleClass("closed");
+    quickshake.configViewer();
+    
+  }
+
   function initialize() {
     getEvents();
     populateForm();
@@ -1148,18 +1151,19 @@ $(function() {
       var width = getValue("width") * 60;
       quickshake = new QuickShake(width, channels);
 
+      $("#toggle-controls").click(function(){
+        toggleControls(quickshake);
+      });
+
       var timeout = window.setTimeout(function(){
-        $("#hide-controls, #show-controls, #toggle-controls, #quickshake-controls").toggleClass("closed");
+        toggleControls(quickshake);
       }, 5000);
       
       $("#controls-container div").click(function(){
-        console.log("clear")
         clearTimeout(timeout);
         timeout = null;
       });
 
-
-      
       if (channels.length > 0 && channels.length < 7) {
         $('.quickshake-warning').hide();
         $('.loading').hide();

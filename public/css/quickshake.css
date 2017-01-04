@@ -242,7 +242,7 @@ form button.btn {
 }
 
 .bootstrap-select .dropdown-menu span.text {
-  display: block;
+  display: block !important;
   overflow: hidden;
   text-overflow: ellipsis;
 }
