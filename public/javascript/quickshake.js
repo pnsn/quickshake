@@ -257,6 +257,7 @@ $(function() {
       var channel = this.channels[i];
       var cName = channel.split(".")[0];
       var yOffset = i * this.channelHeight;
+      
       ctx.fillText(cName, edge.left + this.timeOffset, edge.top + this.archiveOffset + yOffset + this.timeOffset);
 
       var chanCenter = edge.top + this.archiveOffset + this.channelHeight / 2 + yOffset;
@@ -282,7 +283,7 @@ $(function() {
     var pixInterval = this.tickInterval / this.refreshRate;
 
     var date = String(new Date() + "").match(/\(.+\)/)[0];
-    var tz = date.match(/\b(\w)/).length > 2 ? date.match(/\b(\w)/).join('') :  date.match(/\w{3}/)[0];
+    var tz = date.match(/\b(\w)/).length > 2 ? date.match(/\b(\w)/).join('') : date.match(/\w{3}/)[0];
     
     ctx.fillText(tz, 1, edge.top - 3);
     ctx.fillText("UTC", 1, edge.bottom + this.timeOffset);
