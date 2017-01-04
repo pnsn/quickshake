@@ -36,7 +36,8 @@ $(function() {
     this.archive = false;
     this.pad = 0;
     this.archiveOffset = 0; //offset for line labels in archive
-  };
+    this.annotations = [];
+    };
 
   // incoming data are appended to buf
   // drawing is done from left to right (old to new)
@@ -146,7 +147,7 @@ $(function() {
     //Thickness of time axis labels 
     this.timeOffset = 13;
     //Thickness of line labels
-    this.archiveOffset = this.archive ? 20 : 1;
+    this.archiveOffset = this.annotations.length > 0 || this.archive ? 20 : 1;
 
     this.channelHeight = (this.height - this.timeOffset * 2 - this.archiveOffset) / this.channels.length;
 
@@ -156,7 +157,7 @@ $(function() {
       ctx.clearRect(0, 0, this.width, this.height);
       ctx.lineWidth = this.lineWidth;
       this.drawAxes(ctx);
-      this.drawAnnotations(ctx);
+      
       ctx.beginPath();
       
       //iterate through all this.channels and draw
@@ -221,6 +222,8 @@ $(function() {
         ctx.stroke();
 
       }
+    
+      this.drawAnnotations(ctx);
     }
   };
 
@@ -337,32 +340,35 @@ $(function() {
       ctx.strokeStyle = "#ff0000"; // axis color    
       ctx.stroke();
 
-      // Start line
-      if (this.eventStart) {
-        ctx.beginPath();
-        var eventPosition = (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
-        var text = this.width < 570 || (eventPosition - startPosition) < 135 ? "ETA" : "Estimated Arrival Time";
-        var eventOffset = this.width < 570 || (eventPosition - startPosition) < 135 ? 25 : 135;
-        ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
-        ctx.moveTo(eventPosition, edge.bottom);
-        ctx.lineTo(eventPosition, edge.top);
-        ctx.strokeStyle = "#000";
-        ctx.stroke();
-      }
+      // // Start line
+      // if (this.eventStart) {
+      //   ctx.beginPath();
+      //   var eventPosition = (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+      //   var text = this.width < 570 || (eventPosition - startPosition) < 135 ? "ETA" : "Estimated Arrival Time";
+      //   var eventOffset = this.width < 570 || (eventPosition - startPosition) < 135 ? 25 : 135;
+      //   ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
+      //   ctx.moveTo(eventPosition, edge.bottom);
+      //   ctx.lineTo(eventPosition, edge.top);
+      //   ctx.strokeStyle = "#000";
+      //   ctx.stroke();
+      // }
     }
     
     //for live: grab events within "length of buffer" to live
     //for archive: grab events within start to end
     //plot for archive and live, if possible
-    if(this.annotations) {
+    if(this.annotations.length > 0) {
+      // console.log(this.annotations)
+      // console.log(this.annotations)
       ctx.beginPath();
+      var _this = this;
       $.each(this.annotations, function(i, annotation){
-        var position = (annotation.time - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
-        ctx.fillText(annotation.description, position - 75, edge.top + this.archiveOffset / 2 + 3); //75 is offset for width of text
+        var position = (annotation.starttime - _this.viewerLeftTime) / _this.refreshRate + _this.startPixOffset;
+        ctx.fillText("<--" + annotation.description, position + 2, edge.top + _this.archiveOffset / 2 + 3); //75 is offset for width of text
         ctx.moveTo(position, edge.bottom);
         ctx.lineTo(position, edge.top);
       });
-      ctx.strokeStyle = "#000";
+      ctx.strokeStyle = "#107a10";
       ctx.stroke();
     }
     
@@ -721,72 +727,6 @@ $(function() {
     return values[0] + "/" + values[1] + " " + values[2] + ":" + values[3];
   }
 
-  var events = {};
-
-//change the event options
-  function getEvents() {
-    eventSelector
-      .append($("<optgroup label='Local Earthquakes' id='earthquakes-group'></optgroup>"))
-      .append($("<optgroup label='Other events' id='others-group'></optgroup>"))
-      .append($("<optgroup label='Significant Global Events' id='significant-group'></optgroup>"));
-
-    var significant = $("#significant-group");
-    var earthquakes = $("#earthquakes-group");
-    var other = $("#others-group");
-
-    $.ajax({
-      dataType: "json",
-      url: usgsPath + "minlatitude=" + bounds.bottom + "&maxlatitude=" + bounds.top + "&minlongitude=" + bounds.left + "&maxlongitude=" + bounds.right + "&minmagnitude=" + bounds.mag
-    }).done(function(data) {
-
-      $.each(data.features, function(i, feature) {
-        var titleTokens = feature.properties.title.split(" ");
-        var tokens = feature.id;
-        $.each(titleTokens, function(i, token) {
-          tokens += token;
-        });
-        var dateString = makeDate(new Date(feature.properties.time));
-        var title = dateString + " M " + feature.properties.mag;
-        var append = $("<option value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
-
-        if (feature.properties.type == "earthquake") {
-          earthquakes.append(append);
-        } else {
-          other.append(append);
-        }
-
-        var coords = feature.geometry.coordinates;
-        events[feature.id] = {
-          evid: feature.id,
-          description: feature.properties.title,
-          starttime: parseFloat(feature.properties.time),
-          geometry: feature.geometry
-        };
-        // console.log(events[feature.id].starttime)
-      });
-
-      if (data.features.length > 0) {
-        eventSelector.removeAttr('disabled');
-        eventSelector.append($("<option data-hidden='true' data-tokens='false' selected value='false'>").text("Select an event"));
-      } else {
-        console.log("wtf");
-      }
-
-      if (getUrlParam("evid")) {
-        evid = getUrlParam("evid");
-        if ($("select#event-select option[id=" + evid + "]")) {
-          $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
-          $('select#event-select').selectpicker('refresh');
-        }
-      }
-      $('select#event-select').selectpicker('refresh');
-    }).fail(function(response) {
-      console.log("Event request failed");
-      console.log(response);
-    });
-
-  }
-
   function getGroups(_callback) {
     $.ajax({
       type: "GET",
@@ -838,28 +778,64 @@ $(function() {
   // pnsn.org/annotations?start= &end=
   // if live: send in length of buffer & current time
   // if archive: send in data start and end
+  var annotations = [];
   function getAnnotations(start, end){
-    var annotations = [];
-    if(start && end) {
-      $.ajax({
-        type: "GET",
-        dataType: "jsonp",
-        url: "http://" + path + "annotations"
-      }).done(function(data) {
-        // annotations.push({
-        //   id:
-        //   description:
-        //   starttime:
-        // }); //from date string to starttime
-        
-      }).fail(function(response) {
-        console.log("I failed");
-        console.log(response);
-      });
+    var annotStart, annotEnd;
+    
+    if(quickshake.starttime && quickshake.endtime) {
+      annotStart = quickshake.starttime;
+      annotEnd = quickshake.endtime;
+    } else if(quickshake.starttime && quickshake.starttime < Date.now()){
+      annotStart = quickshake.starttime;
+      annotEnd = (new Date()).getTime();
     } else {
-      //live shit
+      annotStart = start;
+      annotEnd = end;
     }
 
+    $.ajax({
+      type: "GET",
+      dataType: "jsonp",
+      url: "http://www.pnsn.org/annotations?starttime=" + annotStart + "&endtime="+ annotEnd + "&category=Seahawk"
+    }).success(function(data) { //sometimes doesn't get called?
+
+      $.each(data, function(i, annotation){
+
+        if (eventSelector.find('#HAWK' + i).length <= 0) {
+          var d = new Date(annotation.datetime);
+          annotations.push({
+            id:"HAWK" + i,
+            description: annotation.name,
+            starttime: d.getTime()
+          });
+        
+          var text = annotation.comment.replace(/<\/*\w>/g,"");
+        
+          var append = $("<option value=" + d.getTime() / 1000 + " data id=HAWK" + i + " title='" + annotation.name + "'>").text(text);
+          
+          eventSelector.append(append);
+        } 
+      });
+
+
+      eventSelector.append($("<option data-hidden='true' data-tokens='false' title='Select an event.' value='false' selected>"));
+      
+      eventSelector.attr({
+        disabled: false,
+        title: "Select an event"
+      });
+      
+      eventSelector.selectpicker('refresh');
+      
+      quickshake.annotations = annotations;
+    }).complete(function(xhr, data) {
+      if (xhr.status != 200) { //In case it fails
+        console.log("oh no")
+      } else {
+        // console.log(xhr)
+      }
+    });
+    
   }
 
   //Get start time for event
@@ -867,7 +843,9 @@ $(function() {
     var stime = start;
     var text;
 
-    if (!evid) {
+    if(evid.indexOf("HAWK") > -1 ) {
+      _callback(stime);
+    } else if (!evid) {
       _callback(stime);
     } else if (events[evid]) {
       stime = stime ? stime : events[evid].starttime;
@@ -1144,7 +1122,6 @@ $(function() {
   }
 
   function initialize() {
-    getEvents();
     populateForm();
     getScnls();
     getGroups(function() {
@@ -1168,12 +1145,20 @@ $(function() {
         $('.quickshake-warning').hide();
         $('.loading').hide();
         $('#header-left').show();
-        var evid = getValue("evid");
+        // var evid = getValue("evid");
 
         var duration = getValue("duration") ? getValue("duration") : 10;
 
-        var start = getValue("start");
-
+        // var start = getValue("start");
+        
+        var t = new Date();
+        getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime());
+        var interval = setInterval(function(){
+          getAnnotations(t.getTime() - 60*60*1000, t.getTime());
+        }, 60000);
+        
+        var start = getUrlParam("start");
+        var evid = getUrlParam("evid");
         var stations = "scnls=" + getChannels();
  
         if (start || evid) {
@@ -1183,7 +1168,9 @@ $(function() {
 
             var dataStart = eventStart - 30000;
             endtime = dataStart + 5 * 60 * 1000;
-            getAnnotations(dataStart, endtime);
+            
+
+            
             $.ajax({
               type: "GET",
               dataType: "jsonp",
@@ -1191,7 +1178,7 @@ $(function() {
               timeout: 4000 //gives it time to think before giving up
               //Drawing speed is varying with amountof data
             }).success(function(data) { //sometimes doesn't get called?
-              console.log("success!");
+              // console.log("success!");
               $("#fastforward-button").show();
               // $(".helpful-label").show();
               quickshake.configViewer();
