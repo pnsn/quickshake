@@ -281,7 +281,7 @@ $(function() {
     var canvasIndex = this.startPixOffset - offset / this.refreshRate;
     var pixInterval = this.tickInterval / this.refreshRate;
 
-    var date = String(new Date() + "").match(/\(\w{3}\)/)[0];
+    var date = String(new Date() + "").match(/\(.+\)/)[0];
     var tz = date.match(/\w{3}/) ? date.match(/\w{3}/)[0] : date.match(/\b(\w)/).join('');
     
     ctx.fillText(tz, 1, edge.top - 3);
@@ -594,10 +594,9 @@ $(function() {
     clearTimeout(timeout);
     timeout = setTimeout(function() {
       _this.configViewer();
-      _this.drawSignal();
-      console.log(new Date(oldLeftTime), new Date(_this.viewerLeftTime))
-      this.viewerLeftTime = (width - _this.width)/_this.sampPerSec * 1000
-      console.log(new Date(oldLeftTime), new Date(_this.viewerLeftTime))
+      // console.log(new Date(oldLeftTime), new Date(_this.viewerLeftTime))
+      // this.viewerLeftTime = (width - _this.width)/_this.sampPerSec * 1000
+      // console.log(new Date(oldLeftTime), new Date(_this.viewerLeftTime))
     }, 500);
   };
 
