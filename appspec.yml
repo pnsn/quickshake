@@ -2,7 +2,7 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: "/var/www/quickshake"
+    destination: "/var/www/tmp"
 hooks:
   ApplicationStop:
     - location: script/aws/application_stop.sh    
