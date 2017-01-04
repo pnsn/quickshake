@@ -1,0 +1,32 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: "/var/www/quickshake"
+hooks:
+  ApplicationStop:
+    - location: script/aws/application_stop.sh    
+      timeout: 100
+      runas: ec2-user
+  BeforeInstall:
+    - location: script/aws/before_install.sh
+      timeout: 600
+      runas: root
+  AfterInstall:
+    - location: script/aws/after_install-root.sh     
+      timeout: 600
+      runas: root
+    - location: script/aws/after_install-ec2-user.sh     
+      timeout: 600
+      runas: ec2-user
+  ApplicationStart:
+    - location: script/aws/application_start.sh     
+      timeout: 300
+      runas: ec2-user    
+    - location: script/aws/elb/start_httpd.sh    
+      timeout: 100
+      runas: root
+  ValidateService:
+    - location: script/aws/validate_service.sh     
+      timeout: 300
+      runas: ec2-user
