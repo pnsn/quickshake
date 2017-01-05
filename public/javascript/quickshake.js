@@ -390,6 +390,7 @@ $(function() {
   //We want to avoid player constantly trying to catch up.
   QuickShake.prototype.adjustPlay = function() {
     var pad = this.pad;
+    console.log(pad)
     var cursorOffset = (this.viewerWidthSec / 10) * this.sampPerSec;
     //i.e. how much buffer in pixels is hanging off the right side of the viewer
     //tail in px    
@@ -404,8 +405,8 @@ $(function() {
         pad = parseInt(Math.abs(tail / 10), 0);
       }
     }
-    
      if (this.startPixOffset == 0) {
+       
        if(pad >= 0){
          this.viewerLeftTime += pad * this.refreshRate;
        } else {
@@ -415,8 +416,6 @@ $(function() {
      } 
      
      this.startPixOffset = Math.max(0, this.startPixOffset - pad);
-   
-
   };
 
   //trim buff when it gets wild
@@ -633,8 +632,8 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
-  // var path = "localdocker:8888/";
   var path = "web4.ess.washington.edu:8888/";
+  // var path = window.location.hostname + "/";
   var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
   //set the area restrictions for local earthquakes
   var bounds = {
@@ -795,8 +794,6 @@ $(function() {
 
     var evid = getUrlParam("evid");
 
-    
-
     $.ajax({
       type: "GET",
       dataType: "jsonp",
@@ -806,17 +803,20 @@ $(function() {
       eventSelector.append($("<option data-hidden='true' data-tokens='false' title='Select an event.' value='false' selected>"));
       $.each(data, function(i, annotation){
         if (eventSelector.find('#HAWK' + annotation.id).length <= 0) {
+
           var d = new Date(annotation.datetime);
-          
+          d = d.getTime() + annotation.seconds_offset * 1000;
+ 
           annotations.push({
             id:"HAWK" + annotation.id,
             description: annotation.name,
-            starttime: d.getTime()
+            starttime: d
           });
         
-          var text = annotation.comment.replace(/<\/*\w>/g,"");
-                    
-          var append = $("<option value=" + d.getTime() / 1000 + " data id=HAWK" + annotation.id + " title='" + text + "'>").text(text);
+          var text = annotation.comment.replace(/(&nbsp;)?<{1}\/?[^>]+>{1}/g,""); //strip out funky characters
+          var append = $("<option value=" + d/1000 + " data id=HAWK" + annotation.id + " title='" + text + "'>").text(text);
+
+          console.log("HAWK" + annotation.id, evid)
 
           if("HAWK" + annotation.id === evid){
             append.attr("selected", "selected");
@@ -951,12 +951,12 @@ $(function() {
   $("button.clear-all").click(function(e) {
     var inputs = ["event", "evid", "start", "duration"];
     $.each(inputs, function(i, val) {
-      console.log($("#" + val + "-select").val());
       if (val == "group" || val == "event" || val == "scnl") {
         $("#" + val + "-select").selectpicker('val', 'false');
       } else {
         $("#" + val + "-select").val("");
       }
+      $(".update.station-select").addClass("btn-primary");
     });
   });
 
@@ -1142,13 +1142,13 @@ $(function() {
         toggleControls(quickshake);
       });
 
-      var timeout = window.setTimeout(function(){
+      var tm = window.setTimeout(function(){
         toggleControls(quickshake);
       }, 5000);
       
-      $("#controls-container div").click(function(){
-        clearTimeout(timeout);
-        timeout = null;
+      $("#controls-container").click(function(){
+        clearTimeout(tm);
+        tm = null;
       });
 
       if (channels.length > 0 && channels.length < 7) {
@@ -1177,8 +1177,8 @@ $(function() {
             $("#start-header span").text(new Date(eventStart));
             $("#start-header").show();
 
-            var dataStart = eventStart - 30000;
-            endtime = dataStart + 5 * 60 * 1000;
+            var dataStart = eventStart - 20 * 1000; //grab 30 seconds before event
+            endtime = dataStart + 5 * 60 * 1000; //grab 5 minutes of data
 
             $.ajax({
               type: "GET",
