@@ -390,7 +390,7 @@ $(function() {
   //We want to avoid player constantly trying to catch up.
   QuickShake.prototype.adjustPlay = function() {
     var pad = this.pad;
-    console.log(pad);
+    // console.log(pad)
     var cursorOffset = (this.viewerWidthSec / 10) * this.sampPerSec;
     //i.e. how much buffer in pixels is hanging off the right side of the viewer
     //tail in px    
@@ -764,8 +764,8 @@ $(function() {
 
       _callback();
     }).fail(function(response) {
-      console.log("Group select failed");
-      console.log(response);
+      // console.log("Group select failed");
+      // console.log(response);
     });
   }
 
@@ -815,7 +815,7 @@ $(function() {
           var text = annotation.comment.replace(/(&nbsp;)?<{1}\/?[^>]+>{1}/g,""); //strip out funky characters
           var append = $("<option value=" + d/1000 + " data id=HAWK" + annotation.id + " title='" + text + "'>").text(text);
 
-          console.log("HAWK" + annotation.id, evid)
+          // console.log("HAWK" + annotation.id, evid)
 
           if("HAWK" + annotation.id === evid){
             append.attr("selected", "selected");
@@ -839,7 +839,7 @@ $(function() {
       // quickshake.annotations = annotations;
     }).complete(function(xhr, data) {
       if (xhr.status != 200) { //In case it fails
-        console.log("oh no")
+        // console.log("oh no")
       } else {
         // console.log(xhr)
       }
@@ -886,8 +886,8 @@ $(function() {
         _callback(stime);
 
       }).fail(function(response) {
-        console.log("I failed");
-        console.log(response);
+        // console.log("I failed");
+        // console.log(response);
       });
     }
   }
@@ -905,8 +905,8 @@ $(function() {
       });
       scnlSelector.selectpicker('refresh');
     }).fail(function(response) {
-      console.log("I failed");
-      console.log(response);
+      // console.log("I failed");
+      // console.log(response);
       scnlSelector.append($("<option data-hidden='true' data-tokens='false' title='No stations found.' value='false' selected>"));
       scnlSelector.selectpicker('refresh');
     });
