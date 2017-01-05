@@ -390,7 +390,7 @@ $(function() {
   //We want to avoid player constantly trying to catch up.
   QuickShake.prototype.adjustPlay = function() {
     var pad = this.pad;
-    console.log(pad)
+    console.log(pad);
     var cursorOffset = (this.viewerWidthSec / 10) * this.sampPerSec;
     //i.e. how much buffer in pixels is hanging off the right side of the viewer
     //tail in px    
@@ -632,8 +632,7 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
-  var path = "web4.ess.washington.edu:8888/";
-  // var path = window.location.hostname + "/";
+  var path = window.location.hostname + "/";
   var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
   //set the area restrictions for local earthquakes
   var bounds = {
