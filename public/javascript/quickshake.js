@@ -843,7 +843,7 @@ $(function() {
     var stime = start;
     var text;
 
-    if(evid.indexOf("HAWK") > -1 ) {
+    if(evid && evid.indexOf("HAWK") > -1) {
       _callback(stime);
     } else if (!evid) {
       _callback(stime);
