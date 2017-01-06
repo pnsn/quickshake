@@ -93,9 +93,9 @@ function Conf(){
       "default":0,
       "scnls": ["HWK1.HNN.UW.--", "HWK2.HNN.UW.--", "HWK3.HNN.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "KDK.ENZ.UW.--"]
     },
-    "Noisy_Channel_Comparison":{
+    "Noise_Comparison":{
       "default":0,
-      "scnls":["HWK6.HNZ.UW.--", "HWK1.HNZ.UW.--", "HWK2.HNZ.UW.--", "KDK.ENZ.UW.--" ]
+      "scnls":["HWK6.HNZ.UW.--", "HWK1.HNZ.UW.--", "KDK.ENZ.UW.--", "COOS.HNZ.UW.--"]
     }
     
   };
