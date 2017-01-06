@@ -621,8 +621,7 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
-  // var path = "web4.ess.washington.edu:8888/";
-  var path = "quickshake.pnsn.org" + "/";
+  var path = window.location.hostname + "/";
   var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
   
   //set the area restrictions for local earthquakes
@@ -806,6 +805,8 @@ $(function() {
           var text = annotation.comment.replace(/(&nbsp;)?<{1}\/?[^>]+>{1}/g,""); //strip out funky characters
           var append = $("<option value=" + d/1000 + " data id=HAWK" + annotation.id + " title='" + text + "'>").text(text);
 
+          // console.log("HAWK" + annotation.id, evid)
+
           if("HAWK" + annotation.id === evid){
             append.attr("selected", "selected");
             $("#event-header span").text(text);
@@ -873,8 +874,8 @@ $(function() {
         _callback(stime);
 
       }).fail(function(response) {
-        console.log("I failed");
-        console.log(response);
+        // console.log("I failed");
+        // console.log(response);
       });
     }
   }
@@ -892,8 +893,8 @@ $(function() {
       });
       scnlSelector.selectpicker('refresh');
     }).fail(function(response) {
-      console.log("I failed");
-      console.log(response);
+      // console.log("I failed");
+      // console.log(response);
       scnlSelector.append($("<option data-hidden='true' data-tokens='false' title='No stations found.' value='false' selected>"));
       scnlSelector.selectpicker('refresh');
     });
