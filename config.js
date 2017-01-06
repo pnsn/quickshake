@@ -12,7 +12,7 @@ function Conf(){
     },
   //the number of tracebuffs to keep in the buffer for each scnl
     ringBuffer: {
-      max: 2048
+      max: 1024
     }
   };
   this.testing= {
@@ -26,7 +26,7 @@ function Conf(){
     },
   //the number of tracebuffs to keep in the buffer for each scnl
     ringBuffer: {
-      max: 2048 
+      max: 1024 
     }
   };
   
@@ -43,7 +43,7 @@ function Conf(){
     },
   //the number of tracebuffs to keep in the buffer for each scnl
     ringBuffer: {
-      max: 2048 
+      max: 1024 
     }
   };
   
