@@ -623,8 +623,8 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
-  // var path = window.location.hostname + "/";
-  var path = "quickshake.pnsn.org/";
+  var path = window.location.hostname + "/";
+  // var path = "quickshake.pnsn.org/";
   var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
   
   //set the area restrictions for local earthquakes
