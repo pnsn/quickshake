@@ -109,6 +109,8 @@ $(function() {
   };
 
   QuickShake.prototype.drawSignal = function() {
+    $('.loading').hide();
+    // console.log("drawsingal")
     // console.log(new Date(this.viewerLeftTime))
     if (this.scroll) {
       //OFFSET at start
@@ -575,7 +577,6 @@ $(function() {
   // Handles sizing of the canvas for different screens
   QuickShake.prototype.configViewer = function() {
     var offSet = 10; //Default for mobile and if there is no scale    
-    $(".loading").hide();
 
     $("#quickshake-canvas").show();
     $("#quickshake").height(window.innerHeight - $("#header").height() - 10 - $("#controls-container").height());
@@ -593,6 +594,7 @@ $(function() {
     this.canvasElement.width = this.width;
 
     this.updateScale();
+     // $(".loading").hide();
   };
 
   // var _this = this;
@@ -902,12 +904,6 @@ $(function() {
 
   }
 
-  //TODO: test if evid is somewhat valid (has network code)
-  $("#evid-select").change(function() {
-    $("#evid-warning").toggle($("#evid-select").val().length != 10);
-    //add test for ww########
-  });
-
   // Returns the channels
   function getChannels() {
     if (channels.length > 0) {
@@ -935,8 +931,9 @@ $(function() {
   $("button.open-controls").click(function() {
     showControlPanel();
   });
-
+  
   $("button.clear-all").click(function(e) {
+    
     var inputs = ["event", "evid", "start", "duration"];
     $.each(inputs, function(i, val) {
       if (val == "group" || val == "event" || val == "scnl") {
@@ -945,6 +942,7 @@ $(function() {
         $("#" + val + "-select").val("");
       }
       $(".update.station-select").addClass("btn-primary");
+      $(".update.station-select").click();
     });
   });
 
@@ -1006,9 +1004,7 @@ $(function() {
       });
       scnlSelector.attr("disabled", false);
     }
-
     scnlSelector.selectpicker('refresh');
-
   }
 
   // Update URL with correct station order and whatnot
@@ -1137,7 +1133,6 @@ $(function() {
 
       if (channels.length > 0 && channels.length < 7) {
         $('.quickshake-warning').hide();
-        $('.loading').hide();
         $('#header-left').show();
         // var evid = getValue("evid");
 
@@ -1149,7 +1144,7 @@ $(function() {
         getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime());
         var interval = setInterval(function(){
           getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime());
-        }, 60000);
+        }, 120000);
         
         var start = getUrlParam("start");
         var evid = getUrlParam("evid");
@@ -1192,10 +1187,9 @@ $(function() {
           $("#realtime-button").show();
           quickshake.configViewer();
           initializeSocket(stations);
-          
           var tm = window.setTimeout(function(){
             toggleControls(quickshake);
-          }, 5000);
+          }, 10000);
         }
 
         controlsInit();

@@ -10,7 +10,7 @@
 #quickshake {
 	height: 100%;
 	width: 100%;
-	min-height: 300px;
+/*  min-height: 300px;*/
 }
 
 #quickshake-CMS {
@@ -120,15 +120,11 @@
 	margin-bottom: 10px;
 }
 
-.quickshake-station-warning {
-  display: none;
-}
-
 .quickshake-station-warning .station-warning {
 	display: inline;
 }
 
-.quickshake-event-warning, .quickshake-invalid-event-warning {
+.quickshake-station-warning, .quickshake-event-warning, .quickshake-invalid-event-warning {
 	display: none;
 }
 
