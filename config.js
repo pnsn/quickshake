@@ -83,15 +83,19 @@ function Conf(){
     // },
     "Z_Channels":{
       "default":1,
-      "scnls": ["HWK1.HNZ.UW.--", "HWK2.HNZ.UW.--", "HWK3.HNZ.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "HWK6.HNZ.UW.--"]
+      "scnls": ["HWK1.HNZ.UW.--", "HWK2.HNZ.UW.--", "HWK3.HNZ.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "KDK.ENZ.UW.--"]
     },
     "E_Channels":{
       "default":0,
-      "scnls": ["HWK1.HNE.UW.--", "HWK2.HNE.UW.--", "HWK3.HNE.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "HWK6.HNZ.UW.--"]
+      "scnls": ["HWK1.HNE.UW.--", "HWK2.HNE.UW.--", "HWK3.HNE.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "KDK.ENZ.UW.--"]
     },
     "N_Channels":{
       "default":0,
-      "scnls": ["HWK1.HNN.UW.--", "HWK2.HNN.UW.--", "HWK3.HNN.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "HWK6.HNZ.UW.--"]
+      "scnls": ["HWK1.HNN.UW.--", "HWK2.HNN.UW.--", "HWK3.HNN.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "KDK.ENZ.UW.--"]
+    },
+    "Noise_Comparison":{
+      "default":0,
+      "scnls":["HWK6.HNZ.UW.--", "HWK1.HNZ.UW.--", "KDK.ENZ.UW.--", "COOS.HNZ.UW.--"]
     }
     
   };

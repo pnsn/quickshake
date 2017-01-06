@@ -22,9 +22,9 @@ $(function() {
     this.localTime = true;
     this.stationScalar = 3.207930 * Math.pow(10, 5) * 9.8; // count/scalar => %g
     //log values
-    this.scale = 4; //starting scale slide value 
-    this.scaleSliderMin = 1;
-    this.scaleSliderMax = 5;
+    this.scale = 2.5; //starting scale slide value 
+    this.scaleSliderMin = 0;
+    this.scaleSliderMax = 3;
     //end log values
     this.realtime = true; //realtime will fast forward if tail of buffer gets too long.
     this.scroll = null; //sets scrolling
@@ -118,8 +118,10 @@ $(function() {
         this.viewerLeftTime += this.refreshRate;
       }
 
+      this.adjustPlay();
+      
       if (this.realtime) {
-        this.adjustPlay();
+        
         this.truncateBuffer();
       } 
 
@@ -286,7 +288,7 @@ $(function() {
     var pixInterval = this.tickInterval / this.refreshRate;
 
     var date = String(new Date() + "").match(/\(.+\)/)[0];
-    var tz = date.match(/\b(\w)/).length > 2 ? date.match(/\b(\w)/).join('') : date.match(/\w{3}/)[0];
+    var tz = date.match(/\b(\w)/g).length > 2 ? date.match(/\b(\w)/g).join('') : date.match(/\w{3}/)[0];
     
     ctx.fillText(tz, 1, edge.top - 3);
     ctx.fillText("UTC", 1, edge.bottom + this.timeOffset);
@@ -593,19 +595,6 @@ $(function() {
     this.updateScale();
   };
 
-  var timeout;
-  QuickShake.prototype.resizeViewer = function(width){
-    var _this = this;
-    var oldLeftTime = _this.viewerLeftTime;
-    clearTimeout(timeout);
-    timeout = setTimeout(function() {
-      _this.configViewer();
-      // console.log(new Date(oldLeftTime), new Date(_this.viewerLeftTime))
-      // this.viewerLeftTime = (width - _this.width)/_this.sampPerSec * 1000
-      // console.log(new Date(oldLeftTime), new Date(_this.viewerLeftTime))
-    }, 500);
-  };
-
   // var _this = this;
   // var lastScale = _this.scale;
   // $("#quickshake-canvas").swipe({
@@ -632,8 +621,10 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
-  var path = window.location.hostname + "/";
+  // var path = window.location.hostname + "/";
+  var path = "quickshake.pnsn.org/";
   var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
+  
   //set the area restrictions for local earthquakes
   var bounds = {
     bottom: 40.5,
@@ -764,8 +755,8 @@ $(function() {
 
       _callback();
     }).fail(function(response) {
-      // console.log("Group select failed");
-      // console.log(response);
+      console.log("Group select failed");
+      console.log(response);
     });
   }
 
@@ -839,10 +830,8 @@ $(function() {
       // quickshake.annotations = annotations;
     }).complete(function(xhr, data) {
       if (xhr.status != 200) { //In case it fails
-        // console.log("oh no")
-      } else {
-        // console.log(xhr)
-      }
+        console.log("Annotation fail", xhr.status);
+      } 
     });
     
   }
@@ -1140,10 +1129,6 @@ $(function() {
       $("#toggle-controls").click(function(){
         toggleControls(quickshake);
       });
-
-      var tm = window.setTimeout(function(){
-        toggleControls(quickshake);
-      }, 5000);
       
       $("#controls-container").click(function(){
         clearTimeout(tm);
@@ -1191,6 +1176,9 @@ $(function() {
               // $(".helpful-label").show();
               quickshake.configViewer();
               quickshake.playArchive(data, eventStart, dataStart);
+              var tm = window.setTimeout(function(){
+                toggleControls(quickshake);
+              }, 10000);
             }).complete(function(xhr, data) {
               if (xhr.status != 200) { //In case it fails
                 showControlPanel();
@@ -1204,9 +1192,14 @@ $(function() {
           $("#realtime-button").show();
           quickshake.configViewer();
           initializeSocket(stations);
+          
+          var tm = window.setTimeout(function(){
+            toggleControls(quickshake);
+          }, 5000);
         }
 
         controlsInit();
+
 
       } else {
         $('.quickshake-warning').show();
@@ -1230,10 +1223,10 @@ $(function() {
 
   // Can't load these until the quickshake is made
   function controlsInit() {
-    var oldWidth = quickshake.width;
     $(window).resize(function(){
-      quickshake.resizeViewer(oldWidth);
-      oldWidth = quickshake.width;
+      var timeout = setTimeout(function(){
+        location.reload();
+      }, 3000);
     });
     // Controls stuff
     $("#playback-slider").slider({
