@@ -623,8 +623,8 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
-  var path = window.location.hostname + "/";
-  // var path = "quickshake.pnsn.org/";
+  // var path = window.location.host + "/";
+  var path = "quickshake.pnsn.org/";
   var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
   
   //set the area restrictions for local earthquakes
@@ -932,6 +932,10 @@ $(function() {
     showControlPanel();
   });
   
+  $("button.help").click(function(){
+    $("#help").modal("show");
+  });
+  
   $("button.clear-all").click(function(e) {
     
     var inputs = ["event", "evid", "start", "duration"];
@@ -1152,8 +1156,10 @@ $(function() {
         var stations = "scnls=" + getChannels();
  
         if (start || evid) {
+          $(".clear-all").show();
           getStart(evid, start, function(eventStart) {
             $("#start-header span").text(new Date(eventStart));
+            
             $("#start-header").show();
 
             var dataStart = eventStart - 20 * 1000; //grab 30 seconds before event

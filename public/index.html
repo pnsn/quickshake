@@ -121,7 +121,7 @@
           </div>
           <div class="modal-footer">
             <div class="col-xs-4">
-              <!-- <button class="button btn btn-default update station-select center-block pull-left" type="button">Help</button> -->
+              <button class="button btn btn-default help station-select center-block pull-left" type="button">Help</button>
             </div>  
             <div class="col-xs-4">
               <button class="btn button btn-default clear-all btn-primary center-block" type="button">Go Live</button>
@@ -131,6 +131,89 @@
             </div>  
             <!-- <button class="btn btn-default pull-right" data-dismiss ="modal" type="button">Cancel</button> -->
           </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade " id="help">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><i class="fa fa-times fa-2x"aria-hidden="true"></i></button>
+            <div class="modal-title">
+              <h4>Help</h4>
+            </div>
+          </div>
+          <div class="modal-body" >
+            <div class="col-xs-9 col-sm-6">
+              <div class="panel-group" id="help-group">
+                <div class="panel panel-default">
+                  <div class="panel-heading">
+                    <h4 class="panel-title">
+                      <a data-toggle="collapse" href="#controls-help" data-parent="#help-group" >Using the Controls</a>
+                    </h4>
+                  </div>
+                  <div id="controls-help" class="panel-collapse collapse in" data-toggle="collapse">
+                    <div class="panel-body">
+                      <ul class="list-group">
+                        <li class="list-group-item"><strong>Shake History:</strong> Scroll through the data. </li>
+                        <li class="list-group-item"><strong>Play/Pause/Skip:</strong> Change the playback. </li>
+                        <li class="list-group-item"><strong>Scale:</strong> Change the scaling. </li>
+                        <li class="list-group-item"><strong> Select Group: </strong> Select which stations to view.             </li>
+                        <li class="list-group-item"><strong>Event: </strong> Replay an event.                                   </li>
+                        <li class="list-group-item"><strong>Stations List: </strong> Rearrange and remove stations.             </li>
+                        <li class="list-group-item"><strong>Viewer Width:</strong> Change the amount of time shown on screen.   </li>
+                        <li class="list-group-item"><strong>Go Live:</strong> Return to realtime and view live data.            </li>
+                        <li class="list-group-item"><strong>Update:</strong> Save and view your changes.                        </li>
+                      <ul>
+                    </div>
+                    
+                  </div>
+                </div>
+                <div class="panel panel-default">
+                  <div class="panel-heading">
+                    <h4 class="panel-title">
+                      <a data-toggle="collapse" href="#stations-help"  data-parent="#help-group">About the Stations</a>
+                    </h4>
+                  </div>
+                  <div id="stations-help" class="panel-collapse collapse" data-toggle="collapse">
+                    <div class="panel-body">
+                      <ul class="list-group">
+                        <li class="list-group-item"><strong>HWK1: </strong>Office at ground level.</li>
+                        <li class="list-group-item"><strong>HWK2: </strong>3rd floor, Southwest 10 yd line.</li>
+                        <li class="list-group-item"><strong>HWK3: </strong>3rd floor, Southeast 15 yd line.</li>
+                        <li class="list-group-item"><strong>HWK4: </strong>3rd floor, Northwest endzone.</li>
+                        <li class="list-group-item"><strong>HWK5: </strong>3rd floor, Northeast endzone.</li>
+                        <li class="list-group-item"><strong>HWK6: </strong>13 stories high at the top of the Hawks Nest.</li>
+                        <li class="list-group-item"><strong>KDK: </strong>Across the street, recorded the original BeastQuake.</li>
+                        <li class="list-group-item"><strong>COOS: </strong>Located 300 miles away at Coos Bay, OR.</li>
+                      <ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="panel panel-default">
+                  <div class="panel-heading">
+                    <h4 class="panel-title">
+                      <a data-toggle="collapse" href="#quickshake-help"  data-parent="#help-group">About QuickShake</a>
+                    </h4>
+                  </div>
+                  <div id="quickshake-help" class="panel-collapse collapse" data-toggle="collapse">
+                    <div class="panel-body">
+                      <ul class="list-group">
+                        <li class="list-group-item"><strong>What is it: </strong>QuickShake is a web tool for viewing realtime seismic data.</li>
+                        <li class="list-group-item"><a href="http://pnsn.org/blog/2017/01/06/another-seahawks-game-experiment-jan-7" target="_blank">More information.</a></li>
+                      <ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+            <div class="col-xs-3 col-sm-6">
+              <a href="images/stationmap.png" target="_blank"><img id="station-map" class="img-responsive" src="images/stationmap.png"></img></a>
+              
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

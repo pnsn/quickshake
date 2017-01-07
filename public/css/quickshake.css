@@ -150,7 +150,6 @@ ul.station-select {
 }
 
 #header-left{
-  display:none;
   height:auto;
 }
 
@@ -250,4 +249,12 @@ form button.btn {
 .btn-primary {
   border-color : #107a10;
   background-color: #107a10;
+}
+
+#station-map {
+  max-height:400px;
+}
+
+#help .modal-body {
+    overflow:auto;
 }
