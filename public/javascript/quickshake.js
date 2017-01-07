@@ -24,7 +24,7 @@ $(function() {
     //log values
     this.scale = 2.5; //starting scale slide value 
     this.scaleSliderMin = 0;
-    this.scaleSliderMax = 3;
+    this.scaleSliderMax = 4;
     //end log values
     this.realtime = true; //realtime will fast forward if tail of buffer gets too long.
     this.scroll = null; //sets scrolling
@@ -623,8 +623,8 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
-  // var path = window.location.host + "/";
-  var path = "quickshake.pnsn.org/";
+  var path = window.location.host + "/";
+  // var path = "quickshake.pnsn.org/";
   var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
   
   //set the area restrictions for local earthquakes
