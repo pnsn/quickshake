@@ -617,7 +617,6 @@ $(function() {
    *
    *
    *
-   *
    ***/
 
   //Globals  
@@ -625,7 +624,7 @@ $(function() {
   var socket;
   var path = window.location.host + "/";
   // var path = "quickshake.pnsn.org/";
-  var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
+  var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
   
   //set the area restrictions for local earthquakes
   var bounds = {
