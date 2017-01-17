@@ -1042,8 +1042,11 @@ $(function() {
       url: "http://" + path + "scnls"
     }).done(function(data) {
       $.each(data, function(key, scnl) {
-        // var sta = scnl.split(".");
-        scnlSelector.append($('<option value=' + scnl + ' id=' + scnl + '>').text(scnl));
+        var sta = scnl.split(".");
+        if(sta.length === 4) {
+          scnlSelector.append($('<option value=' + scnl + ' id=' + scnl + '>').text(scnl));
+        }
+       
       });
       scnlSelector.selectpicker('refresh');
     }).fail(function(response) {
