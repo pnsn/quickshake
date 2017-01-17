@@ -839,7 +839,7 @@ $(function() {
 
       groupSelector.append($("<option data-hidden='true' data-tokens='false' title='Select a group' value='false' >"));
       $.each(data, function(key, group) {
-        groupSelector.append($('<option value=' + group.scnls + ' id=' + key + ' data-subtext=' + group.scnls + '>').text(key.replace("_", " ")));
+        groupSelector.append($('<option value=' + group.scnls + ' id=' + key + ' data-subtext=' + group.scnls + '>').text(key.replace(/_/g, " ")));
         if (group["default"] == 1 && defaultGroup.scnls.length == 0) {
           defaultGroup.name = key;
           defaultGroup.scnls = group.scnls;
