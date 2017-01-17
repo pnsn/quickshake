@@ -622,8 +622,8 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
-  // var path = window.location.host + "/";
-  var path = "quickshake.pnsn.org/";
+  var path = window.location.host + "/";
+  // var path = "quickshake.pnsn.org/";
   var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
   
   //set the area restrictions for local earthquakes
@@ -849,10 +849,10 @@ $(function() {
       if (!getUrlParam("group") && channels.length == 0) {
         channels = defaultGroup.scnls;
         $("select#group-select option[id=" + defaultGroup.name + "]").attr("selected", "selected");
-        $("#group-header span").text(defaultGroup.name.replace("_", " ") + " (default)");
+        $("#group-header span").text(defaultGroup.name.replace(/_/g, " ") + " (default)");
         $("#group-header").show();
       } else if (getUrlParam("group")) {
-        $("#group-header span").text(getUrlParam("group").replace("_", " "));
+        $("#group-header span").text(getUrlParam("group").replace(/_/g, " "));
         $("#group-header").show();
         $("select#group-select option[id=" + getUrlParam("group") + "]").attr("selected", "selected");
         if (channels.length == 0) {
