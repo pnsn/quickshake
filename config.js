@@ -49,55 +49,42 @@ function Conf(){
   
   //temporary till we create ui to manage groups
   this.groups={
-    // "supergrouper": {
-    //   "default": 0,
-    //   "scnls": ["TAHO.HNZ.UW.--", "BABR.ENZ.UW.--", "JEDS.ENZ.UW.--"]
-    // },
-    // "groupaloopa": {
-    //   "default": 0,
-    //   "scnls": ["CORE.ENZ.UW.--", "BABR.ENZ.UW.--", "JEDS.ENZ.UW.--", "BROK.HNZ.UW.--"]
-    // },
-    // "grouptastic": {
-    //   "default": 0,
-    //   "scnls": ["TAHO.HNZ.UW.--", "CORE.ENZ.UW.--", "BROK.HNZ.UW.--"]
-    // },
-    // "groupy":{
-    //   "default": 0,
-    //   "scnls":["BABR.ENZ.UW.--","JEDS.ENZ.UW.--"]
-    // },
-    // "grouper":{
-    //   "default": 0,
-    //   "scnls":["CORE.ENZ.UW.--","BROK.HNZ.UW.--"]
-    // },
-    // "groupaloo":{
-    //   "default": 0,
-    //   "scnls":["TAHO.HNZ.UW.--","BROK.HNZ.UW.--"]
-    // },
-    // "theincrediblegroup":{
-    //   "default": 0,
-    //   "scnls": ["BILS.HNZ.UW.--","LWCK.HNZ.UW.--","CHZZ.HNZ.UW.--","YACH.HNZ.UW.--","BROK.HNZ.UW.--"]
-    // },
-    // "short_period":{
-    //   "default":0,
-    //   "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
-    // },
-    "Z_Channels":{
+    "Short_Period":{
       "default":1,
-      "scnls": ["HWK1.HNZ.UW.--", "HWK2.HNZ.UW.--", "HWK3.HNZ.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "KDK.ENZ.UW.--"]
-    },
-    "E_Channels":{
-      "default":0,
-      "scnls": ["HWK1.HNE.UW.--", "HWK2.HNE.UW.--", "HWK3.HNE.UW.--","HWK4.HNE.UW.--", "HWK5.HNE.UW.--", "KDK.ENE.UW.--"]
-    },
-    "N_Channels":{
-      "default":0,
-      "scnls": ["HWK1.HNN.UW.--", "HWK2.HNN.UW.--", "HWK3.HNN.UW.--","HWK4.HNN.UW.--", "HWK5.HNN.UW.--", "KDK.ENN.UW.--"]
+      "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
     },
     "Noise_Comparison":{
       "default":0,
       "scnls":["HWK6.HNZ.UW.--", "HWK1.HNZ.UW.--", "HWK3.HNZ.UW.--", "KDK.ENZ.UW.--", "COOS.HNZ.UW.--"]
+    },
+    "The_Lord_of_the_Groups": {
+      "default": 0,
+      "scnls": ["TAHO.HNZ.UW.--", "BABR.ENZ.UW.--", "JEDS.ENZ.UW.--"]
+    },
+    "The_Hitchhikers_Group_to_the_Galaxy": {
+      "default": 0,
+      "scnls": ["CORE.ENZ.UW.--", "BABR.ENZ.UW.--", "JEDS.ENZ.UW.--", "BROK.HNZ.UW.--"]
+    },
+    "A_Group_of_Thrones": {
+      "default": 0,
+      "scnls": ["TAHO.HNZ.UW.--", "CORE.ENZ.UW.--", "BROK.HNZ.UW.--"]
+    },
+    "Groupy_Potter":{
+      "default": 0,
+      "scnls":["BABR.ENZ.UW.--","JEDS.ENZ.UW.--"]
+    },
+    "Hunger_Groups":{
+      "default": 0,
+      "scnls":["CORE.ENZ.UW.--","BROK.HNZ.UW.--"]
+    },
+    "A_Group_of_Unfortunate_Events":{
+      "default": 0,
+      "scnls":["TAHO.HNZ.UW.--","BROK.HNZ.UW.--"]
+    },
+    "The_Chronicles_of_Groupia":{
+      "default": 0,
+      "scnls": ["BILS.HNZ.UW.--","LWCK.HNZ.UW.--","CHZZ.HNZ.UW.--","YACH.HNZ.UW.--","BROK.HNZ.UW.--"]
     }
-    
   };
 };
 

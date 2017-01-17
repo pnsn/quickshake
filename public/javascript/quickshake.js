@@ -622,8 +622,8 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
-  var path = window.location.host + "/";
-  // var path = "quickshake.pnsn.org/";
+  // var path = window.location.host + "/";
+  var path = "quickshake.pnsn.org/";
   var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
   
   //set the area restrictions for local earthquakes
@@ -715,6 +715,114 @@ $(function() {
     });
     // console.log(values)
     return values[0] + "/" + values[1] + " " + values[2] + ":" + values[3];
+  }
+  var events = {};
+
+  function getEvents() {
+    eventSelector
+      .append($("<optgroup label='Local Earthquakes' id='earthquakes-group'></optgroup>"))
+      .append($("<optgroup label='Other events' id='others-group'></optgroup>"))
+      .append($("<optgroup label='Significant Global Events' id='significant-group'></optgroup>"));
+
+    var significant = $("#significant-group");
+    var earthquakes = $("#earthquakes-group");
+    var other = $("#others-group");
+
+    $.ajax({
+      dataType: "json",
+      url: usgsPath + "minlatitude=" + bounds.bottom + "&maxlatitude=" + bounds.top + "&minlongitude=" + bounds.left + "&maxlongitude=" + bounds.right + "&minmagnitude=" + bounds.mag
+    }).done(function(data) {
+
+      $.each(data.features, function(i, feature) {
+        // console.log(feature)
+        // console.log(i)
+        var titleTokens = feature.properties.title.split(" ");
+        var tokens = feature.id;
+        $.each(titleTokens, function(i, token) {
+          tokens += token;
+        });
+        var dateString = makeDate(new Date(feature.properties.time));
+        var title = dateString + " M " + feature.properties.mag;
+        var append = $("<option value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
+
+        if (feature.properties.type == "earthquake") {
+          earthquakes.append(append);
+        } else {
+          other.append(append);
+        }
+
+        var coords = feature.geometry.coordinates;
+        events[feature.id] = {
+          evid: feature.id,
+          description: feature.properties.title,
+          starttime: parseFloat(feature.properties.time),
+          geometry: feature.geometry
+        };
+        // console.log(events[feature.id].starttime)
+      });
+
+      if (data.features.length > 0) {
+        eventSelector.removeAttr('disabled');
+        eventSelector.append($("<option data-hidden='true' data-tokens='false' selected value='false'>").text("Select an event"));
+      } else {
+        console.log("wtf");
+      }
+
+      if (getUrlParam("evid")) {
+        evid = getUrlParam("evid");
+        if ($("select#event-select option[id=" + evid + "]")) {
+          $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
+          $('select#event-select').selectpicker('refresh');
+        }
+      }
+      $('select#event-select').selectpicker('refresh');
+    }).fail(function(response) {
+      console.log("I failed");
+      console.log(response);
+    });
+
+    $.ajax({
+      dataType: "json",
+      url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"
+    }).done(function(data) {
+
+      $.each(data.features, function(i, feature) {
+        // console.log(i)
+        var titleTokens = feature.properties.title.split(" ");
+        var tokens = feature.id;
+        $.each(titleTokens, function(i, token) {
+          tokens += token;
+        });
+        var dateString = makeDate(new Date(feature.properties.time));
+        var title = dateString + " M " + feature.properties.mag;
+        var append = $("<option class='significant' value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
+
+        if (feature.properties.type == "earthquake") {
+          significant.append(append);
+        }
+
+        events[feature.id] = {
+          evid: feature.id,
+          description: feature.properties.title,
+          starttime: parseFloat(feature.properties.time),
+          geometry: feature.geometry
+        };
+        // console.log(events[feature.id].starttime)
+      });
+
+      if (getUrlParam("evid")) {
+        evid = getUrlParam("evid");
+        if ($("select#event-select option[id=" + evid + "]")) {
+          $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
+          $('select#event-select').selectpicker('refresh');
+        }
+      }
+
+      $('select#event-select').selectpicker('refresh');
+    }).fail(function(response) {
+      console.log("teleseisms failed");
+    });
+
   }
 
   function getGroups(_callback) {
@@ -842,9 +950,7 @@ $(function() {
     var stime = start;
     var text;
 
-    if(evid && evid.indexOf("HAWK") > -1) {
-      _callback(stime);
-    } else if (!evid) {
+    if(!evid || evid && evid.indexOf("HAWK") > -1) {
       _callback(stime);
     } else if (events[evid]) {
       stime = stime ? stime : events[evid].starttime;
@@ -853,7 +959,7 @@ $(function() {
       $("#event-header span").text(text);
       $("#event-header").show();
 
-      _callback(stime);
+      _callback(getStartOffset(events[evid], stime));
 
     } else {
       $.ajax({
@@ -873,13 +979,59 @@ $(function() {
           geometry: data.geometry
         };
 
-        _callback(stime);
+       _callback(getStartOffset(events[evid], stime));
 
       }).fail(function(response) {
         // console.log("I failed");
         // console.log(response);
       });
     }
+  }
+  
+  //Do the math, the monster math
+  function getStartOffset(event, start) {
+    var lat1 = (bounds.top - bounds.bottom) / 2 + bounds.bottom; //center of bounding box
+    var lon1 = (bounds.left - bounds.right) / 2 + bounds.right;
+
+    var lat2 = event.geometry.coordinates[1];
+    var lon2 = event.geometry.coordinates[0];
+
+    // Lets hope this works
+    var R = 6371; // Radius of the earth in km
+    var dLat = (lat2 - lat1) * Math.PI / 180; // deg2rad below
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a =
+      0.5 - Math.cos(dLat) / 2 +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      (1 - Math.cos(dLon)) / 2;
+
+    var d = 2 * Math.asin(Math.sqrt(a)) * 180 / Math.PI; //angular distance in degrees
+
+    distances = Object.keys(traveltimes).sort(function compare(a, b) {
+      return a - b;
+    });
+
+    var i = 0;
+    var distance = distances[i];
+
+    while (distance < d) {
+      i++;
+      distance = parseFloat(distances[i]);
+    }
+
+    if (distances[i - 1]) {
+      var distance2 = distances[i - 1];
+
+      var linDif = (traveltimes[distance] - traveltimes[distance2]) / (distance - parseFloat(distance2));
+      return start + (linDif * d + traveltimes[distance2] * 1000);
+
+      $("#offset-header").show();
+      $("#start-header").hide();
+
+    } else {
+      return start;
+    }
+
   }
 
   //TODO: make a leaflet map
@@ -933,6 +1085,43 @@ $(function() {
   
   $("button.help").click(function(){
     $("#help").modal("show");
+  });
+  
+  $("button.add-station").click(function(e) {
+    var newScnls = $("#scnl-select").val();
+    console.log(channels);
+    if (!$(this).hasClass("disabled")) {
+      $.each(newScnls, function(i, scnl) {
+        var testScnl = scnl.split(".");
+        var valid = true;
+        if (testScnl.length == 4) { //FIXME: change to 3 when jon fixes this should be ==4
+          $.each(scnl.split("."), function(i, val) {
+            if (val.length == 0) {
+              valid = false;
+            }
+          });
+        } else {
+          valid = false;
+        }
+
+        var index = $.inArray(scnl, channels);
+        if (valid && channels.length < 6 && index == -1) {
+          updateList(scnl);
+          updateChannels();
+          $("#length-warning").hide();
+          $("#scnl-warning").hide();
+        } else if (channels.length >= 6) {
+          $("#length-warning").show();
+        }
+        if (!valid) {
+          $("#scnl-warning").show();
+        }
+      });
+
+      $("#scnl-select").selectpicker('val', 'false');
+    }
+
+    e.preventDefault;
   });
   
   $("button.clear-all").click(function(e) {
@@ -1119,6 +1308,7 @@ $(function() {
   }
 
   function initialize() {
+    getEvents();
     populateForm();
     getScnls();
     getGroups(function() {
@@ -1141,7 +1331,7 @@ $(function() {
 
         var duration = getValue("duration") ? getValue("duration") : 10;
 
-        // var start = getValue("start");
+        var start = getValue("start");
         
         var t = new Date();
         getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime());
