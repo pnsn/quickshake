@@ -53,38 +53,31 @@ function Conf(){
       "default":1,
       "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
     },
-    "Noise_Comparison":{
+    "Seahawks_Noise_Comparison":{
       "default":0,
       "scnls":["HWK6.HNZ.UW.--", "HWK1.HNZ.UW.--", "HWK3.HNZ.UW.--", "KDK.ENZ.UW.--", "COOS.HNZ.UW.--"]
     },
-    "The_Lord_of_the_Groups": {
-      "default": 0,
-      "scnls": ["TAHO.HNZ.UW.--", "BABR.ENZ.UW.--", "JEDS.ENZ.UW.--"]
+    "Inland_Washington":{
+      "default":0,
+      "scnls":["JCW.EHZ.UW.--", "CBS.EHZ.UW.--","SLF.EHZ.UW.--","FMW.EHZ.UW.--","RVC.EHZ.UW.--","ELK.EHZ.UW.--"]
     },
-    "The_Hitchhikers_Group_to_the_Galaxy": {
-      "default": 0,
-      "scnls": ["CORE.ENZ.UW.--", "BABR.ENZ.UW.--", "JEDS.ENZ.UW.--", "BROK.HNZ.UW.--"]
+    "Inland_Oregon":{
+      "default":0,
+      "scnls":["TDH.EHZ.UW.--","HBO.EHZ.UW.--","BBO.EHZ.UW.--","BRO.EHZ.UW.--"]
     },
-    "A_Group_of_Thrones": {
-      "default": 0,
-      "scnls": ["TAHO.HNZ.UW.--", "CORE.ENZ.UW.--", "BROK.HNZ.UW.--"]
+    "Coastal":{
+      "default":0,
+      "scnls":["OOW2.HNZ.UW.--","CORE.HNZ.UW.--","RSLG.HNZ.UW.--","YACH.HNZ.UW.--","CABL.HNZ.UW.--","BROK.HNZ.UW.--"]
     },
-    "Groupy_Potter":{
-      "default": 0,
-      "scnls":["BABR.ENZ.UW.--","JEDS.ENZ.UW.--"]
+    "Coastal_Washington":{
+      "default":0,
+      "scnls":["MKAH.HNZ.UW.--","FORK.ENZ.UW.--","BILS.HNZ.UW.--","OCEN.HNZ.UW.--","RADR.HNZ.UW.--","LWCK.HNZ.UW.--"]
     },
-    "Hunger_Groups":{
-      "default": 0,
-      "scnls":["CORE.ENZ.UW.--","BROK.HNZ.UW.--"]
-    },
-    "A_Group_of_Unfortunate_Events":{
-      "default": 0,
-      "scnls":["TAHO.HNZ.UW.--","BROK.HNZ.UW.--"]
-    },
-    "The_Chronicles_of_Groupia":{
-      "default": 0,
-      "scnls": ["BILS.HNZ.UW.--","LWCK.HNZ.UW.--","CHZZ.HNZ.UW.--","YACH.HNZ.UW.--","BROK.HNZ.UW.--"]
+    "Coastal_Oregon":{
+      "default":0,
+      "scnls":["CNNB.HNZ.UW.--","CHZZ.HNZ.UW.--","ONAB.HNZ.UW.--","FLRE.HNZ.UW.--","COOS.HNZ.UW.--","WEDR.HNZ.UW.--"]
     }
+
   };
 };
 

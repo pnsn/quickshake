@@ -22,9 +22,9 @@ $(function() {
     this.localTime = true;
     this.stationScalar = 3.207930 * Math.pow(10, 5) * 9.8; // count/scalar => %g
     //log values
-    this.scale = 2.5; //starting scale slide value 
-    this.scaleSliderMin = 0;
-    this.scaleSliderMax = 4;
+    this.scale = 3.5; //starting scale slide value 
+    this.scaleSliderMin = 1;
+    this.scaleSliderMax = 6;
     //end log values
     this.realtime = true; //realtime will fast forward if tail of buffer gets too long.
     this.scroll = null; //sets scrolling
@@ -622,8 +622,8 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
-  var path = window.location.host + "/";
-  // var path = "quickshake.pnsn.org/";
+  // var path = window.location.host + "/";
+  var path = "quickshake.pnsn.org/";
   var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
   
   //set the area restrictions for local earthquakes
@@ -1044,6 +1044,7 @@ $(function() {
       $.each(data, function(key, scnl) {
         var sta = scnl.split(".");
         if(sta.length === 4) {
+          console.log(scnl)
           scnlSelector.append($('<option value=' + scnl + ' id=' + scnl + '>').text(scnl));
         }
        
@@ -1092,7 +1093,7 @@ $(function() {
   
   $("button.add-station").click(function(e) {
     var newScnls = $("#scnl-select").val();
-    console.log(channels);
+    // console.log(channels);
     if (!$(this).hasClass("disabled")) {
       $.each(newScnls, function(i, scnl) {
         var testScnl = scnl.split(".");
@@ -1342,7 +1343,6 @@ $(function() {
           getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime());
         }, 120000);
         
-        var start = getUrlParam("start");
         var evid = getUrlParam("evid");
 
         var stations = "scnls=" + getChannels();
