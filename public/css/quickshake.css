@@ -258,3 +258,31 @@ form button.btn {
 #help .modal-body {
     overflow:auto;
 }
+
+#map {
+  height:500px;
+}
+
+.station-icon{
+  background-color:#BB2D2D;
+  border:1px solid #730000;    
+  height:7px;
+  width:7px;
+  border-radius:50%;
+  -moz-border-radius:50%;
+  -webkit-border-radius:50%;
+}
+
+.station-icon.selected{
+  background-color:transparent;
+  border-radius:0;
+  -moz-border-radius:0;
+  -webkit-border-radius:0;
+  width: 0;
+  height: 0;
+  border-top:0px solid transparent;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 14px solid #249524;
+     
+}

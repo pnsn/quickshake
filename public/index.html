@@ -10,9 +10,12 @@
     <link rel="stylesheet" type="text/css" href="css/quickshake.css">
     <link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css">
     <link rel="stylesheet" type="text/css" href="css/bootstrap-datetimepicker.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.2/dist/leaflet.css" />
+    
     
     <script src="http://code.jquery.com/jquery-1.10.0.js"></script>
     <script src="https://code.jquery.com/ui/1.10.3/jquery-ui.min.js"   integrity="sha256-lnH4vnCtlKU2LmD0ZW1dU7ohTTKrcKP50WA9fa350cE="   crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/leaflet@1.0.2/dist/leaflet.js"></script>
     <script src="javascript/traveltimes.js"></script>
     <script src="javascript/bootstrap.min.js"></script>
     <script src="javascript/moment.js"></script>
@@ -20,6 +23,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.11.0/js/bootstrap-select.min.js"></script>
     <script src="javascript/jquery.ui.touch-punch.min.js"></script>  
     <script src="javascript/quickshake.js"></script>
+    <script src="javascript/selection-map.js"></script>
     <link rel="shortcut icon" type="image/png" href="images/favicon.png">
   </head>
   <body>
@@ -54,7 +58,7 @@
     <!--this is broken because the logic for it was in pnsn.js -->
     <div id="header">
       <div id="header-left" class="col-xs-9">
-        <h1>Quickshake <small>by PNSN</small> </h1>
+        <h1>Quickshake <small> <a href="https://pnsn.org" target="_blank"> by PNSN </a></small> </h1>
         <div id="group-header" class="header-info">Group: <span></span></div>
         <div id="event-header" class="header-info">Event: <span></span></div>
         <div id="start-header" class="header-info">Event start time: <span></span></div>
@@ -77,16 +81,16 @@
           <div class="modal-body">
             <form class="form-inline" role="form">
               <div class="row">
-                <div class="form-group col-xs-12 col-sm-5">
-                  <label> Select group: </label>
+                <div class="col-sm-6 hidden-xs" id="station-selector">
+                  <label>Select stations on the map to add to QuickShake</label>
+                  <div class="map" id="map"></div>
+                </div>
+                <div class="form-group col-xs-12 col-sm-6">
+                  <label> Select group (optional): </label>
                   <select class="station-select selectpicker" id="group-select"></select>
                 </div>
-                <div class="form-group col-xs-12 col-sm-7">
-                  <label for="scnl-select">Add SCNLs: </label>
-                  <select class="station-select selectpicker" id="scnl-select" multiple></select>
-                  <button type="button" class="button btn btn-default add-station station-select disabled">Add</button>
-                </div>
-                <div class="col-xs-12">
+                <div class="col-xs-12 col-sm-6">
+                  <label>Drag stations to rearrange: </label>
                   <div id="sorter-container">
                     <ul class="station-select list-group" id="station-sorter"></ul>
                   </div>
@@ -138,10 +142,6 @@
               Invalid event ID. Must include network code.
               <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
-            <div class="quickshake-warning alert alert-danger alert-dismissable" id="length-warning" role="alert">
-              No more than 6 stations can be selected.
-              <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            </div>
             <div class="quickshake-warning alert alert-danger alert-dismissable" id="scnl-warning" role="alert">
               Invalid SCNL.
               <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -154,13 +154,17 @@
               End of data. Click submit to view again or choose a new configuration.
               <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
+            <div class="quickshake-warning alert alert-danger alert-dismissable" id="length-warning" role="alert">
+              No more than 6 stations can be selected.
+              <button type="button" class="close" data-hide="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
           </div>
           <div class="modal-footer">
             <div class="col-xs-4">
               <button class="button btn btn-default help station-select center-block pull-left" type="button">Help</button>
             </div>  
             <div class="col-xs-4">
-              <button class="btn button btn-default clear-all btn-primary center-block" type="button">Go Live</button>
+              <button class="btn button btn-default clear-all center-block" type="button">Clear</button>
             </div>  
             <div class="col-xs-4">
               <button class="button btn btn-default pull-right update station-select center-block" type="button">Update</button>
@@ -180,7 +184,7 @@
             </div>
           </div>
           <div class="modal-body" >
-            <div class="col-xs-9 col-sm-6">
+            <div class="col-xs-12 col-sm-12">
               <div class="panel-group" id="help-group">
                 <div class="panel panel-default">
                   <div class="panel-heading">
@@ -194,36 +198,15 @@
                         <li class="list-group-item"><strong>Shake History:</strong> Scroll through the data. </li>
                         <li class="list-group-item"><strong>Play/Pause/Skip:</strong> Change the playback. </li>
                         <li class="list-group-item"><strong>Scale:</strong> Change the scaling. </li>
-                        <li class="list-group-item"><strong> Select Group: </strong> Select which stations to view.             </li>
+                        <li class="list-group-item"><strong>Select Group: </strong> Select which stations to view.             </li>
                         <li class="list-group-item"><strong>Event: </strong> Replay an event.                                   </li>
                         <li class="list-group-item"><strong>Stations List: </strong> Rearrange and remove stations.             </li>
                         <li class="list-group-item"><strong>Viewer Width:</strong> Change the amount of time shown on screen.   </li>
-                        <li class="list-group-item"><strong>Go Live:</strong> Return to realtime and view live data.            </li>
+                        <li class="list-group-item"><strong>Clear:</strong> Remove all configurations</li>
                         <li class="list-group-item"><strong>Update:</strong> Save and view your changes.                        </li>
                       <ul>
                     </div>
                     
-                  </div>
-                </div>
-                <div class="panel panel-default">
-                  <div class="panel-heading">
-                    <h4 class="panel-title">
-                      <a data-toggle="collapse" href="#stations-help"  data-parent="#help-group">About the Stations</a>
-                    </h4>
-                  </div>
-                  <div id="stations-help" class="panel-collapse collapse" data-toggle="collapse">
-                    <div class="panel-body">
-                      <ul class="list-group">
-                        <li class="list-group-item"><strong>HWK1: </strong>Office at ground level.</li>
-                        <li class="list-group-item"><strong>HWK2: </strong>3rd floor, Southwest 10 yd line.</li>
-                        <li class="list-group-item"><strong>HWK3: </strong>3rd floor, Southeast 15 yd line.</li>
-                        <li class="list-group-item"><strong>HWK4: </strong>3rd floor, Northwest endzone.</li>
-                        <li class="list-group-item"><strong>HWK5: </strong>3rd floor, Northeast endzone.</li>
-                        <li class="list-group-item"><strong>HWK6: </strong>13 stories high at the top of the Hawks Nest.</li>
-                        <li class="list-group-item"><strong>KDK: </strong>Across the street, recorded the original BeastQuake.</li>
-                        <li class="list-group-item"><strong>COOS: </strong>Located 300 miles away at Coos Bay, OR.</li>
-                      <ul>
-                    </div>
                   </div>
                 </div>
                 <div class="panel panel-default">
@@ -244,10 +227,10 @@
               </div>
               
             </div>
-            <div class="col-xs-3 col-sm-6">
+            <!-- <div class="col-xs-3 col-sm-6">
               <a href="images/stationmap.png" target="_blank"><img id="station-map" class="img-responsive" src="images/stationmap.png"></img></a>
-              
-            </div>
+
+            </div> -->
           </div>
 
         </div>
