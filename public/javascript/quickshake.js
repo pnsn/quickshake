@@ -1224,7 +1224,7 @@ $(function() {
 
   function updateList(scnl) {
     $("ul#station-sorter.station-select").append("<li class='list-group-item' id= '" + scnl + "'>" + scnl +
-    "<i class='fa fa-sort pull-left'></i>" + "<i class='fa fa-trash pull-right delete' ></i>" + 
+    "<i class='fa fa-trash pull-right delete' ></i>" + 
     "</li>"); 
   }
   
