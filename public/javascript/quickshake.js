@@ -1,7 +1,7 @@
 //client side of quakeShake 
 $(function() {
   //initial params that should be consistent across all channels on page
-  function QuickShake(viewerWidthSec, chans, test) {
+  function QuickShake(viewerWidthSec, chans) {
     this.viewerWidthSec = viewerWidthSec; //width of viewer in seconds
     //these vals are set dynamically on load and on window resize
     this.height = null;
@@ -32,12 +32,11 @@ $(function() {
     this.lineColor = "#000";
     this.tz = "PST";
     this.channels = chans;
-    this.eventStart = null;
+    this.eventtime = null;
     this.archive = false;
     this.pad = 0;
     this.archiveOffset = 0; //offset for line labels in archive
     this.annotations = [];
-    // this.tes;
     };
 
   // incoming data are appended to buf
@@ -94,26 +93,25 @@ $(function() {
   };
 
   // Takes in array of packets from the archive and the starttime of the packets or event.
-  QuickShake.prototype.playArchive = function(data, eventStart, dataStart) {
+  QuickShake.prototype.playArchive = function(data, eventtime, dataStart) {
 
     this.realtime = false;
     this.archive = true;
 
     this.starttime = dataStart;
-    this.eventStart = dataStart - eventStart != 0 ? this.makeTimeKey(eventStart) : this.makeTimeKey(dataStart);
+    this.eventtime = dataStart - eventtime != 0 ? this.makeTimeKey(eventtime) : this.eventtime;
     this.pad = 0;
 
     var _this = this;
     $.each(data, function(i, packet) {
+      // console.log(new Date(packet.starttime))
       _this.updateBuffer(packet);
+      
     });
   };
 
   QuickShake.prototype.drawSignal = function() {
-    // console.log(this.test);
     $('.loading').hide();
-    // console.log("drawsingal")
-    // console.log(new Date(this.viewerLeftTime))
     if (this.scroll) {
       //OFFSET at start
       if (this.startPixOffset > 0) {
@@ -347,17 +345,17 @@ $(function() {
       ctx.stroke();
 
       // // Start line
-      // if (this.eventStart) {
-      //   ctx.beginPath();
-      //   var eventPosition = (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
-      //   var text = this.width < 570 || (eventPosition - startPosition) < 135 ? "ETA" : "Estimated Arrival Time";
-      //   var eventOffset = this.width < 570 || (eventPosition - startPosition) < 135 ? 25 : 135;
-      //   ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
-      //   ctx.moveTo(eventPosition, edge.bottom);
-      //   ctx.lineTo(eventPosition, edge.top);
-      //   ctx.strokeStyle = "#000";
-      //   ctx.stroke();
-      // }
+      if (this.eventtime) {
+        ctx.beginPath();
+        var eventPosition = (this.eventtime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+        var text = this.width < 570 || (eventPosition - startPosition) < 135 ? "ETA" : "Estimated Arrival Time";
+        var eventOffset = this.width < 570 || (eventPosition - startPosition) < 135 ? 25 : 135;
+        ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
+        ctx.moveTo(eventPosition, edge.bottom);
+        ctx.lineTo(eventPosition, edge.top);
+        ctx.strokeStyle = "#000";
+        ctx.stroke();
+      }
     }
     
     //for live: grab events within "length of buffer" to live
@@ -624,16 +622,16 @@ $(function() {
   //Globals  
   var quickshake;
   var socket;
-  // var path = window.location.host + "/";
-  var path = "quickshake.pnsn.org/";
-  var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
-var map = new L.Map('map'),
-	  osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-	  osmAttrib='Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors',
-	  osm = new L.TileLayer(osmUrl, {attribution: osmAttrib});		
-
-    var test = "hi this is a test";
+  var channels = [];
   
+  //map stuff
+  var map = new L.Map('map'),
+	    osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+	    osmAttrib='Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors',
+	    osm = new L.TileLayer(osmUrl, {attribution: osmAttrib});		
+  
+  //Set some configs
+  var maxChannels = 6; //maximum number of channels that can be shown
   //set the area restrictions for local earthquakes
   var bounds = {
     bottom: 40.5,
@@ -642,8 +640,9 @@ var map = new L.Map('map'),
     right: -115,
     mag: 2.5
   };
-  
-  var channels = [];
+  // var path = "quickshake.pnsn.org/";
+  var path = window.location.host + "/";
+  var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
 
   // Initialize UI
   $("#start-select").datetimepicker({
@@ -1126,8 +1125,8 @@ var map = new L.Map('map'),
       container.append($("<div>"+station.sta+"</div>"));
 
       $.each(station.scnls, function(j, scnl){
-        var button = $("<a class='selected-station btn btn-default' type='button' id='marker_" + scnl.replace(/\./g, "_")+ "'>" + station.chans[j] + "</a>");
-        container.append(button);  
+        var button = $("<a class='selected-station' type='button' id='marker_" + scnl.replace(/\./g, "_")+ "'>" + station.chans[j] + "</a>");
+        container.append(button);
         if(channels.indexOf(scnl) > -1){
           icon = L.divIcon({className: 'station-icon selected marker_' + scnl.replace(/\./g, "_")});
         } else {
@@ -1152,13 +1151,13 @@ var map = new L.Map('map'),
           $(marker._icon).removeClass('selected');
           $("#selected-stations span").text(channels);
           $(".update.station-select").addClass("btn-primary");
-        } else if(channels.length < 6) {
+        } else if(channels.length < maxChannels) {
           $("#length-warning").hide();
           channels.push(thisStation);
           $(marker._icon).addClass('selected');
           $("#selected-stations span").text(channels);
           $(".update.station-select").addClass("btn-primary");
-        }else if(channels.length == 6){
+        }else if(channels.length == maxChannels){
           $("#length-warning").show();
         }
         $("ul#station-sorter.station-select li").remove();
@@ -1241,7 +1240,7 @@ var map = new L.Map('map'),
 
     updateChannels();
 
-    if (channels.length < 6) {
+    if (channels.length < maxChannels) {
       $("#scnl-warning").hide();
     }
   }
@@ -1370,7 +1369,7 @@ var map = new L.Map('map'),
     getScnls();
     getGroups(function() {
       var width = getValue("width") * 60;
-      quickshake = new QuickShake(width, channels.slice(), test);
+      quickshake = new QuickShake(width, channels.slice());
 
       $("#toggle-controls").click(function(){
         toggleControls(quickshake);
@@ -1402,12 +1401,12 @@ var map = new L.Map('map'),
  
         if (start || evid) {
           $(".clear-all").show();
-          getStart(evid, start, function(eventStart) {
-            $("#start-header span").text(new Date(eventStart));
+          getStart(evid, start, function(eventtime) {
+            $("#start-header span").text(new Date(start));
             
             $("#start-header").show();
 
-            var dataStart = eventStart - 20 * 1000; //grab 30 seconds before event
+            var dataStart = evid ? eventtime - 20 * 1000 : eventtime; //grab 30 seconds before event
             endtime = dataStart + 5 * 60 * 1000; //grab 5 minutes of data
 
             $.ajax({
@@ -1421,7 +1420,7 @@ var map = new L.Map('map'),
               $("#fastforward-button").show();
               // $(".helpful-label").show();
               quickshake.configViewer();
-              quickshake.playArchive(data, eventStart, dataStart);
+              quickshake.playArchive(data, eventtime, dataStart);
               var tm = window.setTimeout(function(){
                 toggleControls(quickshake);
               }, 10000);

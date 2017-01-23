@@ -264,8 +264,8 @@ form button.btn {
 }
 
 .station-icon{
-  background-color:#BB2D2D;
-  border:1px solid #730000;    
+  background-color:#B8B8B8 ;
+  border:1px solid #B8B8B8 ;    
   height:7px;
   width:7px;
   border-radius:50%;
@@ -274,8 +274,9 @@ form button.btn {
 }
 
 .station-icon.selected{
-  background-color:transparent;
-  border-radius:0;
+  background-color:#249524;
+  border:1px solid #249524 ;
+/*  border-radius:0;
   -moz-border-radius:0;
   -webkit-border-radius:0;
   width: 0;
@@ -283,6 +284,6 @@ form button.btn {
   border-top:0px solid transparent;
   border-left: 7px solid transparent;
   border-right: 7px solid transparent;
-  border-bottom: 14px solid #249524;
+  border-bottom: 14px solid #249524;*/
      
 }
