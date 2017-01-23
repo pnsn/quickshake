@@ -577,7 +577,6 @@ $(function() {
   // Handles sizing of the canvas for different screens
   QuickShake.prototype.configViewer = function() {
     var offSet = 10; //Default for mobile and if there is no scale    
-
     $("#quickshake-canvas").show();
     $("#quickshake").height(window.innerHeight - $("#header").height() - 10 - $("#controls-container").height());
 
@@ -594,7 +593,6 @@ $(function() {
     this.canvasElement.width = this.width;
 
     this.updateScale();
-     // $(".loading").hide();
   };
 
   // var _this = this;
@@ -1098,6 +1096,7 @@ $(function() {
         makeMap(stations);
         
         $('#controls').on('shown.bs.modal', function() {
+          console.log("show meee")
           var bounds = new L.LatLngBounds(latlngs);
           map.fitBounds(bounds);
         });
@@ -1218,7 +1217,6 @@ $(function() {
         $("#" + val + "-select").val("");
       }
       $(".update.station-select").addClass("btn-primary");
-      $(".update.station-select").click();
     });
   });
 
@@ -1467,11 +1465,6 @@ $(function() {
 
   // Can't load these until the quickshake is made
   function controlsInit() {
-    $(window).resize(function(){
-      var timeout = setTimeout(function(){
-        location.reload();
-      }, 3000);
-    });
     // Controls stuff
     $("#playback-slider").slider({
       slide: function(e, ui) {
