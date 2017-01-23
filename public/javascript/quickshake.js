@@ -640,8 +640,8 @@ $(function() {
     right: -115,
     mag: 2.5
   };
-  // var path = "quickshake.pnsn.org/";
-  var path = window.location.host + "/";
+  var path = "quickshake.pnsn.org/";
+  // var path = window.location.host + "/";
   var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
 
   // Initialize UI
@@ -1164,7 +1164,8 @@ $(function() {
         $.each(channels, function(i, scnl) {
           updateList(scnl);
         });
-        
+        groupSelector.val(false);
+        groupSelector.selectpicker('refresh');
       });
       
       marker.addTo(map);
