@@ -1,14 +1,17 @@
 'use strict';
-/*jslint node: true */
-/*script to archive waveforms into collections based on scnl */
+/*jslint node: true 
+* script to archive waveforms into collections based on scnl 
+* process tails ring collection and writes to ringBuff
+* ringbuff is read every ~5 seconds and writes to respective collection
+*/
+
 const  url = require('url');
 const logger = require('winston');
 const Conf = require("./config.js");
 const MongoClient  = require('mongodb').MongoClient;
 const RingBuffer = require(__dirname + '/lib/ringBuffer');
-const MongoArchive = require(__dirname + '/lib/mongoArchive');
+const waveArchiver = require(__dirname + '/lib/cwaveArchiver');
     
-// const debug = require('debug')('quickshake');
 
 
 const conf = new Conf();
@@ -20,11 +23,11 @@ logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/archiver.log' });
 
 var ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
-var mongoArchive = new MongoArchive(ringBuff, 5000, "ring", logger);
+var cwaveArchiver = new CwaveArchiver(ringBuff, 5000, "ring", logger);
 
 MongoClient.connect(MONGO_URI, function(err, db) {
   if(err) throw err;  
-  mongoArchive.database(db);
-  mongoArchive.tail();
-  mongoArchive.start();
+  cwaveArchiver.database(db);
+  cwaveArchiver.tail();
+  cwaveArchiver.start();
 }); 

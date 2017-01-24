@@ -9,7 +9,7 @@ const conf = new Conf();
 const logger = require('winston');
 const MongoClient  = require('mongodb').MongoClient;
 const RingBuffer = require("../lib/ringBuffer.js");
-const MongoArchive = require("../lib/mongoArchive.js");
+const CwaveArchiver = require("../lib/cwaveArchiver.js");
 
 
 
@@ -32,7 +32,7 @@ before(function(){
   });
   ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
   console.log("here we are" ,ringBuff.ring);
-  mongoArchive = new MongoArchive(ringBuff, 5000, "ring", logger);
+  mongoArchive = new CwaveArchiver(ringBuff, 5000, "ring", logger);
   
 
 });

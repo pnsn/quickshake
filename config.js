@@ -32,9 +32,10 @@ function Conf(){
   
   this.development= {
     mongo:{
-      uri: "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWD + "@" 
-              + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" + "waveforms"
-              + "?authMechanism=DEFAULT" + "&authSource=admin",
+        uri: "mongodb://" + process.env.QUICKMONGO_PORT_27017_TCP_ADDR + ":" + process.env.QUICKMONGO_PORT_27017_TCP_PORT + "/waveforms",
+      //uri: "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWD + "@" 
+        //      + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" + "waveforms"
+        //      + "?authMechanism=DEFAULT" + "&authSource=admin",
       rtCollection: "ring"
     },
     

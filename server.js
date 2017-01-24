@@ -19,8 +19,10 @@ const debug = require('debug')('quickshake');
 const conf = new Conf();
 
 var env=process.env.NODE_ENV || "development"; //get this from env
+console.log(env);
   
 var MONGO_URI = conf[env].mongo.uri;
+console.log(MONGO_URI);
 exports.app=app; //for integration testing
 app.use(express['static']('public'));
 logger.level="debug";
@@ -69,9 +71,8 @@ app.get('/scnls', function (req, res) {
     if(err) throw err;
     var scnls=[];
     for(var i=0;i<collections.length; i++){
-      var col=collections[i]['name'];
-      if(col != "ring"){
-        col=ringBuff.mongoKey2Ew(collections[i]["name"]);
+      var scnl=collections[i]['name'].split("_cwave")[0];
+      if( scnl != "ring"){
         scnls.push(col);
       }
     }
@@ -233,8 +234,7 @@ function sendArchive(scnls,res,starttime, endtime, results) {
     }
     
   }else{
-    var key = scnls.shift();
-    key = ringBuff.ewKey2Mongo(key);
+    var key = scnls.shift() + "_cwave";
     var coll= _db.collection(key);
     coll.find( {"starttime": {$gte: starttime, $lte: endtime}} ).toArray(function(err, tracebuffs){
         if (err) return loggger.error( f);
