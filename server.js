@@ -178,7 +178,7 @@ function sendMessage(doc){
       removeClient(id);
     }else if(CLIENTS[id] && CLIENTS[id]["params"] && 
             CLIENTS[id]['params']["scnls"] &&
-            CLIENTS[id]['params']["scnls"].indexOf(ringBuff.ewKey2Mongo(doc["key"])) != -1){
+            CLIENTS[id]['params']["scnls"].indexOf(doc["key"]) != -1){
       socket.send(JSON.stringify(doc));
     }
   }
@@ -194,7 +194,7 @@ function parseWsParams(socket){
     var temp= params["scnls"].split(",");
     params['scnls'] =[];
     for(var i=0;i< temp.length; i++){
-      params['scnls'].push(ringBuff.ewKey2Mongo(temp[i]));
+      params['scnls'].push(temp[i]);
     }
   }
   return params;
