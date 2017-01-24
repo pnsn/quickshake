@@ -10,7 +10,7 @@
 #quickshake {
 	height: 100%;
 	width: 100%;
-	min-height: 300px;
+/*  min-height: 300px;*/
 }
 
 #quickshake-CMS {
@@ -120,15 +120,11 @@
 	margin-bottom: 10px;
 }
 
-.quickshake-station-warning {
-  display: none;
-}
-
 .quickshake-station-warning .station-warning {
 	display: inline;
 }
 
-.quickshake-event-warning, .quickshake-invalid-event-warning {
+.quickshake-station-warning, .quickshake-event-warning, .quickshake-invalid-event-warning {
 	display: none;
 }
 
@@ -154,7 +150,6 @@ ul.station-select {
 }
 
 #header-left{
-  display:none;
   height:auto;
 }
 
@@ -242,7 +237,7 @@ form button.btn {
 }
 
 .bootstrap-select .dropdown-menu {
-  width: 100%;
+/*  width: 100%;*/
 }
 
 .bootstrap-select .dropdown-menu span.text {
@@ -254,4 +249,41 @@ form button.btn {
 .btn-primary {
   border-color : #107a10;
   background-color: #107a10;
+}
+
+#station-map {
+  max-height:400px;
+}
+
+#help .modal-body {
+    overflow:auto;
+}
+
+#map {
+  height:500px;
+}
+
+.station-icon{
+  background-color:#B8B8B8 ;
+  border:1px solid #B8B8B8 ;    
+  height:7px;
+  width:7px;
+  border-radius:50%;
+  -moz-border-radius:50%;
+  -webkit-border-radius:50%;
+}
+
+.station-icon.selected{
+  background-color:#249524;
+  border:1px solid #249524 ;
+/*  border-radius:0;
+  -moz-border-radius:0;
+  -webkit-border-radius:0;
+  width: 0;
+  height: 0;
+  border-top:0px solid transparent;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 14px solid #249524;*/
+     
 }

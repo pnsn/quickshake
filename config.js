@@ -50,55 +50,30 @@ function Conf(){
   
   //temporary till we create ui to manage groups
   this.groups={
-    // "supergrouper": {
-    //   "default": 0,
-    //   "scnls": ["TAHO.HNZ.UW.--", "BABR.ENZ.UW.--", "JEDS.ENZ.UW.--"]
-    // },
-    // "groupaloopa": {
-    //   "default": 0,
-    //   "scnls": ["CORE.ENZ.UW.--", "BABR.ENZ.UW.--", "JEDS.ENZ.UW.--", "BROK.HNZ.UW.--"]
-    // },
-    // "grouptastic": {
-    //   "default": 0,
-    //   "scnls": ["TAHO.HNZ.UW.--", "CORE.ENZ.UW.--", "BROK.HNZ.UW.--"]
-    // },
-    // "groupy":{
-    //   "default": 0,
-    //   "scnls":["BABR.ENZ.UW.--","JEDS.ENZ.UW.--"]
-    // },
-    // "grouper":{
-    //   "default": 0,
-    //   "scnls":["CORE.ENZ.UW.--","BROK.HNZ.UW.--"]
-    // },
-    // "groupaloo":{
-    //   "default": 0,
-    //   "scnls":["TAHO.HNZ.UW.--","BROK.HNZ.UW.--"]
-    // },
-    // "theincrediblegroup":{
-    //   "default": 0,
-    //   "scnls": ["BILS.HNZ.UW.--","LWCK.HNZ.UW.--","CHZZ.HNZ.UW.--","YACH.HNZ.UW.--","BROK.HNZ.UW.--"]
-    // },
-    // "short_period":{
-    //   "default":0,
-    //   "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
-    // },
-    "Z_Channels":{
+    "Short_Period":{
       "default":1,
-      "scnls": ["HWK1.HNZ.UW.--", "HWK2.HNZ.UW.--", "HWK3.HNZ.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "KDK.ENZ.UW.--"]
+      "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
     },
-    "E_Channels":{
+    "Inland_Washington":{
       "default":0,
-      "scnls": ["HWK1.HNE.UW.--", "HWK2.HNE.UW.--", "HWK3.HNE.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "KDK.ENZ.UW.--"]
+      "scnls":["JCW.EHZ.UW.--", "CBS.EHZ.UW.--","SLF.EHZ.UW.--","FMW.EHZ.UW.--","RVC.EHZ.UW.--","ELK.EHZ.UW.--"]
     },
-    "N_Channels":{
+    "Inland_Oregon":{
       "default":0,
-      "scnls": ["HWK1.HNN.UW.--", "HWK2.HNN.UW.--", "HWK3.HNN.UW.--","HWK4.HNZ.UW.--", "HWK5.HNZ.UW.--", "KDK.ENZ.UW.--"]
+      "scnls":["TDH.EHZ.UW.--","HBO.EHZ.UW.--","BBO.EHZ.UW.--","BRO.EHZ.UW.--"]
     },
-    "Noise_Comparison":{
+    "Coastal":{
       "default":0,
-      "scnls":["HWK6.HNZ.UW.--", "HWK1.HNZ.UW.--", "KDK.ENZ.UW.--", "COOS.HNZ.UW.--"]
+      "scnls":["OOW2.HNZ.UW.--","CORE.HNZ.UW.--","RSLG.HNZ.UW.--","YACH.HNZ.UW.--","CABL.HNZ.UW.--","BROK.HNZ.UW.--"]
+    },
+    "Coastal_Washington":{
+      "default":0,
+      "scnls":["MKAH.HNZ.UW.--","FORK.ENZ.UW.--","BILS.HNZ.UW.--","OCEN.HNZ.UW.--","RADR.HNZ.UW.--","LWCK.HNZ.UW.--"]
+    },
+    "Coastal_Oregon":{
+      "default":0,
+      "scnls":["CNNB.HNZ.UW.--","CHZZ.HNZ.UW.--","ONAB.HNZ.UW.--","FLRE.HNZ.UW.--","COOS.HNZ.UW.--","WEDR.HNZ.UW.--"]
     }
-    
   };
 };
 

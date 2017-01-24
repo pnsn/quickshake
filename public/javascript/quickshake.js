@@ -1,7 +1,7 @@
 //client side of quakeShake 
 $(function() {
   //initial params that should be consistent across all channels on page
-  function QuickShake(viewerWidthSec, channels) {
+  function QuickShake(viewerWidthSec, chans) {
     this.viewerWidthSec = viewerWidthSec; //width of viewer in seconds
     //these vals are set dynamically on load and on window resize
     this.height = null;
@@ -22,17 +22,17 @@ $(function() {
     this.localTime = true;
     this.stationScalar = 3.207930 * Math.pow(10, 5) * 9.8; // count/scalar => %g
     //log values
-    this.scale = 2.5; //starting scale slide value 
-    this.scaleSliderMin = 0;
-    this.scaleSliderMax = 3;
+    this.scale = 3.5; //starting scale slide value 
+    this.scaleSliderMin = 1;
+    this.scaleSliderMax = 6;
     //end log values
     this.realtime = true; //realtime will fast forward if tail of buffer gets too long.
     this.scroll = null; //sets scrolling
     this.timeout = 60; //Number of minutes to keep active
     this.lineColor = "#000";
     this.tz = "PST";
-    this.channels = channels;
-    this.eventStart = null;
+    this.channels = chans;
+    this.eventtime = null;
     this.archive = false;
     this.pad = 0;
     this.archiveOffset = 0; //offset for line labels in archive
@@ -93,23 +93,25 @@ $(function() {
   };
 
   // Takes in array of packets from the archive and the starttime of the packets or event.
-  QuickShake.prototype.playArchive = function(data, eventStart, dataStart) {
+  QuickShake.prototype.playArchive = function(data, eventtime, dataStart) {
 
     this.realtime = false;
     this.archive = true;
 
     this.starttime = dataStart;
-    this.eventStart = dataStart - eventStart != 0 ? this.makeTimeKey(eventStart) : this.makeTimeKey(dataStart);
+    this.eventtime = dataStart - eventtime != 0 ? this.makeTimeKey(eventtime) : this.eventtime;
     this.pad = 0;
 
     var _this = this;
     $.each(data, function(i, packet) {
+      // console.log(new Date(packet.starttime))
       _this.updateBuffer(packet);
+      
     });
   };
 
   QuickShake.prototype.drawSignal = function() {
-    // console.log(new Date(this.viewerLeftTime))
+    $('.loading').hide();
     if (this.scroll) {
       //OFFSET at start
       if (this.startPixOffset > 0) {
@@ -343,17 +345,17 @@ $(function() {
       ctx.stroke();
 
       // // Start line
-      // if (this.eventStart) {
-      //   ctx.beginPath();
-      //   var eventPosition = (this.eventStart - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
-      //   var text = this.width < 570 || (eventPosition - startPosition) < 135 ? "ETA" : "Estimated Arrival Time";
-      //   var eventOffset = this.width < 570 || (eventPosition - startPosition) < 135 ? 25 : 135;
-      //   ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
-      //   ctx.moveTo(eventPosition, edge.bottom);
-      //   ctx.lineTo(eventPosition, edge.top);
-      //   ctx.strokeStyle = "#000";
-      //   ctx.stroke();
-      // }
+      if (this.eventtime) {
+        ctx.beginPath();
+        var eventPosition = (this.eventtime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+        var text = this.width < 570 || (eventPosition - startPosition) < 135 ? "ETA" : "Estimated Arrival Time";
+        var eventOffset = this.width < 570 || (eventPosition - startPosition) < 135 ? 25 : 135;
+        ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
+        ctx.moveTo(eventPosition, edge.bottom);
+        ctx.lineTo(eventPosition, edge.top);
+        ctx.strokeStyle = "#000";
+        ctx.stroke();
+      }
     }
     
     //for live: grab events within "length of buffer" to live
@@ -575,8 +577,6 @@ $(function() {
   // Handles sizing of the canvas for different screens
   QuickShake.prototype.configViewer = function() {
     var offSet = 10; //Default for mobile and if there is no scale    
-    $(".loading").hide();
-
     $("#quickshake-canvas").show();
     $("#quickshake").height(window.innerHeight - $("#header").height() - 10 - $("#controls-container").height());
 
@@ -615,16 +615,21 @@ $(function() {
    *
    *
    *
-   *
    ***/
 
   //Globals  
   var quickshake;
   var socket;
-  // var path = window.location.hostname + "/";
-  var path = "quickshake.pnsn.org/";
-  var usgsPath = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
+  var channels = [];
   
+  //map stuff
+  var map = new L.Map('map'),
+	    osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+	    osmAttrib='Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors',
+	    osm = new L.TileLayer(osmUrl, {attribution: osmAttrib});		
+  
+  //Set some configs
+  var maxChannels = 6; //maximum number of channels that can be shown
   //set the area restrictions for local earthquakes
   var bounds = {
     bottom: 40.5,
@@ -633,8 +638,9 @@ $(function() {
     right: -115,
     mag: 2.5
   };
-  
-  var channels = [];
+  // var path = "quickshake.pnsn.org/";
+  var path = window.location.host + "/";
+  var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
 
   // Initialize UI
   $("#start-select").datetimepicker({
@@ -658,23 +664,17 @@ $(function() {
     'data-size': 10
   });
 
-  var scnlSelector = $('select#scnl-select.station-select');
-  scnlSelector.selectpicker({
-    'data-live-search': true,
-    title: 'Select a scnl.',
-    maxOptionsText: 'No more than 6 stations.',
-    maxOptions: 6,
-    'size': 10
-  });
-
   $(".selectpicker").selectpicker();
 
   groupSelector.change(function() {
     channels = groupSelector.children(":selected").val().split(",");
     $('.quickshake-warning').hide();
     $("ul#station-sorter.station-select li").remove();
+    $(".selected").removeClass("selected");
     $.each(channels, function(i, scnl) {
       updateList(scnl);
+      var klass = ".marker_" + scnl.replace(/\./g, "_");
+      $(klass).addClass("selected");
     });
   });
 
@@ -715,6 +715,114 @@ $(function() {
     // console.log(values)
     return values[0] + "/" + values[1] + " " + values[2] + ":" + values[3];
   }
+  var events = {};
+
+  function getEvents() {
+    eventSelector
+      .append($("<optgroup label='Local Earthquakes' id='earthquakes-group'></optgroup>"))
+      .append($("<optgroup label='Other events' id='others-group'></optgroup>"))
+      .append($("<optgroup label='Significant Global Events' id='significant-group'></optgroup>"));
+
+    var significant = $("#significant-group");
+    var earthquakes = $("#earthquakes-group");
+    var other = $("#others-group");
+
+    $.ajax({
+      dataType: "json",
+      url: usgsPath + "minlatitude=" + bounds.bottom + "&maxlatitude=" + bounds.top + "&minlongitude=" + bounds.left + "&maxlongitude=" + bounds.right + "&minmagnitude=" + bounds.mag
+    }).done(function(data) {
+
+      $.each(data.features, function(i, feature) {
+        // console.log(feature)
+        // console.log(i)
+        var titleTokens = feature.properties.title.split(" ");
+        var tokens = feature.id;
+        $.each(titleTokens, function(i, token) {
+          tokens += token;
+        });
+        var dateString = makeDate(new Date(feature.properties.time));
+        var title = dateString + " M " + feature.properties.mag;
+        var append = $("<option value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
+
+        if (feature.properties.type == "earthquake") {
+          earthquakes.append(append);
+        } else {
+          other.append(append);
+        }
+
+        var coords = feature.geometry.coordinates;
+        events[feature.id] = {
+          evid: feature.id,
+          description: feature.properties.title,
+          starttime: parseFloat(feature.properties.time),
+          geometry: feature.geometry
+        };
+        // console.log(events[feature.id].starttime)
+      });
+
+      if (data.features.length > 0) {
+        eventSelector.removeAttr('disabled');
+        eventSelector.append($("<option data-hidden='true' data-tokens='false' selected value='false'>").text("Select an event"));
+      } else {
+        console.log("wtf");
+      }
+
+      if (getUrlParam("evid")) {
+        evid = getUrlParam("evid");
+        if ($("select#event-select option[id=" + evid + "]")) {
+          $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
+          $('select#event-select').selectpicker('refresh');
+        }
+      }
+      $('select#event-select').selectpicker('refresh');
+    }).fail(function(response) {
+      console.log("I failed");
+      console.log(response);
+    });
+
+    $.ajax({
+      dataType: "json",
+      url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"
+    }).done(function(data) {
+
+      $.each(data.features, function(i, feature) {
+        // console.log(i)
+        var titleTokens = feature.properties.title.split(" ");
+        var tokens = feature.id;
+        $.each(titleTokens, function(i, token) {
+          tokens += token;
+        });
+        var dateString = makeDate(new Date(feature.properties.time));
+        var title = dateString + " M " + feature.properties.mag;
+        var append = $("<option class='significant' value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
+
+        if (feature.properties.type == "earthquake") {
+          significant.append(append);
+        }
+
+        events[feature.id] = {
+          evid: feature.id,
+          description: feature.properties.title,
+          starttime: parseFloat(feature.properties.time),
+          geometry: feature.geometry
+        };
+        // console.log(events[feature.id].starttime)
+      });
+
+      if (getUrlParam("evid")) {
+        evid = getUrlParam("evid");
+        if ($("select#event-select option[id=" + evid + "]")) {
+          $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
+          $('select#event-select').selectpicker('refresh');
+        }
+      }
+
+      $('select#event-select').selectpicker('refresh');
+    }).fail(function(response) {
+      console.log("teleseisms failed");
+    });
+
+  }
 
   function getGroups(_callback) {
     $.ajax({
@@ -730,7 +838,7 @@ $(function() {
 
       groupSelector.append($("<option data-hidden='true' data-tokens='false' title='Select a group' value='false' >"));
       $.each(data, function(key, group) {
-        groupSelector.append($('<option value=' + group.scnls + ' id=' + key + ' data-subtext=' + group.scnls + '>').text(key.replace("_", " ")));
+        groupSelector.append($('<option value=' + group.scnls + ' id=' + key + '>').text(key.replace(/_/g, " ")));
         if (group["default"] == 1 && defaultGroup.scnls.length == 0) {
           defaultGroup.name = key;
           defaultGroup.scnls = group.scnls;
@@ -740,10 +848,10 @@ $(function() {
       if (!getUrlParam("group") && channels.length == 0) {
         channels = defaultGroup.scnls;
         $("select#group-select option[id=" + defaultGroup.name + "]").attr("selected", "selected");
-        $("#group-header span").text(defaultGroup.name.replace("_", " ") + " (default)");
+        $("#group-header span").text(defaultGroup.name.replace(/_/g, " ") + " (default)");
         $("#group-header").show();
       } else if (getUrlParam("group")) {
-        $("#group-header span").text(getUrlParam("group").replace("_", " "));
+        $("#group-header span").text(getUrlParam("group").replace(/_/g, " "));
         $("#group-header").show();
         $("select#group-select option[id=" + getUrlParam("group") + "]").attr("selected", "selected");
         if (channels.length == 0) {
@@ -841,9 +949,7 @@ $(function() {
     var stime = start;
     var text;
 
-    if(evid.indexOf("HAWK") > -1 ) {
-      _callback(stime);
-    } else if (!evid) {
+    if(!evid || evid && evid.indexOf("HAWK") > -1) {
       _callback(stime);
     } else if (events[evid]) {
       stime = stime ? stime : events[evid].starttime;
@@ -852,7 +958,7 @@ $(function() {
       $("#event-header span").text(text);
       $("#event-header").show();
 
-      _callback(stime);
+      _callback(getStartOffset(events[evid], stime));
 
     } else {
       $.ajax({
@@ -872,7 +978,7 @@ $(function() {
           geometry: data.geometry
         };
 
-        _callback(stime);
+       _callback(getStartOffset(events[evid], stime));
 
       }).fail(function(response) {
         // console.log("I failed");
@@ -880,33 +986,194 @@ $(function() {
       });
     }
   }
+  
+  //Do the math, the monster math
+  function getStartOffset(event, start) {
+    var lat1 = (bounds.top - bounds.bottom) / 2 + bounds.bottom; //center of bounding box
+    var lon1 = (bounds.left - bounds.right) / 2 + bounds.right;
+
+    var lat2 = event.geometry.coordinates[1];
+    var lon2 = event.geometry.coordinates[0];
+
+    // Lets hope this works
+    var R = 6371; // Radius of the earth in km
+    var dLat = (lat2 - lat1) * Math.PI / 180; // deg2rad below
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a =
+      0.5 - Math.cos(dLat) / 2 +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      (1 - Math.cos(dLon)) / 2;
+
+    var d = 2 * Math.asin(Math.sqrt(a)) * 180 / Math.PI; //angular distance in degrees
+
+    distances = Object.keys(traveltimes).sort(function compare(a, b) {
+      return a - b;
+    });
+
+    var i = 0;
+    var distance = distances[i];
+
+    while (distance < d) {
+      i++;
+      distance = parseFloat(distances[i]);
+    }
+
+    if (distances[i - 1]) {
+      var distance2 = distances[i - 1];
+
+      var linDif = (traveltimes[distance] - traveltimes[distance2]) / (distance - parseFloat(distance2));
+      return start + (linDif * d + traveltimes[distance2] * 1000);
+
+      $("#offset-header").show();
+      $("#start-header").hide();
+
+    } else {
+      return start;
+    }
+
+  }
 
   //TODO: make a leaflet map
   function getScnls() {
+  
     $.ajax({
       type: "GET",
       dataType: "jsonp",
-      url: "http://" + path + "scnls"
+      url: "http://web4.ess.washington.edu:8888/scnls"
     }).done(function(data) {
+      var stations = {};
+      var latlngs = [];
       $.each(data, function(key, scnl) {
-        // var sta = scnl.split(".");
-        scnlSelector.append($('<option value=' + scnl + ' id=' + scnl + '>').text(scnl));
+        var station = scnl.split(".");
+        if(station.length === 4) {
+          var sta = station[0],
+              cha = station[1],
+              net = station[2];
+          if(stations[sta]){
+            stations[sta].chans.push(cha);
+            stations[sta].scnls.push(scnl);
+          } else {
+            stations[sta] = {
+              sta: sta,
+              net : net,
+              chans : [cha],
+              scnls: [scnl]    
+            };
+          }
+        }
       });
-      scnlSelector.selectpicker('refresh');
+      $.ajax({
+        type: "GET",
+        dataType: "text",
+        url: "https://service.iris.edu/irisws/fedcatalog/1/query?net=UW&format=text&includeoverlaps=false&nodata=404"
+      }).done(function(data) {
+        // console.log(data)
+        var nData = data.split("#");
+      
+        headers = nData[1].split(" | ");
+      
+        for(var i = 2; i < nData.length; i++){
+          var nStations = nData[i].split("\n");
+
+          for(var j = 1; j < nStations.length; j++){
+            var station = nStations[j].split("|");
+            var sta = station[1],
+                net = station[0],
+                lat = station[4],
+                lon = station[5];
+          
+            if(stations[sta] && !stations[sta].coords){
+              stations[sta].coords = {
+                lat: lat,
+                lon: lon
+              }
+              latlngs.push([lat, lon]);
+            } 
+          
+          }
+        }
+        
+        makeMap(stations);
+        
+        $('#controls').on('shown.bs.modal', function() {
+          console.log("show meee")
+          var bounds = new L.LatLngBounds(latlngs);
+          map.fitBounds(bounds);
+        });
+        
+  
+      }).fail(function(response) {
+  
+        console.log("I failed");
+
+      });
+
     }).fail(function(response) {
       // console.log("I failed");
       // console.log(response);
-      scnlSelector.append($("<option data-hidden='true' data-tokens='false' title='No stations found.' value='false' selected>"));
-      scnlSelector.selectpicker('refresh');
     });
 
   }
 
-  //TODO: test if evid is somewhat valid (has network code)
-  $("#evid-select").change(function() {
-    $("#evid-warning").toggle($("#evid-select").val().length != 10);
-    //add test for ww########
-  });
+  function makeMap(stations){
+    map.addLayer(osm);
+    map.doubleClickZoom.disable(); 
+    $.each(stations, function(i, station){
+      var icon;
+      var container = $('<div />');
+      container.append($("<div>"+station.sta+"</div>"));
+
+      $.each(station.scnls, function(j, scnl){
+        var button = $("<a class='selected-station' type='button' id='marker_" + scnl.replace(/\./g, "_")+ "'>" + station.chans[j] + "</a>");
+        container.append(button);
+        if(channels.indexOf(scnl) > -1){
+          icon = L.divIcon({className: 'station-icon selected marker_' + scnl.replace(/\./g, "_")});
+        } else {
+          icon = L.divIcon({className: 'station-icon marker_' + scnl.replace(/\./g, "_")});
+        }
+      });
+      
+      //add text for explanations
+      //group dropdown not working
+      
+      var marker = L.marker([station.coords.lat, station.coords.lon], {icon:icon});
+      
+      container.on('click', '.selected-station', function() {
+        var thisStation = $(this)[0].id.replace("marker_", "").replace(/_/g, ".");
+        
+        if($(marker._icon).hasClass('selected')){
+          $("#length-warning").hide();
+          var index = channels.indexOf(thisStation);
+          if (index > -1) {
+              channels.splice(index, 1);
+          }
+          $(marker._icon).removeClass('selected');
+          $("#selected-stations span").text(channels);
+          $(".update.station-select").addClass("btn-primary");
+        } else if(channels.length < maxChannels) {
+          $("#length-warning").hide();
+          channels.push(thisStation);
+          $(marker._icon).addClass('selected');
+          $("#selected-stations span").text(channels);
+          $(".update.station-select").addClass("btn-primary");
+        }else if(channels.length == maxChannels){
+          $("#length-warning").show();
+        }
+        $("ul#station-sorter.station-select li").remove();
+        $.each(channels, function(i, scnl) {
+          updateList(scnl);
+        });
+        groupSelector.val(false);
+        groupSelector.selectpicker('refresh');
+      });
+      
+      marker.addTo(map);
+      
+      marker.bindPopup(container[0]);
+      
+    });
+    
+  }
 
   // Returns the channels
   function getChannels() {
@@ -935,8 +1202,13 @@ $(function() {
   $("button.open-controls").click(function() {
     showControlPanel();
   });
-
+  
+  $("button.help").click(function(){
+    $("#help").modal("show");
+  });
+  
   $("button.clear-all").click(function(e) {
+    
     var inputs = ["event", "evid", "start", "duration"];
     $.each(inputs, function(i, val) {
       if (val == "group" || val == "event" || val == "scnl") {
@@ -950,13 +1222,14 @@ $(function() {
 
   function updateList(scnl) {
     $("ul#station-sorter.station-select").append("<li class='list-group-item' id= '" + scnl + "'>" + scnl +
-    "<i class='fa fa-sort pull-left'></i>" + "<i class='fa fa-trash pull-right delete' ></i>" + 
+    "<i class='fa fa-trash pull-right delete' ></i>" + 
     "</li>"); 
   }
-
+  
   $("#station-sorter").on('click', '.delete', function() {
+    var klass = ".marker_" + $(this).parent()[0].id.replace(/\./g, "_");
+    $(".selected" + klass).removeClass("selected");
     removeStation($(this).parent());
-    updateScnls();
   });
 
   function removeStation(li) {
@@ -966,7 +1239,7 @@ $(function() {
 
     updateChannels();
 
-    if (channels.length < 6) {
+    if (channels.length < maxChannels) {
       $("#scnl-warning").hide();
     }
   }
@@ -980,35 +1253,6 @@ $(function() {
     if ($("ul#station-sorter li").css('position') == "relative") {
       $(".update.station-select").addClass("btn-primary");
     }
-  }
-
-  scnlSelector.on('shown.bs.select', function(e) {
-    updateScnls();
-  });
-  scnlSelector.on('hidden.bs.select', function(e) {
-    updateScnls();
-  });
-  scnlSelector.on('changed.bs.select', function(e) {
-    $("button.add-station").removeClass("disabled");
-  });
-
-  function updateScnls() {
-    var length = 6 - $("ul#station-sorter li").length;
-    if (length == 0) {
-      scnlSelector.selectpicker({
-        maxOptions: 0
-      });
-      scnlSelector.attr("disabled", true);
-      $("button.add-station").addClass("disabled");
-    } else {
-      scnlSelector.selectpicker({
-        maxOptions: length
-      });
-      scnlSelector.attr("disabled", false);
-    }
-
-    scnlSelector.selectpicker('refresh');
-
   }
 
   // Update URL with correct station order and whatnot
@@ -1073,7 +1317,7 @@ $(function() {
 
   //Populate form with URL values, doesn't handle lack of value
   function populateForm() {
-    if (getUrlParam("width")) { //right now only the selected options are allowed
+    if (getUrlParam("width") && getUrlParam("width") % 1 == 0) { //right now only the selected options are allowed
       $("#width-select option[value=" + getUrlParam("width") + "]").attr("selected", "selected");
       $("#width-select").selectpicker('refresh');
     }
@@ -1118,13 +1362,13 @@ $(function() {
     quickshake.configViewer();
     
   }
-
   function initialize() {
+    getEvents();
     populateForm();
     getScnls();
     getGroups(function() {
       var width = getValue("width") * 60;
-      quickshake = new QuickShake(width, channels);
+      quickshake = new QuickShake(width, channels.slice());
 
       $("#toggle-controls").click(function(){
         toggleControls(quickshake);
@@ -1137,31 +1381,31 @@ $(function() {
 
       if (channels.length > 0 && channels.length < 7) {
         $('.quickshake-warning').hide();
-        $('.loading').hide();
         $('#header-left').show();
         // var evid = getValue("evid");
 
         var duration = getValue("duration") ? getValue("duration") : 10;
 
-        // var start = getValue("start");
+        var start = getValue("start");
         
         var t = new Date();
         getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime());
         var interval = setInterval(function(){
           getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime());
-        }, 60000);
+        }, 120000);
         
-        var start = getUrlParam("start");
         var evid = getUrlParam("evid");
 
         var stations = "scnls=" + getChannels();
  
         if (start || evid) {
-          getStart(evid, start, function(eventStart) {
-            $("#start-header span").text(new Date(eventStart));
+          $(".clear-all").show();
+          getStart(evid, start, function(eventtime) {
+            $("#start-header span").text(new Date(start));
+            
             $("#start-header").show();
 
-            var dataStart = eventStart - 20 * 1000; //grab 30 seconds before event
+            var dataStart = evid ? eventtime - 20 * 1000 : eventtime; //grab 30 seconds before event
             endtime = dataStart + 5 * 60 * 1000; //grab 5 minutes of data
 
             $.ajax({
@@ -1175,7 +1419,7 @@ $(function() {
               $("#fastforward-button").show();
               // $(".helpful-label").show();
               quickshake.configViewer();
-              quickshake.playArchive(data, eventStart, dataStart);
+              quickshake.playArchive(data, eventtime, dataStart);
               var tm = window.setTimeout(function(){
                 toggleControls(quickshake);
               }, 10000);
@@ -1192,10 +1436,9 @@ $(function() {
           $("#realtime-button").show();
           quickshake.configViewer();
           initializeSocket(stations);
-          
           var tm = window.setTimeout(function(){
             toggleControls(quickshake);
-          }, 5000);
+          }, 10000);
         }
 
         controlsInit();
@@ -1215,7 +1458,6 @@ $(function() {
       updateList(scnl);
     });
     $("#station-sorter").show();
-    updateScnls();
   }
 
   //Give date in milliseconds
@@ -1223,11 +1465,6 @@ $(function() {
 
   // Can't load these until the quickshake is made
   function controlsInit() {
-    $(window).resize(function(){
-      var timeout = setTimeout(function(){
-        location.reload();
-      }, 3000);
-    });
     // Controls stuff
     $("#playback-slider").slider({
       slide: function(e, ui) {
