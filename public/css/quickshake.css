@@ -265,7 +265,7 @@ form button.btn {
 
 .station-icon{
   background-color:#B8B8B8 ;
-  border:1px solid #B8B8B8 ;    
+  border:1px solid #808080 ;    
   height:7px;
   width:7px;
   border-radius:50%;
@@ -275,7 +275,7 @@ form button.btn {
 
 .station-icon.selected{
   background-color:#249524;
-  border:1px solid #249524 ;
+  border:1px solid #1D771D ;
 /*  border-radius:0;
   -moz-border-radius:0;
   -webkit-border-radius:0;

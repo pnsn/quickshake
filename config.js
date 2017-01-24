@@ -51,7 +51,7 @@ function Conf(){
   this.groups={
     "Short_Period":{
       "default":1,
-      "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
+      "scnls": ["fmw.ehz.uw.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
     },
     "Inland_Washington":{
       "default":0,

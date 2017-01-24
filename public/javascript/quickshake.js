@@ -93,13 +93,13 @@ $(function() {
   };
 
   // Takes in array of packets from the archive and the starttime of the packets or event.
-  QuickShake.prototype.playArchive = function(data, eventtime, dataStart) {
+  QuickShake.prototype.playArchive = function(data, eventtime, starttime) {
 
     this.realtime = false;
     this.archive = true;
 
-    this.starttime = dataStart;
-    this.eventtime = dataStart - eventtime != 0 ? this.makeTimeKey(eventtime) : this.eventtime;
+    this.starttime = starttime;
+    this.eventtime = starttime - eventtime != 0 ? this.makeTimeKey(eventtime) : this.eventtime;
     this.pad = 0;
 
     var _this = this;
@@ -262,7 +262,7 @@ $(function() {
     //channel center lines and labels:
     for (var i = 0; i < this.channels.length; i++) {
       var channel = this.channels[i];
-      var cName = channel.split(".")[0];
+      var cName = channel.split(".")[0].toUpperCase();
       var yOffset = i * this.channelHeight;
       
       ctx.fillText(cName, edge.left + this.timeOffset, edge.top + this.archiveOffset + yOffset + this.timeOffset);
@@ -618,7 +618,6 @@ $(function() {
    ***/
 
   //Globals  
-  var quickshake;
   var socket;
   var channels = [];
   
@@ -638,8 +637,8 @@ $(function() {
     right: -115,
     mag: 2.5
   };
-  // var path = "quickshake.pnsn.org/";
-  var path = window.location.host + "/";
+  var path = "quickshake.pnsn.org/";
+  // var path = window.location.host + "/";
   var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
 
   // Initialize UI
@@ -655,6 +654,12 @@ $(function() {
     title: "No events found.",
     'data-size': 10
   });
+
+  eventSelector
+    .append($("<optgroup label='Local Earthquakes' id='earthquakes-group'></optgroup>"))
+    .append($("<optgroup label='Other events' id='others-group'></optgroup>"))
+    .append($("<optgroup label='Significant Global Events' id='significant-group'></optgroup>"));
+  
 
   //Populate group groupSelector
   var groupSelector = $('select#group-select.station-select');
@@ -673,8 +678,7 @@ $(function() {
     $(".selected").removeClass("selected");
     $.each(channels, function(i, scnl) {
       updateList(scnl);
-      var klass = ".marker_" + scnl.replace(/\./g, "_");
-      $(klass).addClass("selected");
+      $(".marker_" + scnl.replace(/\./g, "_")).addClass("selected");
     });
   });
 
@@ -715,157 +719,116 @@ $(function() {
     // console.log(values)
     return values[0] + "/" + values[1] + " " + values[2] + ":" + values[3];
   }
-  var events = {};
+  
 
-  function getEvents() {
-    eventSelector
-      .append($("<optgroup label='Local Earthquakes' id='earthquakes-group'></optgroup>"))
-      .append($("<optgroup label='Other events' id='others-group'></optgroup>"))
-      .append($("<optgroup label='Significant Global Events' id='significant-group'></optgroup>"));
 
+//this will get condensed when we get events from mongo
+  function processEvents(localEventData, significantEventData) {
+    var events = {};
     var significant = $("#significant-group");
     var earthquakes = $("#earthquakes-group");
     var other = $("#others-group");
-
-    $.ajax({
-      dataType: "json",
-      url: usgsPath + "minlatitude=" + bounds.bottom + "&maxlatitude=" + bounds.top + "&minlongitude=" + bounds.left + "&maxlongitude=" + bounds.right + "&minmagnitude=" + bounds.mag
-    }).done(function(data) {
-
-      $.each(data.features, function(i, feature) {
-        // console.log(feature)
-        // console.log(i)
-        var titleTokens = feature.properties.title.split(" ");
-        var tokens = feature.id;
-        $.each(titleTokens, function(i, token) {
-          tokens += token;
-        });
-        var dateString = makeDate(new Date(feature.properties.time));
-        var title = dateString + " M " + feature.properties.mag;
-        var append = $("<option value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
-
-        if (feature.properties.type == "earthquake") {
-          earthquakes.append(append);
-        } else {
-          other.append(append);
-        }
-
-        var coords = feature.geometry.coordinates;
-        events[feature.id] = {
-          evid: feature.id,
-          description: feature.properties.title,
-          starttime: parseFloat(feature.properties.time),
-          geometry: feature.geometry
-        };
-        // console.log(events[feature.id].starttime)
+    
+    $.each(localEventData.features, function(i, feature) {
+      var titleTokens = feature.properties.title.split(" ");
+      var tokens = feature.id;
+      $.each(titleTokens, function(i, token) {
+        tokens += token;
       });
+      var dateString = makeDate(new Date(feature.properties.time));
+      var title = dateString + " M " + feature.properties.mag;
+      var append = $("<option value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
 
-      if (data.features.length > 0) {
-        eventSelector.removeAttr('disabled');
-        eventSelector.append($("<option data-hidden='true' data-tokens='false' selected value='false'>").text("Select an event"));
+      if (feature.properties.type == "earthquake") {
+        earthquakes.append(append);
       } else {
-        console.log("wtf");
+        other.append(append);
       }
 
-      if (getUrlParam("evid")) {
-        evid = getUrlParam("evid");
-        if ($("select#event-select option[id=" + evid + "]")) {
-          $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
-          $('select#event-select').selectpicker('refresh');
-        }
-      }
-      $('select#event-select').selectpicker('refresh');
-    }).fail(function(response) {
-      console.log("I failed");
-      console.log(response);
-    });
-
-    $.ajax({
-      dataType: "json",
-      url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"
-    }).done(function(data) {
-
-      $.each(data.features, function(i, feature) {
-        // console.log(i)
-        var titleTokens = feature.properties.title.split(" ");
-        var tokens = feature.id;
-        $.each(titleTokens, function(i, token) {
-          tokens += token;
-        });
-        var dateString = makeDate(new Date(feature.properties.time));
-        var title = dateString + " M " + feature.properties.mag;
-        var append = $("<option class='significant' value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
-
-        if (feature.properties.type == "earthquake") {
-          significant.append(append);
-        }
-
-        events[feature.id] = {
-          evid: feature.id,
-          description: feature.properties.title,
-          starttime: parseFloat(feature.properties.time),
-          geometry: feature.geometry
-        };
-        // console.log(events[feature.id].starttime)
-      });
-
-      if (getUrlParam("evid")) {
-        evid = getUrlParam("evid");
-        if ($("select#event-select option[id=" + evid + "]")) {
-          $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
-          $('select#event-select').selectpicker('refresh');
-        }
-      }
-
-      $('select#event-select').selectpicker('refresh');
-    }).fail(function(response) {
-      console.log("teleseisms failed");
-    });
-
-  }
-
-  function getGroups(_callback) {
-    $.ajax({
-      type: "GET",
-      dataType: "jsonp",
-      url: "http://" + path + "groups"
-    }).done(function(data) {
-
-      var defaultGroup = {
-        name: "",
-        scnls: []
+      var coords = feature.geometry.coordinates;
+      events[feature.id] = {
+        evid: feature.id,
+        description: feature.properties.title,
+        starttime: parseFloat(feature.properties.time),
+        geometry: feature.geometry
       };
 
-      groupSelector.append($("<option data-hidden='true' data-tokens='false' title='Select a group' value='false' >"));
-      $.each(data, function(key, group) {
-        groupSelector.append($('<option value=' + group.scnls + ' id=' + key + '>').text(key.replace(/_/g, " ")));
-        if (group["default"] == 1 && defaultGroup.scnls.length == 0) {
-          defaultGroup.name = key;
-          defaultGroup.scnls = group.scnls;
-        }
+    });
+
+    $.each(significantEventData.features, function(i, feature) {
+      // console.log(i)
+      var titleTokens = feature.properties.title.split(" ");
+      var tokens = feature.id;
+      $.each(titleTokens, function(i, token) {
+        tokens += token;
       });
-      
-      if (!getUrlParam("group") && channels.length == 0) {
-        channels = defaultGroup.scnls;
-        $("select#group-select option[id=" + defaultGroup.name + "]").attr("selected", "selected");
-        $("#group-header span").text(defaultGroup.name.replace(/_/g, " ") + " (default)");
-        $("#group-header").show();
-      } else if (getUrlParam("group")) {
-        $("#group-header span").text(getUrlParam("group").replace(/_/g, " "));
-        $("#group-header").show();
-        $("select#group-select option[id=" + getUrlParam("group") + "]").attr("selected", "selected");
-        if (channels.length == 0) {
-          channels = data[getUrlParam("group")] ? data[getUrlParam("group")].scnls : [];
-        }
+      var dateString = makeDate(new Date(feature.properties.time));
+      var title = dateString + " M " + feature.properties.mag;
+      var append = $("<option class='significant' value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
+
+      if (feature.properties.type == "earthquake") {
+        significant.append(append);
       }
 
-      groupSelector.selectpicker('refresh');
-
-      _callback();
-    }).fail(function(response) {
-      console.log("Group select failed");
-      console.log(response);
+      events[feature.id] = {
+        evid: feature.id,
+        description: feature.properties.title,
+        starttime: parseFloat(feature.properties.time),
+        geometry: feature.geometry
+      };
+      // console.log(events[feature.id].starttime)
     });
+
+    if (localEventData.features.length > 0 || significantEventData.features.length > 0) {
+      eventSelector.removeAttr('disabled');
+      eventSelector.append($("<option data-hidden='true' data-tokens='false' selected value='false'>").text("Select an event"));
+    } else {
+      console.log("wtf");
+    }
+
+    if (getUrlParam("evid")) {
+      evid = getUrlParam("evid");
+      if ($("select#event-select option[id=" + evid + "]")) {
+        $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
+        $('select#event-select').selectpicker('refresh');
+      }
+    }
+
+    $('select#event-select').selectpicker('refresh');
+    
+    return events;
+  }
+
+  function processGroups(groupData) {
+    var defaultGroup = {
+      name: "",
+      scnls: []
+    };
+
+    groupSelector.append($("<option data-hidden='true' data-tokens='false' title='Select a group' value='false' >"));
+    $.each(groupData, function(key, group) {
+      groupSelector.append($('<option value=' + group.scnls + ' id=' + key + '>').text(key.replace(/_/g, " ")));
+      if (group["default"] == 1 && defaultGroup.scnls.length == 0) {
+        defaultGroup.name = key;
+        defaultGroup.scnls = group.scnls;
+      }
+    });
+    
+    if (!getUrlParam("group") && channels.length == 0) {
+      channels = defaultGroup.scnls;
+      $("select#group-select option[id=" + defaultGroup.name + "]").attr("selected", "selected");
+      $("#group-header span").text(defaultGroup.name.replace(/_/g, " ") + " (default)");
+      $("#group-header").show();
+    } else if (getUrlParam("group")) {
+      $("#group-header span").text(getUrlParam("group").replace(/_/g, " "));
+      $("#group-header").show();
+      $("select#group-select option[id=" + getUrlParam("group") + "]").attr("selected", "selected");
+      if (channels.length == 0) {
+        channels = groupData[getUrlParam("group")] ? groupData[getUrlParam("group")].scnls : [];
+      }
+    }
+
+    groupSelector.selectpicker('refresh');
   }
 
   $("[data-hide]").on("click", function() {
@@ -876,7 +839,7 @@ $(function() {
   // if live: send in length of buffer & current time
   // if archive: send in data start and end
   var annotations = [];
-  function getAnnotations(start, end){
+  function getAnnotations(start, end, quickshake){
     var annotStart, annotEnd;
     
     if(quickshake.starttime && quickshake.endtime) {
@@ -895,7 +858,7 @@ $(function() {
     $.ajax({
       type: "GET",
       dataType: "jsonp",
-      url: "http://www.pnsn.org/annotations?starttime=" + annotStart + "&endtime="+ annotEnd + "&category=Seahawk"
+      url: "http://www.pnsn.org/annotations?starttime=" + annotStart + "&endtime="+ annotEnd + "&category=Automatic"
     }).success(function(data) { //sometimes doesn't get called?
       var annot = quickshake.annotations;
       eventSelector.append($("<option data-hidden='true' data-tokens='false' title='Select an event.' value='false' selected>"));
@@ -1034,158 +997,104 @@ $(function() {
   }
 
   //TODO: make a leaflet map
-  function getScnls() {
-  
-    $.ajax({
-      type: "GET",
-      dataType: "jsonp",
-      url: "http://web4.ess.washington.edu:8888/scnls"
-    }).done(function(data) {
-      var stations = {};
-      var latlngs = [];
-      $.each(data, function(key, scnl) {
-        var station = scnl.split(".");
-        if(station.length === 4) {
-          var sta = station[0],
-              cha = station[1],
-              net = station[2];
-          if(stations[sta]){
-            stations[sta].chans.push(cha);
-            stations[sta].scnls.push(scnl);
-          } else {
-            stations[sta] = {
-              sta: sta,
-              net : net,
-              chans : [cha],
-              scnls: [scnl]    
-            };
-          }
+  function processStations(stations, stationData) {
+    var latlngs = [];
+    var stationData = stationData.split("#");
+
+    headers = stationData[1].split(" | ");
+    for(var i = 2; i < stationData.length; i++){
+      var nStations = stationData[i].split("\n");
+    
+      for(var j = 1; j < nStations.length; j++){
+        var station = nStations[j].split("|");
+        if(station.length > 1){
+          var sta = station[1],
+              net = station[0],
+              lat = station[4],
+              lon = station[5];
+          if(stations[sta] && !stations[sta].coords){
+            stations[sta].coords = {
+              lat: lat,
+              lon: lon
+            }
+            latlngs.push([lat, lon]);
+          } 
         }
-      });
-      $.ajax({
-        type: "GET",
-        dataType: "text",
-        url: "https://service.iris.edu/irisws/fedcatalog/1/query?net=UW&format=text&includeoverlaps=false&nodata=404"
-      }).done(function(data) {
-        // console.log(data)
-        var nData = data.split("#");
-      
-        headers = nData[1].split(" | ");
-      
-        for(var i = 2; i < nData.length; i++){
-          var nStations = nData[i].split("\n");
+      }
+    }
 
-          for(var j = 1; j < nStations.length; j++){
-            var station = nStations[j].split("|");
-            var sta = station[1],
-                net = station[0],
-                lat = station[4],
-                lon = station[5];
-          
-            if(stations[sta] && !stations[sta].coords){
-              stations[sta].coords = {
-                lat: lat,
-                lon: lon
-              }
-              latlngs.push([lat, lon]);
-            } 
-          
-          }
-        }
-        
-        makeMap(stations);
-        
-        $('#controls').on('shown.bs.modal', function() {
-          console.log("show meee")
-          var bounds = new L.LatLngBounds(latlngs);
-          map.fitBounds(bounds);
-        });
-        
-  
-      }).fail(function(response) {
-  
-        console.log("I failed");
-
-      });
-
-    }).fail(function(response) {
-      // console.log("I failed");
-      // console.log(response);
+    $('#controls').on('shown.bs.modal', function() {
+      var bounds = new L.LatLngBounds(latlngs);
+      map.fitBounds(bounds);
     });
-
+  
+    return stations;
   }
 
   function makeMap(stations){
     map.addLayer(osm);
     map.doubleClickZoom.disable(); 
     $.each(stations, function(i, station){
+      // console.log(statio)
       var icon;
       var container = $('<div />');
-      container.append($("<div>"+station.sta+"</div>"));
+      container.append($("<div>"+station.sta.toUpperCase()+"</div>"));
 
       $.each(station.scnls, function(j, scnl){
-        var button = $("<a class='selected-station' type='button' id='marker_" + scnl.replace(/\./g, "_")+ "'>" + station.chans[j] + "</a>");
+        var _scnl = scnl.replace(/\./g, "_");
+        var button = $("<a class='selected-station' type='button' id='marker_" + _scnl + "'>" + station.chans[j] + "</a>");
         container.append(button);
         if(channels.indexOf(scnl) > -1){
-          icon = L.divIcon({className: 'station-icon selected marker_' + scnl.replace(/\./g, "_")});
+          icon = L.divIcon({className: 'station-icon selected marker_' + _scnl});
         } else {
-          icon = L.divIcon({className: 'station-icon marker_' + scnl.replace(/\./g, "_")});
+          icon = L.divIcon({className: 'station-icon marker_' + _scnl});
         }
       });
       
       //add text for explanations
       //group dropdown not working
       
-      var marker = L.marker([station.coords.lat, station.coords.lon], {icon:icon});
+      if(station.coords.lat && station.coords.lon){
+        var marker = L.marker([station.coords.lat, station.coords.lon], {icon:icon});
       
-      container.on('click', '.selected-station', function() {
-        var thisStation = $(this)[0].id.replace("marker_", "").replace(/_/g, ".");
+        container.on('click', '.selected-station', function() {
+          var thisStation = $(this)[0].id.replace("marker_", "").replace(/_/g, ".");
         
-        if($(marker._icon).hasClass('selected')){
-          $("#length-warning").hide();
-          var index = channels.indexOf(thisStation);
-          if (index > -1) {
-              channels.splice(index, 1);
+          if($(marker._icon).hasClass('selected')){
+            $("#length-warning").hide();
+            var index = channels.indexOf(thisStation);
+            if (index > -1) {
+                channels.splice(index, 1);
+            }
+            $(marker._icon).removeClass('selected');
+            console.log(thisStation)
+            $("#selected-stations span").text(channels);
+            $(".update.station-select").addClass("btn-primary");
+          } else if(channels.length < maxChannels) {
+            $("#length-warning").hide();
+            channels.push(thisStation);
+            $(marker._icon).addClass('selected');
+            $("#selected-stations span").text(channels);
+            $(".update.station-select").addClass("btn-primary");
+          }else if(channels.length == maxChannels){
+            $("#length-warning").show();
           }
-          $(marker._icon).removeClass('selected');
-          $("#selected-stations span").text(channels);
-          $(".update.station-select").addClass("btn-primary");
-        } else if(channels.length < maxChannels) {
-          $("#length-warning").hide();
-          channels.push(thisStation);
-          $(marker._icon).addClass('selected');
-          $("#selected-stations span").text(channels);
-          $(".update.station-select").addClass("btn-primary");
-        }else if(channels.length == maxChannels){
-          $("#length-warning").show();
-        }
-        $("ul#station-sorter.station-select li").remove();
-        $.each(channels, function(i, scnl) {
-          updateList(scnl);
+          $("ul#station-sorter.station-select li").remove();
+          $.each(channels, function(i, scnl) {
+            updateList(scnl);
+          });
+          groupSelector.val(false);
+          groupSelector.selectpicker('refresh');
         });
-        groupSelector.val(false);
-        groupSelector.selectpicker('refresh');
-      });
       
-      marker.addTo(map);
+        marker.addTo(map);
       
-      marker.bindPopup(container[0]);
+        marker.bindPopup(container[0]);
+      }
+
       
     });
     
-  }
-
-  // Returns the channels
-  function getChannels() {
-    if (channels.length > 0) {
-      return channels;
-    } else if ($('select#group-select option:selected').length > 0 && $('select#group-select option:selected')[0].value) {
-      channels = $('select#group-select option:selected').first().val().split(",");
-      return channels;
-    } else {
-      // $(".quickshake-warning").show();
-      return false;
-    }
   }
 
   $("ul#station-sorter.station-select").sortable({
@@ -1227,7 +1136,7 @@ $(function() {
   }
   
   $("#station-sorter").on('click', '.delete', function() {
-    var klass = ".marker_" + $(this).parent()[0].id.replace(/\./g, "_");
+    var klass = ".marker_" + $(this).parent()[0].id;
     $(".selected" + klass).removeClass("selected");
     removeStation($(this).parent());
   });
@@ -1345,6 +1254,7 @@ $(function() {
       $("#duration-select option[value='" + getUrlParam("duration") + "']").attr("selected", "selected");
       $("#duration-select").selectpicker('refresh');
     }
+
   }
 
   function getValue(variable) {
@@ -1362,92 +1272,131 @@ $(function() {
     quickshake.configViewer();
     
   }
+  
   function initialize() {
-    getEvents();
+    var getGroups = function(){ return $.ajax({dataType: "jsonp", url: "http://" + path + "groups"});};
+    var getLocalEvents = function(){return $.ajax({dataType: "json", url: usgsPath + "minlatitude=" + bounds.bottom + "&maxlatitude=" + bounds.top + "&minlongitude=" + bounds.left + "&maxlongitude=" + bounds.right + "&minmagnitude=" + bounds.mag});};
+    var getSignificantEvents = function(){return $.ajax({dataType: "json",url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"});};
+    var getStations = function(){return $.ajax({dataType: "text",url: "https://service.iris.edu/irisws/fedcatalog/1/query?net=UW&format=text&includeoverlaps=false&nodata=404"});};
+    
+    var stations = {},
+        events,
+        controlsTimeout,
+        duration = getValue("duration") ? getValue("duration") : 10,
+        start = getValue("start"),
+        evid = getValue("evid");
+    
     populateForm();
-    getScnls();
-    getGroups(function() {
-      var width = getValue("width") * 60;
-      quickshake = new QuickShake(width, channels.slice());
-
-      $("#toggle-controls").click(function(){
-        toggleControls(quickshake);
+    
+    $.ajax({
+      type: "GET",
+      dataType: "jsonp",
+      url: "http://web4.ess.washington.edu:8888/scnls"
+    }).done(function(data){
+      
+      $.each(data, function(key, scnl) {
+        
+        var station = scnl.split(/\./g);
+        if(station.length <= 4) {
+          var sta = station[0],
+              cha = station[1],
+              net = station[2];
+          if(stations[sta] && $.inArray(cha, stations[sta].chans) === -1){
+            stations[sta].chans.push(cha);
+            stations[sta].scnls.push(scnl);
+          } else {
+            stations[sta] = {
+              sta: sta,
+              net : net,
+              chans : [cha],
+              scnls: [scnl]    
+            };
+          }
+        }
       });
       
-      $("#controls-container").click(function(){
-        clearTimeout(tm);
-        tm = null;
-      });
-
-      if (channels.length > 0 && channels.length < 7) {
-        $('.quickshake-warning').hide();
-        $('#header-left').show();
-        // var evid = getValue("evid");
-
-        var duration = getValue("duration") ? getValue("duration") : 10;
-
-        var start = getValue("start");
+      //Patiently waits until all the requests are done before proceeding,
+      $.when(getGroups(),getLocalEvents(), getSignificantEvents(), getStations(), stations).done(function(groupData, localEventData, significantEventData, stationData, stations){
+        processGroups(groupData[0]);
+        events = processEvents(localEventData[0], significantEventData[0]);
         
-        var t = new Date();
-        getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime());
-        var interval = setInterval(function(){
-          getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime());
-        }, 120000);
+        stations = processStations(stations, stationData[0]);
+
+        makeMap(stations);
         
-        var evid = getUrlParam("evid");
+        quickshake = new QuickShake(getValue("width") ? getValue("width") * 60 : 2 * 60, channels.slice());
+        
+        $("#toggle-controls").click(function(){
+          toggleControls(quickshake);
+        });
+        
+        if (channels.length > 0 && channels.length <= maxChannels) {
+          $('.quickshake-warning').hide();
+          $('#header-left').show();
+          
+          // var t = new Date();
+          // getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime(), quickshake);
+          // var interval = setInterval(function(){
+          //   getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime(), quickshake);
+          // }, 5*60*1000);
 
-        var stations = "scnls=" + getChannels();
- 
-        if (start || evid) {
-          $(".clear-all").show();
-          getStart(evid, start, function(eventtime) {
-            $("#start-header span").text(new Date(start));
-            
-            $("#start-header").show();
+          if (start || evid) {
+            getStart(evid, start, function(eventtime) {
+              $("#start-header span").text(new Date(start));
 
-            var dataStart = evid ? eventtime - 20 * 1000 : eventtime; //grab 30 seconds before event
-            endtime = dataStart + 5 * 60 * 1000; //grab 5 minutes of data
+              $("#start-header").show();
 
-            $.ajax({
-              type: "GET",
-              dataType: "jsonp",
-              url: "http://" + path + "archive?starttime=" + dataStart + "&" + stations + "&endtime=" + endtime,
-              timeout: 4000 //gives it time to think before giving up
-              //Drawing speed is varying with amountof data
-            }).success(function(data) { //sometimes doesn't get called?
-              // console.log("success!");
-              $("#fastforward-button").show();
-              // $(".helpful-label").show();
-              quickshake.configViewer();
-              quickshake.playArchive(data, eventtime, dataStart);
-              var tm = window.setTimeout(function(){
-                toggleControls(quickshake);
-              }, 10000);
-            }).complete(function(xhr, data) {
-              if (xhr.status != 200) { //In case it fails
-                showControlPanel();
-                $("#station-sorter").show();
-                $("#data-error").show();
-              }
+              var starttime = evid ? eventtime - 20 * 1000 : eventtime; //grab 30 seconds before event
+              var endtime = starttime + 5 * 60 * 1000; //grab 5 minutes of data
+
+              $.ajax({
+                type: "GET",
+                dataType: "jsonp",
+                url: "http://" + path + "archive?starttime=" + starttime + "&" + channels + "&endtime=" + endtime,
+                timeout: 4000 //gives it time to think before giving up
+              }).success(function(data) { //sometimes doesn't get called?
+                $("#fastforward-button").show();
+                quickshake.configViewer();
+                quickshake.playArchive(data, eventtime, starttime);
+                
+                controlsTimeout = window.setTimeout(function(){
+                  toggleControls(quickshake);
+                }, 10000);
+                
+              }).complete(function(xhr, data) {
+                if (xhr.status != 200) { //In case it fails
+                  showControlPanel();
+                  $("#station-sorter").show();
+                  $("#data-error").show();
+                }
+              });
             });
-          });
 
+          } else {
+            $("#realtime-button").show();
+            quickshake.configViewer();
+            initializeSocket(quickshake, stations);
+            controlsTimeout = window.setTimeout(function(){
+              toggleControls(quickshake);
+            }, 10000);
+          }
+
+          controlsInit(quickshake);
         } else {
-          $("#realtime-button").show();
-          quickshake.configViewer();
-          initializeSocket(stations);
-          var tm = window.setTimeout(function(){
-            toggleControls(quickshake);
-          }, 10000);
+          $('.quickshake-warning').show();
         }
 
-        controlsInit();
-
-
-      } else {
-        $('.quickshake-warning').show();
-      }
     });
+    
+  }).fail(function(){
+    console.log("Oops something went wrong. ");
+    alert("JON WEB4 IS DOWN!!!")
+  });
+  
+  $("#controls-container").click(function(){
+    clearTimeout(controlsTimeout);
+    controlsTimeout = null;
+  });
 
   }
 
@@ -1464,7 +1413,7 @@ $(function() {
   initialize();
 
   // Can't load these until the quickshake is made
-  function controlsInit() {
+  function controlsInit(quickshake) {
     // Controls stuff
     $("#playback-slider").slider({
       slide: function(e, ui) {
@@ -1533,7 +1482,7 @@ $(function() {
 
   // Websocket stuff
 
-  function initializeSocket(stations) {
+  function initializeSocket(quickshake, stations) {
     // console.log(stations)
     if (window.WebSocket) {
       socket = new WebSocket("ws://" + path + "?" + stations);
