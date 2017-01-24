@@ -73,7 +73,7 @@ app.get('/scnls', function (req, res) {
     for(var i=0;i<collections.length; i++){
       var scnl=collections[i]['name'].split("_cwave")[0];
       if( scnl != "ring"){
-        scnls.push(col);
+        scnls.push(scnl);
       }
     }
     res.jsonp(scnls);
