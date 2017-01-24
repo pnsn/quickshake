@@ -32,10 +32,9 @@ function Conf(){
   
   this.development= {
     mongo:{
-        uri: "mongodb://" + process.env.QUICKMONGO_PORT_27017_TCP_ADDR + ":" + process.env.QUICKMONGO_PORT_27017_TCP_PORT + "/waveforms",
-      //uri: "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWD + "@" 
-        //      + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" + "waveforms"
-        //      + "?authMechanism=DEFAULT" + "&authSource=admin",
+      uri: "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWD + "@" 
+              + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" + "waveforms"
+              + "?authMechanism=DEFAULT" + "&authSource=admin",
       rtCollection: "ring"
     },
     
@@ -52,28 +51,33 @@ function Conf(){
   this.groups={
     "Short_Period":{
       "default":1,
-      "scnls": ["fmw_ehz_uw", "slf_ehz_uw", "hdw_ehz_uw", "bbo_ehz_uw", "hbo_ehz_uw", "elk_ehz_uw"]
+      "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
+    },
+    "Seahawks_Noise_Comparison":{
+      "default":0,
+      "scnls":["HWK6.HNZ.UW.--", "HWK1.HNZ.UW.--", "HWK3.HNZ.UW.--", "KDK.ENZ.UW.--", "COOS.HNZ.UW.--"]
     },
     "Inland_Washington":{
       "default":0,
-      "scnls":["jcw_ehz_uw", "cbs_ehz_uw","slf_ehz_uw","fmw_ehz_uw","rvc_ehz_uw","elk_ehz_uw"]
+      "scnls":["JCW.EHZ.UW.--", "CBS.EHZ.UW.--","SLF.EHZ.UW.--","FMW.EHZ.UW.--","RVC.EHZ.UW.--","ELK.EHZ.UW.--"]
     },
     "Inland_Oregon":{
       "default":0,
-      "scnls":["tdh_ehz_uw","hbo_ehz_uw","bbo_ehz_uw","bro_ehz_uw"]
+      "scnls":["TDH.EHZ.UW.--","HBO.EHZ.UW.--","BBO.EHZ.UW.--","BRO.EHZ.UW.--"]
     },
     "Coastal":{
       "default":0,
-      "scnls":["oow2_hnz_uw","core_hnz_uw","rslg_hnz_uw","yach_hnz_uw","cabl_hnz_uw","brok_hnz_uw"]
+      "scnls":["OOW2.HNZ.UW.--","CORE.HNZ.UW.--","RSLG.HNZ.UW.--","YACH.HNZ.UW.--","CABL.HNZ.UW.--","BROK.HNZ.UW.--"]
     },
     "Coastal_Washington":{
       "default":0,
-      "scnls":["mkah_hnz_uw","fork_enz_uw","bils_hnz_uw","ocen_hnz_uw","radr_hnz_uw","lwck_hnz_uw"]
+      "scnls":["MKAH.HNZ.UW.--","FORK.ENZ.UW.--","BILS.HNZ.UW.--","OCEN.HNZ.UW.--","RADR.HNZ.UW.--","LWCK.HNZ.UW.--"]
     },
     "Coastal_Oregon":{
       "default":0,
-      "scnls":["cnnb_hnz_uw","chzz_hnz_uw","onab_hnz_uw","flre_hnz_uw","coos_hnz_uw","wedr_hnz_uw"]
+      "scnls":["CNNB.HNZ.UW.--","CHZZ.HNZ.UW.--","ONAB.HNZ.UW.--","FLRE.HNZ.UW.--","COOS.HNZ.UW.--","WEDR.HNZ.UW.--"]
     }
+
   };
 };
 
