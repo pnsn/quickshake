@@ -10,7 +10,7 @@ const logger = require('winston');
 const Conf = require("./config.js");
 const MongoClient  = require('mongodb').MongoClient;
 const RingBuffer = require(__dirname + '/lib/ringBuffer');
-const waveArchiver = require(__dirname + '/lib/cwaveArchiver');
+const CwaveArchiver = require(__dirname + '/lib/cwaveArchiver');
     
 
 

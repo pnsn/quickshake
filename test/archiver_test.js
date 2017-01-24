@@ -48,12 +48,12 @@ describe('add document to mongo', function(){
         
         db.listCollections().toArray(function(err, names){
           for(var i=0; i< names.length; i++){
-            var collname=names[i]['name'];
+            var key=names[i]['name'];
             if(!waveforms_found){
-              waveforms_found=collname==="ring";
+              waveforms_found=key==="ring";
             }
             if(!yach_found){
-              yach_found=collname==="yach_hnz_uw___";
+              yach_found=key==="yach_hnz_uw___";
             }            
           }
         });

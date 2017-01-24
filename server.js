@@ -71,7 +71,7 @@ app.get('/scnls', function (req, res) {
     if(err) throw err;
     var scnls=[];
     for(var i=0;i<collections.length; i++){
-      var scnl=collections[i]['name'].split("_cwave")[0];
+      var scnl=collections[i]['name'];
       if( scnl != "ring"){
         scnls.push(scnl);
       }
@@ -234,7 +234,7 @@ function sendArchive(scnls,res,starttime, endtime, results) {
     }
     
   }else{
-    var key = scnls.shift() + "_cwave";
+    var key = scnls.shift() + "_CWAVE";
     var coll= _db.collection(key);
     coll.find( {"starttime": {$gte: starttime, $lte: endtime}} ).toArray(function(err, tracebuffs){
         if (err) return loggger.error( f);
