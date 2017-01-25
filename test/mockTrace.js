@@ -21,7 +21,7 @@ MockTrace.prototype.makeEwKey=function(){
 };
 
 MockTrace.prototype.makeMongoCollectionKey=function(){
-  return this.sta.toLowerCase() + "_" + this.chan.toLowerCase() + "_" + this.net.toLowerCase() + "_" + (this.loc==="--"? "__" : this.loc.toLowerCase());
+  return this.sta.toLowerCase() + "_" + this.chan.toLowerCase() + "_" + this.net.toLowerCase() + (this.loc==="--"? "" : ("_" + this.loc.toLowerCase()));
 };
 
 module.exports = MockTrace;

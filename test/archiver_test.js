@@ -9,7 +9,7 @@ const conf = new Conf();
 const logger = require('winston');
 const MongoClient  = require('mongodb').MongoClient;
 const RingBuffer = require("../lib/ringBuffer.js");
-const MongoArchive = require("../lib/mongoArchive.js");
+const CwaveArchiver = require("../lib/cwaveArchiver.js");
 
 
 
@@ -32,7 +32,7 @@ before(function(){
   });
   ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
   console.log("here we are" ,ringBuff.ring);
-  mongoArchive = new MongoArchive(ringBuff, 5000, "ring", logger);
+  mongoArchive = new CwaveArchiver(ringBuff, 5000, "ring", logger);
   
 
 });
@@ -48,12 +48,12 @@ describe('add document to mongo', function(){
         
         db.listCollections().toArray(function(err, names){
           for(var i=0; i< names.length; i++){
-            var collname=names[i]['name'];
+            var key=names[i]['name'];
             if(!waveforms_found){
-              waveforms_found=collname==="ring";
+              waveforms_found=key==="ring";
             }
             if(!yach_found){
-              yach_found=collname==="yach_hnz_uw___";
+              yach_found=key==="yach_hnz_uw___";
             }            
           }
         });

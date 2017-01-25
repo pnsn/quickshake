@@ -53,6 +53,10 @@ function Conf(){
       "default":1,
       "scnls": ["fmw.ehz.uw.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
     },
+    "Seahawks_Noise_Comparison":{
+      "default":0,
+      "scnls":["HWK6.HNZ.UW.--", "HWK1.HNZ.UW.--", "HWK3.HNZ.UW.--", "KDK.ENZ.UW.--", "COOS.HNZ.UW.--"]
+    },
     "Inland_Washington":{
       "default":0,
       "scnls":["JCW.EHZ.UW.--", "CBS.EHZ.UW.--","SLF.EHZ.UW.--","FMW.EHZ.UW.--","RVC.EHZ.UW.--","ELK.EHZ.UW.--"]
@@ -73,6 +77,7 @@ function Conf(){
       "default":0,
       "scnls":["CNNB.HNZ.UW.--","CHZZ.HNZ.UW.--","ONAB.HNZ.UW.--","FLRE.HNZ.UW.--","COOS.HNZ.UW.--","WEDR.HNZ.UW.--"]
     }
+
   };
 };
 
