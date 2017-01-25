@@ -32,11 +32,11 @@ $(function() {
     this.lineColor = "#000";
     this.tz = "PST";
     this.channels = chans;
-    this.eventtime = null;
     this.archive = false;
     this.pad = 0;
     this.archiveOffset = 0; //offset for line labels in archive
     this.annotations = [];
+    this.arrivals = [];
     };
 
   // incoming data are appended to buf
@@ -93,13 +93,13 @@ $(function() {
   };
 
   // Takes in array of packets from the archive and the starttime of the packets or event.
-  QuickShake.prototype.playArchive = function(data, eventtime, starttime) {
+  QuickShake.prototype.playArchive = function(data, starttime) {
 
     this.realtime = false;
     this.archive = true;
 
     this.starttime = starttime;
-    this.eventtime = starttime - eventtime != 0 ? this.makeTimeKey(eventtime) : this.eventtime;
+
     this.pad = 0;
 
     var _this = this;
@@ -632,7 +632,7 @@ $(function() {
     top: 52,
     left: -130,
     right: -115,
-    mag: 2.5
+    mag: 0.5
   };
   var path = "quickshake.pnsn.org/";
   // var path = window.location.host + "/";
@@ -649,7 +649,7 @@ $(function() {
     .attr({
       'data-live-search': true,
       disabled: 'disabled',
-      title: "No events found.",
+      title: "Select an event.",
       'data-size': 10
     })
     .append($("<optgroup label='Local Earthquakes' id='earthquakes-group'></optgroup>"))
@@ -680,6 +680,12 @@ $(function() {
     });
 
   $(".selectpicker").selectpicker();
+  
+  $("#start-select").change(function(){
+    $("#evid-select").val("");
+    eventSelector.val(false);
+    eventSelector.selectpicker('refresh');
+  });
   
   $("#evid-select").change(function() {
     $("#start-select").val("");
@@ -774,7 +780,7 @@ $(function() {
 
     if (localEventData.features.length > 0 || significantEventData.features.length > 0) {
       eventSelector.removeAttr('disabled');
-      eventSelector.append($("<option data-hidden='true' data-tokens='false' selected value='false'>").text("Select an event"));
+      eventSelector.append($("<option data-hidden='true' data-tokens='false' selected value='false'>").text("Select an event."));
     } else {
       console.log("wtf");
     }
@@ -829,21 +835,29 @@ $(function() {
   });
 
   //Get start time for event
-  function getStart(evid, start, _callback) {
+  function getStart(events, stations, channels, evid, start, _callback) {
     var stime = start;
     var text;
+    var arrivals = [];
+    var earliestArrival = Number.MAX_SAFE_INTEGER;
+    // console.log(stations, channels, events, evid, start)
 
-    if(!evid || evid && evid.indexOf("HAWK") > -1) {
-      _callback(stime);
+    if(!evid || (evid && evid.indexOf("HAWK") > -1)) {
+      _callback(stime, earliestArrival, arrivals);
     } else if (events[evid]) {
       stime = stime ? stime : events[evid].starttime;
       text = events[evid].description;
 
       $("#event-header span").text(text);
       $("#event-header").show();
-
-      _callback(getStartOffset(events[evid], stime));
-
+      
+      $.each(channels, function(i, channel){
+        var arrival = getStartOffset(events[evid], stime, stations[channel.split(".")[0]]);
+        arrivals.push(arrival);
+        earliestArrival = Math.min(arrival, earliestArrival);
+      });
+      
+      _callback(stime, earliestArrival, arrivals);
     } else {
       $.ajax({
         type: "GET",
@@ -862,19 +876,24 @@ $(function() {
           geometry: data.geometry
         };
 
-       _callback(getStartOffset(events[evid], stime));
+        $.each(channels, function(i, channel){
+          var arrival = getStartOffset(events[evid], stime, stations[channel.split(".")[0]]);
+          arrivals.push(arrival);
+          earliestArrival = Math.min(arrival, earliestArrival);
+        });
+        
+        _callback(stime, earliestArrival, arrivals);
 
       }).fail(function(response) {
         // console.log("I failed");
-        // console.log(response);
       });
     }
   }
   
   //Do the math, the monster math
-  function getStartOffset(event, start) {
-    var lat1 = (bounds.top - bounds.bottom) / 2 + bounds.bottom; //center of bounding box
-    var lon1 = (bounds.left - bounds.right) / 2 + bounds.right;
+  function getStartOffset(event, start, station) {
+    var lat1 = station.coords.lat; //center of bounding box
+    var lon1 = station.coords.lon;
 
     var lat2 = event.geometry.coordinates[1];
     var lon2 = event.geometry.coordinates[0];
@@ -989,7 +1008,6 @@ $(function() {
             $("#selected-stations span").text(channels);
             $(".update.station-select").addClass("btn-primary");
           }else if(index == -1 && channels.length < maxChannels) {//not in channel array, space to add 
-            console.log(thisChannel)
             $("#length-warning").hide();
             channels.push(thisChannel);
             $(marker._icon).addClass('selected');
@@ -1197,15 +1215,15 @@ $(function() {
     var getSignificantEvents = function(){return $.ajax({dataType: "json",url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"});};
     var getStations = function(){return $.ajax({dataType: "text",url: "https://service.iris.edu/irisws/fedcatalog/1/query?net=UW&format=text&includeoverlaps=false&nodata=404"});};
     
+    populateForm();
+    
     var stations = {},
         events,
         controlsTimeout,
         duration = getValue("duration") ? getValue("duration") : 10,
         start = getValue("start"),
         evid = getValue("evid");
-    
-    populateForm();
-    
+
     $.ajax({
       type: "GET",
       dataType: "jsonp",
@@ -1254,7 +1272,10 @@ $(function() {
           $('#header-left').show();
 
           if (start || evid) {
-            getStart(evid, start, function(eventtime) {
+
+            getStart(events, stations, channels, evid, start, function(eventtime, earliestArrival, arrivals) {
+              
+              // console.log(eventtime, earliestArrival, arrivals)
               $("#start-header span").text(new Date(start));
 
               $("#start-header").show();
@@ -1270,12 +1291,13 @@ $(function() {
               }).success(function(data) { //sometimes doesn't get called?
                 $("#fastforward-button").show();
                 quickshake.configViewer();
-                quickshake.playArchive(data, eventtime, starttime);
-                
+                quickshake.playArchive(data, starttime);
+                quickshake.arrivals = arrivals.slice();
+                console.log(quickshake.arrivals)
                 controlsTimeout = window.setTimeout(function(){
                   toggleControls(quickshake);
                 }, 10000);
-                
+
               }).complete(function(xhr, data) {
                 if (xhr.status != 200) { //In case it fails
                   showControlPanel();
