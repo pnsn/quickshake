@@ -51,7 +51,7 @@ function Conf(){
   this.groups={
     "Short_Period":{
       "default":1,
-      "scnls": ["fmw.ehz.uw.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
+      "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
     },
     "Seahawks_Noise_Comparison":{
       "default":0,
