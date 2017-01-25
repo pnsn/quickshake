@@ -37,6 +37,7 @@ $(function() {
     this.archiveOffset = 0; //offset for line labels in archive
     this.annotations = [];
     this.arrivals = [];
+    this.eventtime = null;
     };
 
   // incoming data are appended to buf
@@ -93,13 +94,13 @@ $(function() {
   };
 
   // Takes in array of packets from the archive and the starttime of the packets or event.
-  QuickShake.prototype.playArchive = function(data, starttime) {
+  QuickShake.prototype.playArchive = function(data, eventtime, starttime) {
 
     this.realtime = false;
     this.archive = true;
 
     this.starttime = starttime;
-
+    this.eventtime = eventtime;
     this.pad = 0;
 
     var _this = this;
@@ -343,36 +344,56 @@ $(function() {
       ctx.stroke();
 
       // // Start line
-      if (this.eventtime) {
+      // if (this.eventtime) {
+      //   ctx.beginPath();
+      //   var eventPosition = (this.eventtime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+      //   var text = this.width < 570 || (eventPosition - startPosition) < 135 ? "OT" : "Origin Time";
+      //   var eventOffset = this.width < 570 || (eventPosition - startPosition) < 135 ? 25 : 135;
+      //   ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
+      //   ctx.moveTo(eventPosition, edge.bottom);
+      //   ctx.lineTo(eventPosition, edge.top);
+      //   ctx.strokeStyle = "#000";
+      //   ctx.stroke();
+      // }
+      
+      if(this.arrivals.length > 0) {
         ctx.beginPath();
-        var eventPosition = (this.eventtime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
-        var text = this.width < 570 || (eventPosition - startPosition) < 135 ? "ETA" : "Estimated Arrival Time";
-        var eventOffset = this.width < 570 || (eventPosition - startPosition) < 135 ? 25 : 135;
-        ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
-        ctx.moveTo(eventPosition, edge.bottom);
-        ctx.lineTo(eventPosition, edge.top);
-        ctx.strokeStyle = "#000";
+        var _this = this;
+        $.each(this.arrivals, function(i, arrival){
+          var arrivalPosition = (arrival - _this.viewerLeftTime) / _this.refreshRate + _this.startPixOffset;
+          if(i == 0) {
+            var text = _this.width < 570 || (arrivalPosition - startPosition) < 135 ? "ETA" : "Estimated arrival times";
+            var eventOffset = _this.width < 570 || (arrivalPosition - startPosition) < 135 ? 25 : 135;
+            ctx.fillText(text, arrivalPosition - eventOffset, edge.top + _this.archiveOffset / 2 + 3);
+            ctx.moveTo(arrivalPosition, edge.top + _this.archiveOffset);
+            ctx.lineTo(arrivalPosition, edge.top);
+          } else {
+            ctx.moveTo(arrivalPosition, edge.top + _this.archiveOffset + _this.channelHeight * i);
+            ctx.lineTo(arrivalPosition, edge.top + _this.archiveOffset + _this.channelHeight * (i - 1));
+          }
+        });
+        ctx.strokeStyle = "#107a10";
         ctx.stroke();
       }
+      
     }
     
     //for live: grab events within "length of buffer" to live
     //for archive: grab events within start to end
     //plot for archive and live, if possible
-    if(this.annotations.length > 0) {
-
-      ctx.beginPath();
-      var _this = this;
-      $.each(this.annotations, function(i, annotation){
-        var position = (annotation.starttime - _this.viewerLeftTime) / _this.refreshRate + _this.startPixOffset;
-        ctx.fillText("<--" + annotation.description, position + 2, edge.top + _this.archiveOffset / 2 + 3); //75 is offset for width of text
-        ctx.moveTo(position, edge.bottom);
-        ctx.lineTo(position, edge.top);
-      });
-      ctx.strokeStyle = "#107a10";
-      ctx.stroke();
-    }
-    
+    // if(this.annotations.length > 0) {
+    //
+    //   ctx.beginPath();
+    //   var _this = this;
+    //   $.each(this.annotations, function(i, annotation){
+    //     var position = (annotation.starttime - _this.viewerLeftTime) / _this.refreshRate + _this.startPixOffset;
+    //     ctx.fillText("<--" + annotation.description, position + 2, edge.top + _this.archiveOffset / 2 + 3); //75 is offset for width of text
+    //     ctx.moveTo(position, edge.bottom);
+    //     ctx.lineTo(position, edge.top);
+    //   });
+    //   ctx.strokeStyle = "#107a10";
+    //   ctx.stroke();
+    // }
   };
 
   //make a key based on new samprate that zeros out the insignificant digits. 
@@ -634,8 +655,8 @@ $(function() {
     right: -115,
     mag: 0.5
   };
-  // var path = "quickshake.pnsn.org/";
-  var path = window.location.host + "/";
+  var path = "quickshake.pnsn.org/";
+  // var path = window.location.host + "/";
   var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
 
   // Initialize UI
@@ -843,7 +864,7 @@ $(function() {
     // console.log(stations, channels, events, evid, start)
 
     if(!evid || (evid && evid.indexOf("HAWK") > -1)) {
-      _callback(stime, earliestArrival, arrivals);
+      _callback(stime, false, arrivals);
     } else if (events[evid]) {
       stime = stime ? stime : events[evid].starttime;
       text = events[evid].description;
@@ -910,7 +931,7 @@ $(function() {
     var d = 2 * Math.asin(Math.sqrt(a)) * 180 / Math.PI; //angular distance in degrees
 
     distances = Object.keys(traveltimes).sort(function compare(a, b) {
-      return a - b;
+      return parseFloat(a) - parseFloat(b);
     });
 
     var i = 0;
@@ -920,11 +941,14 @@ $(function() {
       i++;
       distance = parseFloat(distances[i]);
     }
-
+    
+    console.log(traveltimes)
     if (distances[i - 1]) {
       var distance2 = distances[i - 1];
-
+      console.log(station.sta, distance, distance2)
+      console.log(station.sta, traveltimes[distance], traveltimes[distance2])
       var linDif = (traveltimes[distance] - traveltimes[distance2]) / (distance - parseFloat(distance2));
+      console.log(station.sta, linDif)
       return start + (linDif * d + traveltimes[distance2] * 1000);
 
       $("#offset-header").show();
@@ -1205,7 +1229,14 @@ $(function() {
 
   function toggleControls(quickshake){
     $("#hide-controls, #show-controls, #toggle-controls, #quickshake-controls").toggleClass("closed");
-    quickshake.configViewer();
+
+    window.setTimeout(function(){
+      quickshake.configViewer();
+      
+      if(!quickshake.scroll){ //FIXME: goes blank if not scrolling
+        quickshake.drawSignal();
+      }
+    }, 100);
     
   }
   
@@ -1280,8 +1311,19 @@ $(function() {
 
               $("#start-header").show();
 
-              var starttime = evid ? eventtime - 20 * 1000 : eventtime; //grab 30 seconds before event
-              var endtime = starttime + 5 * 60 * 1000; //grab 5 minutes of data
+              var starttime;
+              
+              if (evid && earliestArrival &&  earliestArrival - eventtime > 20 * 1000 && earliestArrival - eventtime < 60 * 1000) {
+                starttime = eventtime;
+              } else if (evid && earliestArrival){
+                starttime = earliestArrival - 20 * 1000;
+              } else {
+                starttime = eventtime;
+              }
+              
+              arrivals.unshift(earliestArrival);
+              
+              var endtime = starttime + duration * 60 * 1000;
 
               $.ajax({
                 type: "GET",
@@ -1291,9 +1333,8 @@ $(function() {
               }).success(function(data) { //sometimes doesn't get called?
                 $("#fastforward-button").show();
                 quickshake.configViewer();
-                quickshake.playArchive(data, starttime);
+                quickshake.playArchive(data, eventtime, starttime);
                 quickshake.arrivals = arrivals.slice();
-                console.log(quickshake.arrivals)
                 controlsTimeout = window.setTimeout(function(){
                   toggleControls(quickshake);
                 }, 10000);
@@ -1349,6 +1390,13 @@ $(function() {
 
   // Can't load these until the quickshake is made
   function controlsInit(quickshake) {
+    // $(window).resize(function(){
+    //    var timeout = setTimeout(function(){
+    //      quickshake.configViewer();
+    //      quickshake.drawSignal();
+    //    }, 1000);
+    // });
+    
     // Controls stuff
     $("#playback-slider").slider({
       slide: function(e, ui) {
