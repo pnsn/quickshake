@@ -277,6 +277,8 @@ $(function() {
       ctx.beginPath();
       ctx.font = "15px Helvetica, Arial, sans-serif";
       var channel = this.channels[i];
+      
+      //I got this from Renate
       this.stationScalars[channel].unitPerPix =  this.channelHeight /  (2 * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4: this.scale));
       var cName = channel.split(".")[0].toUpperCase();
       var yOffset = i * this.channelHeight;
