@@ -297,7 +297,7 @@ $(function() {
       ctx.font = "13px Helvetica, Arial, sans-serif";
       
       //Jon made me do this
-      ctx.fillText(this.stationScalars[channel].unitPerPix.toExponential(1) + " (" + this.stationScalars[channel].unit + ")", edge.right - 78, edge.top + this.archiveOffset + yOffset + this.timeOffset - 8);
+      ctx.fillText(this.stationScalars[channel].unitPerPix.toExponential(1) + " (" + this.stationScalars[channel].unit + ")", edge.right - 78, edge.top + this.archiveOffset + yOffset + this.timeOffset - 2);
       
       ctx.moveTo(edge.right-5, edge.top + this.archiveOffset + yOffset );
       ctx.lineTo(edge.right, edge.top + this.archiveOffset + yOffset );
