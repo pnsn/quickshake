@@ -655,7 +655,7 @@ $(function() {
     top: 52,
     left: -130,
     right: -115,
-    mag: 0.5
+    mag: 2
   };
   var path = "quickshake.pnsn.org/";
   // var path = window.location.host + "/";
@@ -676,8 +676,8 @@ $(function() {
       'data-size': 10
     })
     .append($("<optgroup label='Local Earthquakes' id='earthquakes-group'></optgroup>"))
-    .append($("<optgroup label='Other events' id='others-group'></optgroup>"))
     .append($("<optgroup label='Significant Global Events' id='significant-group'></optgroup>"))
+    .append($("<optgroup label='Other events' id='others-group'></optgroup>"))
     .change(function() {
       $("#evid-select").val("");
       $("#start-select").val("");
@@ -762,7 +762,8 @@ $(function() {
 
       if (feature.properties.type == "earthquake") {
         earthquakes.append(append);
-      } else {
+      } else if(feature.properties.mag) {
+        console.log(feature.properties.mag)
         other.append(append);
       }
 
