@@ -23,9 +23,9 @@ $(function() {
     // this.stationScalar = 3.207930 * Math.pow(10, 5) * 9.8; // count/scalar => %g
     this.stationScalars = {};
     //log values
-    this.scale = 3; //starting scale slide value 
-    this.scaleSliderMin = 1;
-    this.scaleSliderMax = 6;
+    this.scale = 2; //starting scale slide value 
+    this.scaleSliderMin = 0.1;
+    this.scaleSliderMax = 4;
     //end log values
     this.realtime = true; //realtime will fast forward if tail of buffer gets too long.
     this.scroll = null; //sets scrolling
@@ -136,14 +136,14 @@ $(function() {
         $("#data-end-warning").show();
       }
     }
-
+    
     // FIND MEAN AND Extreme vals
     //only consider part of buffer in viewer
     var cursor, cursorStop;
     if (this.archive && this.scroll) {
       this.updatePlaybackSlider();
       cursor = this.viewerLeftTime;
-      cursorStop = cursor + this.viewerWidthSec * 1000 * 0.9;
+      cursorStop = cursor + this.viewerWidthSec * 1000 * 0.9 ;
     } else {
       cursor = this.viewerLeftTime;
       cursorStop = cursor + this.viewerWidthSec * 1000;
@@ -155,19 +155,28 @@ $(function() {
     this.archiveOffset = this.annotations.length > 0 || this.archive ? 20 : 1;
 
     this.channelHeight = (this.height - this.timeOffset * 2 - this.archiveOffset) / this.channels.length;
-
+    
+    
+    $(".quickshake-scale").height(this.channelHeight/2);
+    
+    
     if (cursor < cursorStop) {
       
       var ctx = this.canvasElement.getContext("2d");
       ctx.clearRect(0, 0, this.width, this.height);
       ctx.lineWidth = this.lineWidth;
-      this.drawAxes(ctx);
       
+      this.drawAxes(ctx);
       ctx.beginPath();
       
       //iterate through all this.channels and draw
       for (var i = 0; i < this.channels.length; i++) {
         var channel = this.channels[i];
+        
+        var top = this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i;
+        $("#" + channel).css('top', top + "px");
+        // console.log(this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i + "px");
+        // console.log(channel, this.stationScalars[channel].scale)
         cursor = this.viewerLeftTime; //start back at left on each iteration through this.channels
         //find mean
         var sum = 0;
@@ -196,10 +205,11 @@ $(function() {
         var gap = true;
         // draw Always start from viewerLeftTime and go one canvas width
         count = 0;
-
+        
         while (cursor <= cursorStop) {
           if (this.buffer[cursor] && this.buffer[cursor][channel]) {
             var val = this.buffer[cursor][channel];
+            
             var norm = ((val - mean) * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4 : this.scale));
 
             if (norm < -1)
@@ -227,6 +237,7 @@ $(function() {
         ctx.stroke();
 
       }
+    
     
       this.drawAnnotations(ctx);
     }
@@ -258,23 +269,42 @@ $(function() {
     ctx.font = "15px Helvetica, Arial, sans-serif";
     ctx.strokeStyle = "#119247"; // axis color    
     ctx.stroke();
+    
 
-    ctx.beginPath();
     //channel center lines and labels:
     for (var i = 0; i < this.channels.length; i++) {
+              
+      ctx.beginPath();
+      ctx.font = "15px Helvetica, Arial, sans-serif";
       var channel = this.channels[i];
+      this.stationScalars[channel].unitPerPix =  this.channelHeight /  (2 * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4: this.scale));
       var cName = channel.split(".")[0].toUpperCase();
       var yOffset = i * this.channelHeight;
       
-      ctx.fillText(cName + " (" + this.stationScalars[channel].unit + ")", edge.left + this.timeOffset, edge.top + this.archiveOffset + yOffset + this.timeOffset);
+      ctx.fillText(channel, edge.left + this.timeOffset, edge.top + this.archiveOffset + yOffset + 14);
 
       var chanCenter = edge.top + this.archiveOffset + this.channelHeight / 2 + yOffset;
 
       ctx.moveTo(edge.left, chanCenter);
       ctx.lineTo(edge.right, chanCenter);
+      
+      ctx.strokeStyle = "#CCCCCC"; //middle line
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.font = "13px Helvetica, Arial, sans-serif";
+      
+      //Jon made me do this
+      ctx.fillText(this.stationScalars[channel].unitPerPix.toExponential(1) + " (" + this.stationScalars[channel].unit + ")", edge.right - 78, edge.top + this.archiveOffset + yOffset + this.timeOffset - 5);
+      
+      ctx.moveTo(edge.right-5, edge.top + this.archiveOffset + yOffset );
+      ctx.lineTo(edge.right, edge.top + this.archiveOffset + yOffset );
+      
+      ctx.strokeStyle = "#000"; 
+      ctx.stroke();
+
     }
-    ctx.strokeStyle = "#CCCCCC"; //middle line
-    ctx.stroke();
+
     //end axis
 
     //plot a tick and time at all tickIntervals
@@ -299,12 +329,12 @@ $(function() {
     ctx.fillText("UTC", edge.right - 30, edge.bottom + this.timeOffset);
 
     var index = 0;
-    while (canvasIndex < edge.right + 20) { //allow times to be drawn off of canvas
+    while (canvasIndex < edge.right) { //allow times to be drawn off of canvas
       // ctx.moveTo(canvasIndex, this.height -19);
       ctx.moveTo(canvasIndex, edge.top);
       ctx.lineTo(canvasIndex, edge.bottom);
 
-      if (canvasIndex - 23 >= 30 && canvasIndex <= this.width - 65) {
+      if (canvasIndex - 23 >= 30 && canvasIndex <= this.width - 65 ) {
         ctx.fillText(this.dateFormat(tickTime, "top"), canvasIndex - 23, edge.top - 3); //top
         ctx.fillText(this.dateFormat(tickTime, "bottom"), canvasIndex - 23, edge.bottom + this.timeOffset); //bottom
       }
@@ -584,7 +614,7 @@ $(function() {
   };
 
   QuickShake.prototype.updateScale = function() {
-    $("#quickshake-scale").css("height", this.channelHeight / 2);
+    // $("#quickshake-scale").css("height", this.channelHeight / 2);
     var scale = Math.pow(10, -this.scale); //3 sig. digits
     if (scale < 0.000099) {
       scale = scale.toExponential(2);
@@ -599,10 +629,10 @@ $(function() {
     var offSet = 10; //Default for mobile and if there is no scale    
     $("#quickshake-canvas").show();
     $("#quickshake").height(window.innerHeight - $("#header").height() - 10 - $("#controls-container").height());
-
+    
     this.height = $("#quickshake").height();
     this.width = $("#quickshake").width();
-
+    $("#quickshake-scale").height(this.height);  
     this.sampPerSec = Math.round(this.width / this.viewerWidthSec);
     this.viewerWidthSec = this.width / this.sampPerSec; //actual width in Sec due to rounding
     this.refreshRate = Math.round(1000 / this.sampPerSec); //refresh rate in milliseconds
@@ -763,7 +793,7 @@ $(function() {
       if (feature.properties.type == "earthquake") {
         earthquakes.append(append);
       } else if(feature.properties.mag) {
-        console.log(feature.properties.mag)
+        // console.log(feature.properties.mag)
         other.append(append);
       }
 
@@ -789,7 +819,7 @@ $(function() {
 
       if (feature.properties.type == "earthquake") {
         significant.append(append);
-      }
+      };
 
       events[feature.id] = {
         evid: feature.id,
@@ -984,11 +1014,16 @@ $(function() {
               lon: lon
             };
             if(unit == "M/S**2") {
-              stations[sta].scale = scale ;
-              stations[sta].unit = "m/s^2";
+              // stations[sta].scale = scale ;
+              // stations[sta].unit = "m/s^2";
+              
+              stations[sta].scale = scale * 9.8 / 100 ;
+              stations[sta].unit = "%g";
             } else{
               stations[sta].scale = scale ;
               stations[sta].unit = "m/s";
+              // stations[sta].scale = scale / 100;
+              // stations[sta].unit = "cm/s";
             }
             latlngs.push([lat, lon]);
           } 
@@ -1334,6 +1369,7 @@ $(function() {
         eventSelector.change(function() {
           plotEvent(events[ $(this).find("option:selected")[0].id ]);
         });
+      
         
         quickshake = new QuickShake(getValue("width") ? getValue("width") * 60 : 2 * 60, channels.slice());
         

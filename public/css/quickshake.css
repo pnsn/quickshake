@@ -9,8 +9,6 @@
 
 #quickshake {
 	height: 100%;
-	width: 100%;
-/*  min-height: 300px;*/
 }
 
 #quickshake-CMS {
@@ -85,25 +83,7 @@
 	border-radius: 10px;
 }
 
-#quickshake-scale {
-	position: absolute;
-	left: 0px;
-	display: inline-block;
-	width: 55px;
-	border-right: solid #888888 2px;
-}
-
-#quickshake-scale #top {
-	top: 0px;
-	right: 1px;
-}
-
-#quickshake-scale #bottom {
-	bottom: 0px;
-	right: 3px;
-}
-
-#quickshake-scale, #quickshake-canvas {
+#quickshake-canvas {
 	display:none;
 }
 
