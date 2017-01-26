@@ -689,8 +689,8 @@ $(function() {
     right: -115,
     mag: 2
   };
-  var path = "quickshake.pnsn.org/";
-  // var path = window.location.host + "/";
+  // var path = "quickshake.pnsn.org/";
+  var path = window.location.host + "/";
   var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
 
   // Initialize UI
