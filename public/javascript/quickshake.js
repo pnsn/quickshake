@@ -20,9 +20,10 @@ $(function() {
     this.viewerLeftTime = null; // track the time of the last time frame(left side of canvas this will be incremented each interval)
     this.canvasElement = document.getElementById("quickshake-canvas");
     this.localTime = true;
-    this.stationScalar = 3.207930 * Math.pow(10, 5) * 9.8; // count/scalar => %g
+    // this.stationScalar = 3.207930 * Math.pow(10, 5) * 9.8; // count/scalar => %g
+    this.stationScalars = {};
     //log values
-    this.scale = 3.5; //starting scale slide value 
+    this.scale = 3; //starting scale slide value 
     this.scaleSliderMin = 1;
     this.scaleSliderMax = 6;
     //end log values
@@ -38,7 +39,7 @@ $(function() {
     this.annotations = [];
     this.arrivals = [];
     this.eventtime = null;
-    };
+  };
 
   // incoming data are appended to buf
   // drawing is done from left to right (old to new)
@@ -85,7 +86,7 @@ $(function() {
         if (!this.buffer[_t]) {
           this.buffer[_t] = {};
         }
-        this.buffer[_t][packet.key] = packet.data[_i] / this.stationScalar;
+        this.buffer[_t][packet.key] = packet.data[_i] / this.stationScalars[packet.key].scale;
         _t += this.refreshRate;
         _i += _decimate;
       }
@@ -199,7 +200,7 @@ $(function() {
         while (cursor <= cursorStop) {
           if (this.buffer[cursor] && this.buffer[cursor][channel]) {
             var val = this.buffer[cursor][channel];
-            var norm = ((val - mean) * Math.pow(10, this.scale));
+            var norm = ((val - mean) * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4 : this.scale));
 
             if (norm < -1)
               norm = -1;
@@ -207,6 +208,7 @@ $(function() {
               norm = 1;
 
             var chanAxis = this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i; //22 is offset for header timeline.
+            
             var yval = Math.round((this.channelHeight) / 2 * norm + chanAxis);
 
             if (gap) {
@@ -264,7 +266,7 @@ $(function() {
       var cName = channel.split(".")[0].toUpperCase();
       var yOffset = i * this.channelHeight;
       
-      ctx.fillText(cName, edge.left + this.timeOffset, edge.top + this.archiveOffset + yOffset + this.timeOffset);
+      ctx.fillText(cName + " (" + this.stationScalars[channel].unit + ")", edge.left + this.timeOffset, edge.top + this.archiveOffset + yOffset + this.timeOffset);
 
       var chanCenter = edge.top + this.archiveOffset + this.channelHeight / 2 + yOffset;
 
@@ -741,8 +743,6 @@ $(function() {
     return values[0] + "/" + values[1] + " " + values[2] + ":" + values[3];
   }
   
-
-
 //this will get condensed when we get events from mongo
   function processEvents(localEventData, significantEventData) {
     var events = {};
@@ -803,7 +803,7 @@ $(function() {
       eventSelector.removeAttr('disabled');
       eventSelector.append($("<option data-hidden='true' data-tokens='false' selected value='false'>").text("Select an event."));
     } else {
-      console.log("wtf");
+      console.log("events failure");
     }
 
     if (getUrlParam("evid")) {
@@ -812,6 +812,8 @@ $(function() {
         $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
         $('select#event-select').selectpicker('refresh');
       }
+      
+      plotEvent(events[evid]);
     }
 
     $('select#event-select').selectpicker('refresh');
@@ -942,13 +944,9 @@ $(function() {
       distance = parseFloat(distances[i]);
     }
     
-    console.log(traveltimes)
     if (distances[i - 1]) {
       var distance2 = distances[i - 1];
-      console.log(station.sta, distance, distance2)
-      console.log(station.sta, traveltimes[distance], traveltimes[distance2])
       var linDif = (traveltimes[distance] - traveltimes[distance2]) / (distance - parseFloat(distance2));
-      console.log(station.sta, linDif)
       return start + (linDif * d + traveltimes[distance2] * 1000);
 
       $("#offset-header").show();
@@ -975,12 +973,22 @@ $(function() {
           var sta = station[1],
               net = station[0],
               lat = station[4],
-              lon = station[5];
+              lon = station[5],
+              scale = station[11],
+              unit = station[13];
+                  
           if(stations[sta] && !stations[sta].coords){
             stations[sta].coords = {
               lat: lat,
               lon: lon
             };
+            if(unit == "M/S**2") {
+              stations[sta].scale = scale ;
+              stations[sta].unit = "m/s^2";
+            } else{
+              stations[sta].scale = scale ;
+              stations[sta].unit = "m/s";
+            }
             latlngs.push([lat, lon]);
           } 
         }
@@ -997,9 +1005,8 @@ $(function() {
 
   function makeMap(stations){
     map.addLayer(osm);
-    map.doubleClickZoom.disable(); 
+    // map.doubleClickZoom.disable(); 
     $.each(stations, function(i, station){
-      // console.log(statio)
       var icon;
       var container = $('<div />');
       container.append($("<div>"+station.sta.toUpperCase()+"</div>"));
@@ -1054,9 +1061,38 @@ $(function() {
       
         marker.bindPopup(container[0]);
       }
-
     });
     
+  }
+  
+  var eventMarker;
+  function plotEvent(event){
+    if (eventMarker) {
+      map.removeLayer(eventMarker);
+    }
+    if(event.geometry && event.geometry.coordinates){
+      
+      var eventIcon = L.icon({
+          iconUrl: '/images/star.svg',
+          iconSize:     [20, 20], // size of the icon
+          iconAnchor:   [10, 10], // point of the icon which will correspond to marker's location
+          shadowAnchor: [4, 62],  // the same for the shadow
+          popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+      });
+      
+      
+      eventMarker = L.marker([event.geometry.coordinates[1], event.geometry.coordinates[0]], {icon:eventIcon, zIndexOffset:1000});
+      eventMarker.bindPopup("Selected Event");
+      eventMarker.on('mouseover', function (e) {
+          this.openPopup();
+      });
+      eventMarker.on('mouseout', function (e) {
+          this.closePopup();
+      });
+      
+      
+      eventMarker.addTo(map);
+    }
   }
 
   $("ul#station-sorter.station-select").sortable({
@@ -1289,12 +1325,26 @@ $(function() {
         events = processEvents(localEventData[0], significantEventData[0]);
         
         stations = processStations(stations, stationData[0]);
+        
+
+        
         makeMap(stations);
+        
+        eventSelector.change(function() {
+          plotEvent(events[ $(this).find("option:selected")[0].id ]);
+        });
         
         quickshake = new QuickShake(getValue("width") ? getValue("width") * 60 : 2 * 60, channels.slice());
         
         $("#toggle-controls").click(function(){
           toggleControls(quickshake);
+        });
+
+        $.each(channels, function(i, channel){
+          quickshake.stationScalars[channel] = {
+            scale: stations[channel.split(".")[0]].scale,
+            unit:stations[channel.split(".")[0]].unit
+          };
         });
         
         if (channels.length > 0 && channels.length <= maxChannels) {
@@ -1397,6 +1447,10 @@ $(function() {
     //    }, 1000);
     // });
     
+    
+    $(".open-image").click(function(){
+        window.open(quickshake.canvasElement.toDataURL('png'), "");
+    });
     // Controls stuff
     $("#playback-slider").slider({
       slide: function(e, ui) {

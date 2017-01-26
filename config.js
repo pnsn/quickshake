@@ -55,7 +55,7 @@ function Conf(){
     },
     "Olympic_Peninsula":{
       "default":1,
-      "scnls": ["OSD.EHZ.UW.--", "DOSE.BHZ.UW.--", "HDW.EHZ.UW.--", "GMW.EHZ.UW.--", "GNW.BHZ.UW.--"]
+      "scnls": ["OSD.EHZ.UW.--","DOSE.BHZ.UW.--", "HDW.EHZ.UW.--", "GMW.EHZ.UW.--", "GNW.BHZ.UW.--"]
     },
     "Seahawks_Noise_Comparison":{
       "default":0,
