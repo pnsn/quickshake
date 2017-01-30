@@ -244,6 +244,12 @@ $(function() {
   };
 
   QuickShake.prototype.drawAxes = function(ctx) {
+    
+    base_image = new Image();
+    base_image.src = 'images/brand_icon.png';
+    ctx.drawImage(base_image, this.width-110, this.height-55);
+    
+    
     var edge = {
       left: 0,
       top: this.timeOffset,
@@ -689,8 +695,8 @@ $(function() {
     right: -115,
     mag: 2
   };
-  // var path = "quickshake.pnsn.org/";
-  var path = window.location.host + "/";
+  var path = "quickshake.pnsn.org/";
+  // var path = window.location.host + "/";
   var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
 
   // Initialize UI
@@ -965,6 +971,7 @@ $(function() {
 
     var d = 2 * Math.asin(Math.sqrt(a)) * 180 / Math.PI; //angular distance in degrees
 
+    console.log(station, d)
     distances = Object.keys(traveltimes).sort(function compare(a, b) {
       return parseFloat(a) - parseFloat(b);
     });
@@ -1418,7 +1425,7 @@ $(function() {
                 type: "GET",
                 dataType: "jsonp",
                 url: "http://" + path + "archive?starttime=" + starttime + "&scnls=" + channels + "&endtime=" + endtime,
-                timeout: 4000 //gives it time to think before giving up
+                timeout: 8000 //gives it time to think before giving up
               }).success(function(data) { //sometimes doesn't get called?
                 $("#fastforward-button").show();
                 quickshake.configViewer();
