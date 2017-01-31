@@ -1352,7 +1352,7 @@ $(function() {
           if(stations[sta] && $.inArray(cha, stations[sta].chans) === -1){
             stations[sta].chans.push(cha);
             stations[sta].scnls.push(scnl);
-          } else if(cha != "TE") {
+          } else if(net != "TE") {
             stations[sta] = {
               sta: sta,
               net : net,
