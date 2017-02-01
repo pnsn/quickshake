@@ -20,11 +20,12 @@ $(function() {
     this.viewerLeftTime = null; // track the time of the last time frame(left side of canvas this will be incremented each interval)
     this.canvasElement = document.getElementById("quickshake-canvas");
     this.localTime = true;
-    this.stationScalar = 3.207930 * Math.pow(10, 5) * 9.8; // count/scalar => %g
+    // this.stationScalar = 3.207930 * Math.pow(10, 5) * 9.8; // count/scalar => %g
+    this.stationScalars = {};
     //log values
-    this.scale = 3.5; //starting scale slide value 
-    this.scaleSliderMin = 1;
-    this.scaleSliderMax = 6;
+    this.scale = 2; //starting scale slide value 
+    this.scaleSliderMin = 0.1;
+    this.scaleSliderMax = 4;
     //end log values
     this.realtime = true; //realtime will fast forward if tail of buffer gets too long.
     this.scroll = null; //sets scrolling
@@ -32,12 +33,13 @@ $(function() {
     this.lineColor = "#000";
     this.tz = "PST";
     this.channels = chans;
-    this.eventtime = null;
     this.archive = false;
     this.pad = 0;
     this.archiveOffset = 0; //offset for line labels in archive
     this.annotations = [];
-    };
+    this.arrivals = [];
+    this.eventtime = null;
+  };
 
   // incoming data are appended to buf
   // drawing is done from left to right (old to new)
@@ -84,7 +86,7 @@ $(function() {
         if (!this.buffer[_t]) {
           this.buffer[_t] = {};
         }
-        this.buffer[_t][packet.key] = packet.data[_i] / this.stationScalar;
+        this.buffer[_t][packet.key] = packet.data[_i] / this.stationScalars[packet.key].scale;
         _t += this.refreshRate;
         _i += _decimate;
       }
@@ -93,18 +95,17 @@ $(function() {
   };
 
   // Takes in array of packets from the archive and the starttime of the packets or event.
-  QuickShake.prototype.playArchive = function(data, eventtime, dataStart) {
+  QuickShake.prototype.playArchive = function(data, eventtime, starttime) {
 
     this.realtime = false;
     this.archive = true;
 
-    this.starttime = dataStart;
-    this.eventtime = dataStart - eventtime != 0 ? this.makeTimeKey(eventtime) : this.eventtime;
+    this.starttime = starttime;
+    this.eventtime = eventtime;
     this.pad = 0;
 
     var _this = this;
     $.each(data, function(i, packet) {
-      // console.log(new Date(packet.starttime))
       _this.updateBuffer(packet);
       
     });
@@ -135,14 +136,14 @@ $(function() {
         $("#data-end-warning").show();
       }
     }
-
+    
     // FIND MEAN AND Extreme vals
     //only consider part of buffer in viewer
     var cursor, cursorStop;
     if (this.archive && this.scroll) {
       this.updatePlaybackSlider();
       cursor = this.viewerLeftTime;
-      cursorStop = cursor + this.viewerWidthSec * 1000 * 0.9;
+      cursorStop = cursor + this.viewerWidthSec * 1000 * 0.9 ;
     } else {
       cursor = this.viewerLeftTime;
       cursorStop = cursor + this.viewerWidthSec * 1000;
@@ -154,19 +155,28 @@ $(function() {
     this.archiveOffset = this.annotations.length > 0 || this.archive ? 20 : 1;
 
     this.channelHeight = (this.height - this.timeOffset * 2 - this.archiveOffset) / this.channels.length;
-
+    
+    
+    $(".quickshake-scale").height(this.channelHeight/2);
+    
+    
     if (cursor < cursorStop) {
       
       var ctx = this.canvasElement.getContext("2d");
       ctx.clearRect(0, 0, this.width, this.height);
       ctx.lineWidth = this.lineWidth;
-      this.drawAxes(ctx);
       
+      this.drawAxes(ctx);
       ctx.beginPath();
       
       //iterate through all this.channels and draw
       for (var i = 0; i < this.channels.length; i++) {
         var channel = this.channels[i];
+        
+        var top = this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i;
+        $("#" + channel).css('top', top + "px");
+        // console.log(this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i + "px");
+        // console.log(channel, this.stationScalars[channel].scale)
         cursor = this.viewerLeftTime; //start back at left on each iteration through this.channels
         //find mean
         var sum = 0;
@@ -195,19 +205,20 @@ $(function() {
         var gap = true;
         // draw Always start from viewerLeftTime and go one canvas width
         count = 0;
-        // console.log("cursor: " + cursor, "cursorStop: " + cursorStop)
-
+        
         while (cursor <= cursorStop) {
           if (this.buffer[cursor] && this.buffer[cursor][channel]) {
             var val = this.buffer[cursor][channel];
-            var norm = ((val - mean) * Math.pow(10, this.scale));
+            
+            var norm = ((val - mean) * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4 : this.scale));
 
             if (norm < -1)
               norm = -1;
             if (norm > 1)
               norm = 1;
-            // console.log(canvasIndex)
+
             var chanAxis = this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i; //22 is offset for header timeline.
+            
             var yval = Math.round((this.channelHeight) / 2 * norm + chanAxis);
 
             if (gap) {
@@ -227,11 +238,18 @@ $(function() {
 
       }
     
+    
       this.drawAnnotations(ctx);
     }
   };
 
   QuickShake.prototype.drawAxes = function(ctx) {
+    
+    base_image = new Image();
+    base_image.src = 'images/brand_icon.png';
+    ctx.drawImage(base_image, this.width-110, this.height-55);
+    
+    
     var edge = {
       left: 0,
       top: this.timeOffset,
@@ -257,23 +275,44 @@ $(function() {
     ctx.font = "15px Helvetica, Arial, sans-serif";
     ctx.strokeStyle = "#119247"; // axis color    
     ctx.stroke();
+    
 
-    ctx.beginPath();
     //channel center lines and labels:
     for (var i = 0; i < this.channels.length; i++) {
+              
+      ctx.beginPath();
+      ctx.font = "15px Helvetica, Arial, sans-serif";
       var channel = this.channels[i];
-      var cName = channel.split(".")[0];
+      
+      //I got this from Renate
+      this.stationScalars[channel].unitPerPix =  this.channelHeight /  (2 * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4: this.scale));
+      var cName = channel.split(".")[0].toUpperCase();
       var yOffset = i * this.channelHeight;
       
-      ctx.fillText(cName, edge.left + this.timeOffset, edge.top + this.archiveOffset + yOffset + this.timeOffset);
+      ctx.fillText(channel, edge.left + this.timeOffset, edge.top + this.archiveOffset + yOffset + 14);
 
       var chanCenter = edge.top + this.archiveOffset + this.channelHeight / 2 + yOffset;
 
       ctx.moveTo(edge.left, chanCenter);
       ctx.lineTo(edge.right, chanCenter);
+      
+      ctx.strokeStyle = "#CCCCCC"; //middle line
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.font = "13px Helvetica, Arial, sans-serif";
+      
+      //Jon made me do this
+      ctx.fillText(this.stationScalars[channel].unitPerPix.toExponential(1) + " (" + this.stationScalars[channel].unit + ")", edge.right - 78, edge.top + this.archiveOffset + yOffset + this.timeOffset - 2);
+      
+      ctx.moveTo(edge.right-5, edge.top + this.archiveOffset + yOffset );
+      ctx.lineTo(edge.right, edge.top + this.archiveOffset + yOffset );
+      
+      ctx.strokeStyle = "#000"; 
+      ctx.stroke();
+
     }
-    ctx.strokeStyle = "#CCCCCC"; //middle line
-    ctx.stroke();
+
     //end axis
 
     //plot a tick and time at all tickIntervals
@@ -298,12 +337,12 @@ $(function() {
     ctx.fillText("UTC", edge.right - 30, edge.bottom + this.timeOffset);
 
     var index = 0;
-    while (canvasIndex < edge.right + 20) { //allow times to be drawn off of canvas
+    while (canvasIndex < edge.right) { //allow times to be drawn off of canvas
       // ctx.moveTo(canvasIndex, this.height -19);
       ctx.moveTo(canvasIndex, edge.top);
       ctx.lineTo(canvasIndex, edge.bottom);
 
-      if (canvasIndex - 23 >= 30 && canvasIndex <= this.width - 65) {
+      if (canvasIndex - 23 >= 30 && canvasIndex <= this.width - 65 ) {
         ctx.fillText(this.dateFormat(tickTime, "top"), canvasIndex - 23, edge.top - 3); //top
         ctx.fillText(this.dateFormat(tickTime, "bottom"), canvasIndex - 23, edge.bottom + this.timeOffset); //bottom
       }
@@ -328,7 +367,7 @@ $(function() {
 
     //Draws a vertical line to mark start of event.
     if (this.archive) {
-      // console.log("archive?")
+
       ctx.beginPath();
 
       var startPosition = (this.starttime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
@@ -345,37 +384,56 @@ $(function() {
       ctx.stroke();
 
       // // Start line
-      if (this.eventtime) {
+      // if (this.eventtime) {
+      //   ctx.beginPath();
+      //   var eventPosition = (this.eventtime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
+      //   var text = this.width < 570 || (eventPosition - startPosition) < 135 ? "OT" : "Origin Time";
+      //   var eventOffset = this.width < 570 || (eventPosition - startPosition) < 135 ? 25 : 135;
+      //   ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
+      //   ctx.moveTo(eventPosition, edge.bottom);
+      //   ctx.lineTo(eventPosition, edge.top);
+      //   ctx.strokeStyle = "#000";
+      //   ctx.stroke();
+      // }
+      
+      if(this.arrivals.length > 0) {
         ctx.beginPath();
-        var eventPosition = (this.eventtime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
-        var text = this.width < 570 || (eventPosition - startPosition) < 135 ? "ETA" : "Estimated Arrival Time";
-        var eventOffset = this.width < 570 || (eventPosition - startPosition) < 135 ? 25 : 135;
-        ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
-        ctx.moveTo(eventPosition, edge.bottom);
-        ctx.lineTo(eventPosition, edge.top);
-        ctx.strokeStyle = "#000";
+        var _this = this;
+        $.each(this.arrivals, function(i, arrival){
+          var arrivalPosition = (arrival - _this.viewerLeftTime) / _this.refreshRate + _this.startPixOffset;
+          if(i == 0) {
+            var text = _this.width < 570 || (arrivalPosition - startPosition) < 135 ? "ETA" : "Estimated arrival times";
+            var eventOffset = _this.width < 570 || (arrivalPosition - startPosition) < 135 ? 25 : 135;
+            ctx.fillText(text, arrivalPosition - eventOffset, edge.top + _this.archiveOffset / 2 + 3);
+            ctx.moveTo(arrivalPosition, edge.top + _this.archiveOffset);
+            ctx.lineTo(arrivalPosition, edge.top);
+          } else {
+            ctx.moveTo(arrivalPosition, edge.top + _this.archiveOffset + _this.channelHeight * i);
+            ctx.lineTo(arrivalPosition, edge.top + _this.archiveOffset + _this.channelHeight * (i - 1));
+          }
+        });
+        ctx.strokeStyle = "#107a10";
         ctx.stroke();
       }
+      
     }
     
     //for live: grab events within "length of buffer" to live
     //for archive: grab events within start to end
     //plot for archive and live, if possible
-    if(this.annotations.length > 0) {
-      // console.log(this.annotations)
-      // console.log(this.annotations)
-      ctx.beginPath();
-      var _this = this;
-      $.each(this.annotations, function(i, annotation){
-        var position = (annotation.starttime - _this.viewerLeftTime) / _this.refreshRate + _this.startPixOffset;
-        ctx.fillText("<--" + annotation.description, position + 2, edge.top + _this.archiveOffset / 2 + 3); //75 is offset for width of text
-        ctx.moveTo(position, edge.bottom);
-        ctx.lineTo(position, edge.top);
-      });
-      ctx.strokeStyle = "#107a10";
-      ctx.stroke();
-    }
-    
+    // if(this.annotations.length > 0) {
+    //
+    //   ctx.beginPath();
+    //   var _this = this;
+    //   $.each(this.annotations, function(i, annotation){
+    //     var position = (annotation.starttime - _this.viewerLeftTime) / _this.refreshRate + _this.startPixOffset;
+    //     ctx.fillText("<--" + annotation.description, position + 2, edge.top + _this.archiveOffset / 2 + 3); //75 is offset for width of text
+    //     ctx.moveTo(position, edge.bottom);
+    //     ctx.lineTo(position, edge.top);
+    //   });
+    //   ctx.strokeStyle = "#107a10";
+    //   ctx.stroke();
+    // }
   };
 
   //make a key based on new samprate that zeros out the insignificant digits. 
@@ -394,7 +452,7 @@ $(function() {
   //We want to avoid player constantly trying to catch up.
   QuickShake.prototype.adjustPlay = function() {
     var pad = this.pad;
-    // console.log(pad)
+
     var cursorOffset = (this.viewerWidthSec / 10) * this.sampPerSec;
     //i.e. how much buffer in pixels is hanging off the right side of the viewer
     //tail in px    
@@ -564,7 +622,7 @@ $(function() {
   };
 
   QuickShake.prototype.updateScale = function() {
-    $("#quickshake-scale").css("height", this.channelHeight / 2);
+    // $("#quickshake-scale").css("height", this.channelHeight / 2);
     var scale = Math.pow(10, -this.scale); //3 sig. digits
     if (scale < 0.000099) {
       scale = scale.toExponential(2);
@@ -579,10 +637,10 @@ $(function() {
     var offSet = 10; //Default for mobile and if there is no scale    
     $("#quickshake-canvas").show();
     $("#quickshake").height(window.innerHeight - $("#header").height() - 10 - $("#controls-container").height());
-
+    
     this.height = $("#quickshake").height();
     this.width = $("#quickshake").width();
-
+    $("#quickshake-scale").height(this.height);  
     this.sampPerSec = Math.round(this.width / this.viewerWidthSec);
     this.viewerWidthSec = this.width / this.sampPerSec; //actual width in Sec due to rounding
     this.refreshRate = Math.round(1000 / this.sampPerSec); //refresh rate in milliseconds
@@ -618,7 +676,6 @@ $(function() {
    ***/
 
   //Globals  
-  var quickshake;
   var socket;
   var channels = [];
   
@@ -636,10 +693,10 @@ $(function() {
     top: 52,
     left: -130,
     right: -115,
-    mag: 2.5
+    mag: 2
   };
-  // var path = "quickshake.pnsn.org/";
-  var path = window.location.host + "/";
+  var path = "quickshake.pnsn.org/";
+  // var path = window.location.host + "/";
   var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
 
   // Initialize UI
@@ -649,40 +706,48 @@ $(function() {
   });
 
   var eventSelector = $('select#event-select.station-select');
-  eventSelector.attr({
-    'data-live-search': true,
-    disabled: 'disabled',
-    title: "No events found.",
-    'data-size': 10
-  });
+  eventSelector
+    .attr({
+      'data-live-search': true,
+      disabled: 'disabled',
+      title: "Select an event.",
+      'data-size': 10
+    })
+    .append($("<optgroup label='Local Earthquakes' id='earthquakes-group'></optgroup>"))
+    .append($("<optgroup label='Significant Global Events' id='significant-group'></optgroup>"))
+    .append($("<optgroup label='Other events' id='others-group'></optgroup>"))
+    .change(function() {
+      $("#evid-select").val("");
+      $("#start-select").val("");
+    });
 
   //Populate group groupSelector
   var groupSelector = $('select#group-select.station-select');
-  groupSelector.attr({
-    'data-live-search': true,
-    title: 'Select a group.',
-    'data-size': 10
-  });
+  groupSelector
+    .attr({
+      'data-live-search': true,
+      title: 'Select a group.',
+      'data-size': 10
+    })
+    .change(function() {
+      channels = groupSelector.children(":selected").val().split(",");
+      $('.quickshake-warning').hide();
+      $("ul#station-sorter.station-select li").remove();
+      $(".selected").removeClass("selected");
+      $.each(channels, function(i, scnl) {
+        updateList(scnl);
+        $(".marker_" + scnl.replace("_","").replace(/\./g, "_")).addClass("selected");
+      });
+    });
 
   $(".selectpicker").selectpicker();
-
-  groupSelector.change(function() {
-    channels = groupSelector.children(":selected").val().split(",");
-    $('.quickshake-warning').hide();
-    $("ul#station-sorter.station-select li").remove();
-    $(".selected").removeClass("selected");
-    $.each(channels, function(i, scnl) {
-      updateList(scnl);
-      var klass = ".marker_" + scnl.replace(/\./g, "_");
-      $(klass).addClass("selected");
-    });
-  });
-
-  eventSelector.change(function() {
+  
+  $("#start-select").change(function(){
     $("#evid-select").val("");
-    $("#start-select").val("");
+    eventSelector.val(false);
+    eventSelector.selectpicker('refresh');
   });
-
+  
   $("#evid-select").change(function() {
     $("#start-select").val("");
     eventSelector.val("");
@@ -712,254 +777,149 @@ $(function() {
         values[i] = "0" + value;
       }
     });
-    // console.log(values)
+
     return values[0] + "/" + values[1] + " " + values[2] + ":" + values[3];
   }
-  var events = {};
-
-  function getEvents() {
-    eventSelector
-      .append($("<optgroup label='Local Earthquakes' id='earthquakes-group'></optgroup>"))
-      .append($("<optgroup label='Other events' id='others-group'></optgroup>"))
-      .append($("<optgroup label='Significant Global Events' id='significant-group'></optgroup>"));
-
+  
+//this will get condensed when we get events from mongo
+  function processEvents(localEventData, significantEventData) {
+    var events = {};
     var significant = $("#significant-group");
     var earthquakes = $("#earthquakes-group");
     var other = $("#others-group");
-
-    $.ajax({
-      dataType: "json",
-      url: usgsPath + "minlatitude=" + bounds.bottom + "&maxlatitude=" + bounds.top + "&minlongitude=" + bounds.left + "&maxlongitude=" + bounds.right + "&minmagnitude=" + bounds.mag
-    }).done(function(data) {
-
-      $.each(data.features, function(i, feature) {
-        // console.log(feature)
-        // console.log(i)
-        var titleTokens = feature.properties.title.split(" ");
-        var tokens = feature.id;
-        $.each(titleTokens, function(i, token) {
-          tokens += token;
-        });
-        var dateString = makeDate(new Date(feature.properties.time));
-        var title = dateString + " M " + feature.properties.mag;
-        var append = $("<option value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
-
-        if (feature.properties.type == "earthquake") {
-          earthquakes.append(append);
-        } else {
-          other.append(append);
-        }
-
-        var coords = feature.geometry.coordinates;
-        events[feature.id] = {
-          evid: feature.id,
-          description: feature.properties.title,
-          starttime: parseFloat(feature.properties.time),
-          geometry: feature.geometry
-        };
-        // console.log(events[feature.id].starttime)
+    
+    $.each(localEventData.features, function(i, feature) {
+      var titleTokens = feature.properties.title.split(" ");
+      var tokens = feature.id;
+      $.each(titleTokens, function(i, token) {
+        tokens += token;
       });
+      var dateString = makeDate(new Date(feature.properties.time));
+      var title = dateString + " M " + feature.properties.mag;
+      var append = $("<option value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
 
-      if (data.features.length > 0) {
-        eventSelector.removeAttr('disabled');
-        eventSelector.append($("<option data-hidden='true' data-tokens='false' selected value='false'>").text("Select an event"));
-      } else {
-        console.log("wtf");
+      if (feature.properties.type == "earthquake") {
+        earthquakes.append(append);
+      } else if(feature.properties.mag) {
+        // console.log(feature.properties.mag)
+        other.append(append);
       }
 
-      if (getUrlParam("evid")) {
-        evid = getUrlParam("evid");
-        if ($("select#event-select option[id=" + evid + "]")) {
-          $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
-          $('select#event-select').selectpicker('refresh');
-        }
-      }
-      $('select#event-select').selectpicker('refresh');
-    }).fail(function(response) {
-      console.log("I failed");
-      console.log(response);
-    });
-
-    $.ajax({
-      dataType: "json",
-      url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"
-    }).done(function(data) {
-
-      $.each(data.features, function(i, feature) {
-        // console.log(i)
-        var titleTokens = feature.properties.title.split(" ");
-        var tokens = feature.id;
-        $.each(titleTokens, function(i, token) {
-          tokens += token;
-        });
-        var dateString = makeDate(new Date(feature.properties.time));
-        var title = dateString + " M " + feature.properties.mag;
-        var append = $("<option class='significant' value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
-
-        if (feature.properties.type == "earthquake") {
-          significant.append(append);
-        }
-
-        events[feature.id] = {
-          evid: feature.id,
-          description: feature.properties.title,
-          starttime: parseFloat(feature.properties.time),
-          geometry: feature.geometry
-        };
-        // console.log(events[feature.id].starttime)
-      });
-
-      if (getUrlParam("evid")) {
-        evid = getUrlParam("evid");
-        if ($("select#event-select option[id=" + evid + "]")) {
-          $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
-          $('select#event-select').selectpicker('refresh');
-        }
-      }
-
-      $('select#event-select').selectpicker('refresh');
-    }).fail(function(response) {
-      console.log("teleseisms failed");
-    });
-
-  }
-
-  function getGroups(_callback) {
-    $.ajax({
-      type: "GET",
-      dataType: "jsonp",
-      url: "http://" + path + "groups"
-    }).done(function(data) {
-
-      var defaultGroup = {
-        name: "",
-        scnls: []
+      var coords = feature.geometry.coordinates;
+      events[feature.id] = {
+        evid: feature.id,
+        description: feature.properties.title,
+        starttime: parseFloat(feature.properties.time),
+        geometry: feature.geometry
       };
 
-      groupSelector.append($("<option data-hidden='true' data-tokens='false' title='Select a group' value='false' >"));
-      $.each(data, function(key, group) {
-        groupSelector.append($('<option value=' + group.scnls + ' id=' + key + '>').text(key.replace(/_/g, " ")));
-        if (group["default"] == 1 && defaultGroup.scnls.length == 0) {
-          defaultGroup.name = key;
-          defaultGroup.scnls = group.scnls;
-        }
-      });
-      
-      if (!getUrlParam("group") && channels.length == 0) {
-        channels = defaultGroup.scnls;
-        $("select#group-select option[id=" + defaultGroup.name + "]").attr("selected", "selected");
-        $("#group-header span").text(defaultGroup.name.replace(/_/g, " ") + " (default)");
-        $("#group-header").show();
-      } else if (getUrlParam("group")) {
-        $("#group-header span").text(getUrlParam("group").replace(/_/g, " "));
-        $("#group-header").show();
-        $("select#group-select option[id=" + getUrlParam("group") + "]").attr("selected", "selected");
-        if (channels.length == 0) {
-          channels = data[getUrlParam("group")] ? data[getUrlParam("group")].scnls : [];
-        }
-      }
-
-      groupSelector.selectpicker('refresh');
-
-      _callback();
-    }).fail(function(response) {
-      console.log("Group select failed");
-      console.log(response);
     });
+
+    $.each(significantEventData.features, function(i, feature) {
+      var titleTokens = feature.properties.title.split(" ");
+      var tokens = feature.id;
+      $.each(titleTokens, function(i, token) {
+        tokens += token;
+      });
+      var dateString = makeDate(new Date(feature.properties.time));
+      var title = dateString + " M " + feature.properties.mag;
+      var append = $("<option class='significant' value=" + (parseInt(feature.properties.time, 10) / 1000) + " data id=" + feature.id + " data-subtext=" + feature.id + " title='" + title + "'>").text(dateString + " " + feature.properties.title);
+
+      if (feature.properties.type == "earthquake") {
+        significant.append(append);
+      };
+
+      events[feature.id] = {
+        evid: feature.id,
+        description: feature.properties.title,
+        starttime: parseFloat(feature.properties.time),
+        geometry: feature.geometry
+      };
+      // console.log(events[feature.id].starttime)
+    });
+
+    if (localEventData.features.length > 0 || significantEventData.features.length > 0) {
+      eventSelector.removeAttr('disabled');
+      eventSelector.append($("<option data-hidden='true' data-tokens='false' selected value='false'>").text("Select an event."));
+    } else {
+      console.log("events failure");
+    }
+
+    if (getUrlParam("evid")) {
+      evid = getUrlParam("evid");
+      if ($("select#event-select option[id=" + evid + "]")) {
+        $("select#event-select option[id=" + evid + "]").attr("selected", "selected");
+        $('select#event-select').selectpicker('refresh');
+      }
+      
+      plotEvent(events[evid]);
+    }
+
+    $('select#event-select').selectpicker('refresh');
+    
+    return events;
+  }
+
+  function processGroups(groupData) {
+    var defaultGroup = { //keep track of default group
+      name: "",
+      scnls: []
+    };
+
+    groupSelector.append($("<option data-hidden='true' data-tokens='false' title='Select a group' value='false' >"));
+    $.each(groupData, function(key, group) {
+      groupSelector.append($('<option value=' + group.scnls + ' id=' + key + '>').text(key.replace(/_/g, " ")));
+      if (group["default"] == 1 && defaultGroup.scnls.length == 0) {
+        defaultGroup.name = key;
+        defaultGroup.scnls = group.scnls;
+      }
+    });
+    
+    if (!getUrlParam("group") && channels.length == 0) {
+      channels = defaultGroup.scnls;
+      $("select#group-select option[id=" + defaultGroup.name + "]").attr("selected", "selected");
+      $("#group-header span").text(defaultGroup.name.replace(/_/g, " ") + " (default)");
+      $("#group-header").show();
+    } else if (getUrlParam("group")) {
+      $("#group-header span").text(getUrlParam("group").replace(/_/g, " "));
+      $("#group-header").show();
+      $("select#group-select option[id=" + getUrlParam("group") + "]").attr("selected", "selected");
+      if (channels.length == 0) {
+        channels = groupData[getUrlParam("group")] ? groupData[getUrlParam("group")].scnls : [];
+      }
+    }
+
+    groupSelector.selectpicker('refresh');
   }
 
   $("[data-hide]").on("click", function() {
     $(this).closest("." + $(this).attr("data-hide")).hide();
   });
-  
-  // pnsn.org/annotations?start= &end=
-  // if live: send in length of buffer & current time
-  // if archive: send in data start and end
-  var annotations = [];
-  function getAnnotations(start, end){
-    var annotStart, annotEnd;
-    
-    if(quickshake.starttime && quickshake.endtime) {
-      annotStart = quickshake.starttime;
-      annotEnd = quickshake.endtime;
-    } else if(quickshake.starttime && quickshake.starttime < Date.now()){
-      annotStart = quickshake.starttime;
-      annotEnd = (new Date()).getTime();
-    } else {
-      annotStart = start;
-      annotEnd = end;
-    }
-
-    var evid = getUrlParam("evid");
-
-    $.ajax({
-      type: "GET",
-      dataType: "jsonp",
-      url: "http://www.pnsn.org/annotations?starttime=" + annotStart + "&endtime="+ annotEnd + "&category=Seahawk"
-    }).success(function(data) { //sometimes doesn't get called?
-      var annot = quickshake.annotations;
-      eventSelector.append($("<option data-hidden='true' data-tokens='false' title='Select an event.' value='false' selected>"));
-      $.each(data, function(i, annotation){
-        if (eventSelector.find('#HAWK' + annotation.id).length <= 0) {
-
-          var d = new Date(annotation.datetime);
-          d = d.getTime() + annotation.seconds_offset * 1000;
- 
-          annotations.push({
-            id:"HAWK" + annotation.id,
-            description: annotation.name,
-            starttime: d
-          });
-        
-          var text = annotation.comment.replace(/(&nbsp;)?<{1}\/?[^>]+>{1}/g,""); //strip out funky characters
-          var append = $("<option value=" + d/1000 + " data id=HAWK" + annotation.id + " title='" + text + "'>").text(text);
-
-          // console.log("HAWK" + annotation.id, evid)
-
-          if("HAWK" + annotation.id === evid){
-            append.attr("selected", "selected");
-            $("#event-header span").text(text);
-            $("#event-header ").show();
-          }
-          eventSelector.append(append);
-        } 
-      });
-      
-      quickshake.annotations = annotations;
-      
-      
-      eventSelector.attr({
-        disabled: false,
-        title: "Select an event"
-      });
-      
-      eventSelector.selectpicker('refresh');
-      
-      // quickshake.annotations = annotations;
-    }).complete(function(xhr, data) {
-      if (xhr.status != 200) { //In case it fails
-        console.log("Annotation fail", xhr.status);
-      } 
-    });
-    
-  }
 
   //Get start time for event
-  function getStart(evid, start, _callback) {
+  function getStart(events, stations, channels, evid, start, _callback) {
     var stime = start;
     var text;
+    var arrivals = [];
+    var earliestArrival = Number.MAX_SAFE_INTEGER;
+    // console.log(stations, channels, events, evid, start)
 
-    if(!evid || evid && evid.indexOf("HAWK") > -1) {
-      _callback(stime);
+    if(!evid || (evid && evid.indexOf("HAWK") > -1)) {
+      _callback(stime, false, arrivals);
     } else if (events[evid]) {
       stime = stime ? stime : events[evid].starttime;
       text = events[evid].description;
 
       $("#event-header span").text(text);
       $("#event-header").show();
-
-      _callback(getStartOffset(events[evid], stime));
-
+      
+      $.each(channels, function(i, channel){
+        var arrival = getStartOffset(events[evid], stime, stations[channel.split(".")[0]]);
+        arrivals.push(arrival);
+        earliestArrival = Math.min(arrival, earliestArrival);
+      });
+      
+      _callback(stime, earliestArrival, arrivals);
     } else {
       $.ajax({
         type: "GET",
@@ -978,19 +938,24 @@ $(function() {
           geometry: data.geometry
         };
 
-       _callback(getStartOffset(events[evid], stime));
+        $.each(channels, function(i, channel){
+          var arrival = getStartOffset(events[evid], stime, stations[channel.split(".")[0]]);
+          arrivals.push(arrival);
+          earliestArrival = Math.min(arrival, earliestArrival);
+        });
+        
+        _callback(stime, earliestArrival, arrivals);
 
       }).fail(function(response) {
         // console.log("I failed");
-        // console.log(response);
       });
     }
   }
   
   //Do the math, the monster math
-  function getStartOffset(event, start) {
-    var lat1 = (bounds.top - bounds.bottom) / 2 + bounds.bottom; //center of bounding box
-    var lon1 = (bounds.left - bounds.right) / 2 + bounds.right;
+  function getStartOffset(event, start, station) {
+    var lat1 = station.coords.lat; //center of bounding box
+    var lon1 = station.coords.lon;
 
     var lat2 = event.geometry.coordinates[1];
     var lon2 = event.geometry.coordinates[0];
@@ -1006,8 +971,9 @@ $(function() {
 
     var d = 2 * Math.asin(Math.sqrt(a)) * 180 / Math.PI; //angular distance in degrees
 
+    console.log(station, d)
     distances = Object.keys(traveltimes).sort(function compare(a, b) {
-      return a - b;
+      return parseFloat(a) - parseFloat(b);
     });
 
     var i = 0;
@@ -1017,10 +983,9 @@ $(function() {
       i++;
       distance = parseFloat(distances[i]);
     }
-
+    
     if (distances[i - 1]) {
       var distance2 = distances[i - 1];
-
       var linDif = (traveltimes[distance] - traveltimes[distance2]) / (distance - parseFloat(distance2));
       return start + (linDif * d + traveltimes[distance2] * 1000);
 
@@ -1034,157 +999,144 @@ $(function() {
   }
 
   //TODO: make a leaflet map
-  function getScnls() {
-  
-    $.ajax({
-      type: "GET",
-      dataType: "jsonp",
-      url: "http://web4.ess.washington.edu:8888/scnls"
-    }).done(function(data) {
-      var stations = {};
-      var latlngs = [];
-      $.each(data, function(key, scnl) {
-        var station = scnl.split(".");
-        if(station.length === 4) {
-          var sta = station[0],
-              cha = station[1],
-              net = station[2];
-          if(stations[sta]){
-            stations[sta].chans.push(cha);
-            stations[sta].scnls.push(scnl);
-          } else {
-            stations[sta] = {
-              sta: sta,
-              net : net,
-              chans : [cha],
-              scnls: [scnl]    
+  function processStations(stations, stationData) {
+    var latlngs = [];
+    var stationData = stationData.split("#");
+
+    headers = stationData[1].split(" | ");
+    for(var i = 2; i < stationData.length; i++){
+      var nStations = stationData[i].split("\n");
+    
+      for(var j = 1; j < nStations.length; j++){
+        var station = nStations[j].split("|");
+        if(station.length > 1){
+          var sta = station[1],
+              net = station[0],
+              lat = station[4],
+              lon = station[5],
+              scale = station[11],
+              unit = station[13];
+                  
+          if(stations[sta] && !stations[sta].coords){
+            stations[sta].coords = {
+              lat: lat,
+              lon: lon
             };
-          }
+            if(unit == "M/S**2") {
+              // stations[sta].scale = scale ;
+              // stations[sta].unit = "m/s^2";
+              
+              stations[sta].scale = scale * 9.8 / 100 ;
+              stations[sta].unit = "%g";
+            } else{
+              stations[sta].scale = scale ;
+              stations[sta].unit = "m/s";
+              // stations[sta].scale = scale / 100;
+              // stations[sta].unit = "cm/s";
+            }
+            latlngs.push([lat, lon]);
+          } 
         }
-      });
-      $.ajax({
-        type: "GET",
-        dataType: "text",
-        url: "https://service.iris.edu/irisws/fedcatalog/1/query?net=UW&format=text&includeoverlaps=false&nodata=404"
-      }).done(function(data) {
-        // console.log(data)
-        var nData = data.split("#");
-      
-        headers = nData[1].split(" | ");
-      
-        for(var i = 2; i < nData.length; i++){
-          var nStations = nData[i].split("\n");
+      }
+    }
 
-          for(var j = 1; j < nStations.length; j++){
-            var station = nStations[j].split("|");
-            var sta = station[1],
-                net = station[0],
-                lat = station[4],
-                lon = station[5];
-          
-            if(stations[sta] && !stations[sta].coords){
-              stations[sta].coords = {
-                lat: lat,
-                lon: lon
-              }
-              latlngs.push([lat, lon]);
-            } 
-          
-          }
-        }
-        
-        makeMap(stations);
-        
-        $('#controls').on('shown.bs.modal', function() {
-          console.log("show meee")
-          var bounds = new L.LatLngBounds(latlngs);
-          map.fitBounds(bounds);
-        });
-        
-  
-      }).fail(function(response) {
-  
-        console.log("I failed");
-
-      });
-
-    }).fail(function(response) {
-      // console.log("I failed");
-      // console.log(response);
+    $('#controls').on('shown.bs.modal', function() {
+      var bounds = new L.LatLngBounds(latlngs);
+      map.fitBounds(bounds);
     });
-
+  
+    return stations;
   }
 
   function makeMap(stations){
     map.addLayer(osm);
-    map.doubleClickZoom.disable(); 
+    // map.doubleClickZoom.disable(); 
     $.each(stations, function(i, station){
       var icon;
       var container = $('<div />');
-      container.append($("<div>"+station.sta+"</div>"));
-
+      container.append($("<div>"+station.sta.toUpperCase()+"</div>"));
+      var list = $('<ul />');
+      var iconClass = "station-icon";
       $.each(station.scnls, function(j, scnl){
-        var button = $("<a class='selected-station' type='button' id='marker_" + scnl.replace(/\./g, "_")+ "'>" + station.chans[j] + "</a>");
-        container.append(button);
-        if(channels.indexOf(scnl) > -1){
-          icon = L.divIcon({className: 'station-icon selected marker_' + scnl.replace(/\./g, "_")});
-        } else {
-          icon = L.divIcon({className: 'station-icon marker_' + scnl.replace(/\./g, "_")});
-        }
+        var _scnl = scnl.replace("_","").replace(/\./g, "_");
+        var button = $("<li><a class='selected-station' type='button' id='marker_" + _scnl + "'>" + station.chans[j] + "</a></li>");
+        list.append(button);
+        if(channels.indexOf(scnl.replace("_","")) > -1){
+          iconClass += " selected";
+        } 
+        iconClass += " marker_" + _scnl;
       });
+      container.append(list);
+      if(station.coords && station.coords.lat && station.coords.lon){
+        var marker = L.marker([station.coords.lat, station.coords.lon], {icon:L.divIcon({className: iconClass})});
       
-      //add text for explanations
-      //group dropdown not working
-      
-      var marker = L.marker([station.coords.lat, station.coords.lon], {icon:icon});
-      
-      container.on('click', '.selected-station', function() {
-        var thisStation = $(this)[0].id.replace("marker_", "").replace(/_/g, ".");
-        
-        if($(marker._icon).hasClass('selected')){
-          $("#length-warning").hide();
-          var index = channels.indexOf(thisStation);
-          if (index > -1) {
-              channels.splice(index, 1);
+        container.on('click', '.selected-station', function() {
+          var thisChannel = $(this)[0].id.replace("marker_", "").replace(/_/g, ".");
+          
+          var index = channels.indexOf(thisChannel);
+          
+          if(index > -1){//is in the channels array already
+            $("#length-warning").hide();
+            channels.splice(index, 1);
+            if($(marker._icon).hasClass('selected')){
+              $(marker._icon).removeClass('selected');
+            } 
+            $("#selected-stations span").text(channels);
+            $(".update.station-select").addClass("btn-primary");
+          }else if(index == -1 && channels.length < maxChannels) {//not in channel array, space to add 
+            $("#length-warning").hide();
+            channels.push(thisChannel);
+            $(marker._icon).addClass('selected');
+            $("#selected-stations span").text(channels);
+            $(".update.station-select").addClass("btn-primary");
+            
+          } else if(channels.length == maxChannels){
+            $("#length-warning").show();
           }
-          $(marker._icon).removeClass('selected');
-          $("#selected-stations span").text(channels);
-          $(".update.station-select").addClass("btn-primary");
-        } else if(channels.length < maxChannels) {
-          $("#length-warning").hide();
-          channels.push(thisStation);
-          $(marker._icon).addClass('selected');
-          $("#selected-stations span").text(channels);
-          $(".update.station-select").addClass("btn-primary");
-        }else if(channels.length == maxChannels){
-          $("#length-warning").show();
-        }
-        $("ul#station-sorter.station-select li").remove();
-        $.each(channels, function(i, scnl) {
-          updateList(scnl);
+
+          $("ul#station-sorter.station-select li").remove();
+          $.each(channels, function(i, scnl) {
+            updateList(scnl);
+          });
+          groupSelector.val(false);
+          groupSelector.selectpicker('refresh');
         });
-        groupSelector.val(false);
-        groupSelector.selectpicker('refresh');
-      });
       
-      marker.addTo(map);
+        marker.addTo(map);
       
-      marker.bindPopup(container[0]);
-      
+        marker.bindPopup(container[0]);
+      }
     });
     
   }
-
-  // Returns the channels
-  function getChannels() {
-    if (channels.length > 0) {
-      return channels;
-    } else if ($('select#group-select option:selected').length > 0 && $('select#group-select option:selected')[0].value) {
-      channels = $('select#group-select option:selected').first().val().split(",");
-      return channels;
-    } else {
-      // $(".quickshake-warning").show();
-      return false;
+  
+  var eventMarker;
+  function plotEvent(event){
+    if (eventMarker) {
+      map.removeLayer(eventMarker);
+    }
+    if(event.geometry && event.geometry.coordinates){
+      
+      var eventIcon = L.icon({
+          iconUrl: '/images/star.svg',
+          iconSize:     [20, 20], // size of the icon
+          iconAnchor:   [10, 10], // point of the icon which will correspond to marker's location
+          shadowAnchor: [4, 62],  // the same for the shadow
+          popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+      });
+      
+      
+      eventMarker = L.marker([event.geometry.coordinates[1], event.geometry.coordinates[0]], {icon:eventIcon, zIndexOffset:1000});
+      eventMarker.bindPopup("Selected Event");
+      eventMarker.on('mouseover', function (e) {
+          this.openPopup();
+      });
+      eventMarker.on('mouseout', function (e) {
+          this.closePopup();
+      });
+      
+      
+      eventMarker.addTo(map);
     }
   }
 
@@ -1234,9 +1186,7 @@ $(function() {
 
   function removeStation(li) {
     var scnl = li.attr("id");
-
     li.remove();
-
     updateChannels();
 
     if (channels.length < maxChannels) {
@@ -1345,6 +1295,7 @@ $(function() {
       $("#duration-select option[value='" + getUrlParam("duration") + "']").attr("selected", "selected");
       $("#duration-select").selectpicker('refresh');
     }
+
   }
 
   function getValue(variable) {
@@ -1359,95 +1310,165 @@ $(function() {
 
   function toggleControls(quickshake){
     $("#hide-controls, #show-controls, #toggle-controls, #quickshake-controls").toggleClass("closed");
-    quickshake.configViewer();
+
+    window.setTimeout(function(){
+      quickshake.configViewer();
+      
+      if(!quickshake.scroll){ //FIXME: goes blank if not scrolling
+        quickshake.drawSignal();
+      }
+    }, 100);
     
   }
+  
   function initialize() {
-    getEvents();
+    var getGroups = function(){ return $.ajax({dataType: "jsonp", url: "http://" + path + "groups"});};
+    var getLocalEvents = function(){return $.ajax({dataType: "json", url: usgsPath + "minlatitude=" + bounds.bottom + "&maxlatitude=" + bounds.top + "&minlongitude=" + bounds.left + "&maxlongitude=" + bounds.right + "&minmagnitude=" + bounds.mag});};
+    var getSignificantEvents = function(){return $.ajax({dataType: "json",url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"});};
+    var getStations = function(){return $.ajax({dataType: "text",url: "https://service.iris.edu/irisws/fedcatalog/1/query?net=UW&format=text&includeoverlaps=false&nodata=404"});};
+    
     populateForm();
-    getScnls();
-    getGroups(function() {
-      var width = getValue("width") * 60;
-      quickshake = new QuickShake(width, channels.slice());
+    
+    var stations = {},
+        events,
+        controlsTimeout,
+        duration = getValue("duration") ? getValue("duration") : 10,
+        start = getValue("start"),
+        evid = getValue("evid");
 
-      $("#toggle-controls").click(function(){
-        toggleControls(quickshake);
+    $.ajax({
+      type: "GET",
+      dataType: "jsonp",
+      url: "http://web4.ess.washington.edu:8888/scnls"
+    }).done(function(data){
+      
+      $.each(data, function(key, scnl) {
+        
+        var station = scnl.split(/\./g);
+        if(station.length <= 4 && station.length > 2) {
+          var sta = station[0],
+              cha = station[1],
+              net = station[2];
+          if(stations[sta] && $.inArray(cha, stations[sta].chans) === -1){
+            stations[sta].chans.push(cha);
+            stations[sta].scnls.push(scnl);
+          } else if(net != "TE") {
+            stations[sta] = {
+              sta: sta,
+              net : net,
+              chans : [cha],
+              scnls: [scnl]    
+            };
+          }
+        }
       });
       
-      $("#controls-container").click(function(){
-        clearTimeout(tm);
-        tm = null;
-      });
-
-      if (channels.length > 0 && channels.length < 7) {
-        $('.quickshake-warning').hide();
-        $('#header-left').show();
-        // var evid = getValue("evid");
-
-        var duration = getValue("duration") ? getValue("duration") : 10;
-
-        var start = getValue("start");
+      //Patiently waits until all the requests are done before proceeding,
+      $.when(getGroups(),getLocalEvents(), getSignificantEvents(), getStations(), stations).done(function(groupData, localEventData, significantEventData, stationData, stations){
         
-        var t = new Date();
-        getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime());
-        var interval = setInterval(function(){
-          getAnnotations(t.getTime() - 7*24*60*60*1000, t.getTime());
-        }, 120000);
+        processGroups(groupData[0]);
+        events = processEvents(localEventData[0], significantEventData[0]);
         
-        var evid = getUrlParam("evid");
+        stations = processStations(stations, stationData[0]);
+        
 
-        var stations = "scnls=" + getChannels();
- 
-        if (start || evid) {
-          $(".clear-all").show();
-          getStart(evid, start, function(eventtime) {
-            $("#start-header span").text(new Date(start));
-            
-            $("#start-header").show();
+        
+        makeMap(stations);
+        
+        eventSelector.change(function() {
+          plotEvent(events[ $(this).find("option:selected")[0].id ]);
+        });
+      
+        
+        quickshake = new QuickShake(getValue("width") ? getValue("width") * 60 : 2 * 60, channels.slice());
+        
+        $("#toggle-controls").click(function(){
+          toggleControls(quickshake);
+        });
 
-            var dataStart = evid ? eventtime - 20 * 1000 : eventtime; //grab 30 seconds before event
-            endtime = dataStart + 5 * 60 * 1000; //grab 5 minutes of data
+        $.each(channels, function(i, channel){
+          quickshake.stationScalars[channel] = {
+            scale: stations[channel.split(".")[0]].scale,
+            unit:stations[channel.split(".")[0]].unit
+          };
+        });
+        
+        if (channels.length > 0 && channels.length <= maxChannels) {
+          
+          $('.quickshake-warning').hide();
+          $('#header-left').show();
 
-            $.ajax({
-              type: "GET",
-              dataType: "jsonp",
-              url: "http://" + path + "archive?starttime=" + dataStart + "&" + stations + "&endtime=" + endtime,
-              timeout: 4000 //gives it time to think before giving up
-              //Drawing speed is varying with amountof data
-            }).success(function(data) { //sometimes doesn't get called?
-              // console.log("success!");
-              $("#fastforward-button").show();
-              // $(".helpful-label").show();
-              quickshake.configViewer();
-              quickshake.playArchive(data, eventtime, dataStart);
-              var tm = window.setTimeout(function(){
-                toggleControls(quickshake);
-              }, 10000);
-            }).complete(function(xhr, data) {
-              if (xhr.status != 200) { //In case it fails
-                showControlPanel();
-                $("#station-sorter").show();
-                $("#data-error").show();
+          if (start || evid) {
+
+            getStart(events, stations, channels, evid, start, function(eventtime, earliestArrival, arrivals) {
+              
+              // console.log(eventtime, earliestArrival, arrivals)
+              $("#start-header span").text(new Date(start));
+
+              $("#start-header").show();
+
+              var starttime;
+              
+              if (evid && earliestArrival &&  earliestArrival - eventtime > 20 * 1000 && earliestArrival - eventtime < 60 * 1000) {
+                starttime = eventtime;
+              } else if (evid && earliestArrival){
+                starttime = earliestArrival - 20 * 1000;
+              } else {
+                starttime = eventtime;
               }
-            });
-          });
+              
+              arrivals.unshift(earliestArrival);
+              
+              var endtime = starttime + duration * 60 * 1000;
 
+              $.ajax({
+                type: "GET",
+                dataType: "jsonp",
+                url: "http://" + path + "archive?starttime=" + starttime + "&scnls=" + channels + "&endtime=" + endtime,
+                timeout: 8000 //gives it time to think before giving up
+              }).success(function(data) { //sometimes doesn't get called?
+                $("#fastforward-button").show();
+                quickshake.configViewer();
+                quickshake.playArchive(data, eventtime, starttime);
+                quickshake.arrivals = arrivals.slice();
+                controlsTimeout = window.setTimeout(function(){
+                  toggleControls(quickshake);
+                }, 10000);
+
+              }).complete(function(xhr, data) {
+                if (xhr.status != 200) { //In case it fails
+                  showControlPanel();
+                  $("#station-sorter").show();
+                  $("#data-error").show();
+                }
+              });
+            });
+
+          } else {
+            $("#realtime-button").show();
+            quickshake.configViewer();
+            initializeSocket("scnls=" + channels, quickshake);
+            controlsTimeout = window.setTimeout(function(){
+              toggleControls(quickshake);
+            }, 10000);
+          }
+
+          controlsInit(quickshake);
         } else {
-          $("#realtime-button").show();
-          quickshake.configViewer();
-          initializeSocket(stations);
-          var tm = window.setTimeout(function(){
-            toggleControls(quickshake);
-          }, 10000);
+          $('.quickshake-warning').show();
         }
 
-        controlsInit();
-
-
-      } else {
-        $('.quickshake-warning').show();
-      }
     });
+    
+  }).fail(function(){
+    console.log("Oops something went wrong. ");
+    alert("JON WEB4 IS DOWN!!!");
+  });
+  
+  $("#controls-container").click(function(){
+    clearTimeout(controlsTimeout);
+    controlsTimeout = null;
+  });
 
   }
 
@@ -1464,7 +1485,18 @@ $(function() {
   initialize();
 
   // Can't load these until the quickshake is made
-  function controlsInit() {
+  function controlsInit(quickshake) {
+    // $(window).resize(function(){
+    //    var timeout = setTimeout(function(){
+    //      quickshake.configViewer();
+    //      quickshake.drawSignal();
+    //    }, 1000);
+    // });
+    
+    
+    $(".open-image").click(function(){
+        window.open(quickshake.canvasElement.toDataURL('png'), "");
+    });
     // Controls stuff
     $("#playback-slider").slider({
       slide: function(e, ui) {
@@ -1533,8 +1565,7 @@ $(function() {
 
   // Websocket stuff
 
-  function initializeSocket(stations) {
-    // console.log(stations)
+  function initializeSocket(stations, quickshake) {
     if (window.WebSocket) {
       socket = new WebSocket("ws://" + path + "?" + stations);
       quickshake.setTimeout();

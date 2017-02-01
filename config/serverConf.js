@@ -53,6 +53,10 @@ function ServerConf(){
       "default":1,
       "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
     },
+    "Olympic_Peninsula":{
+      "default":1,
+      "scnls": ["OSD.EHZ.UW.--","DOSE.BHZ.UW.--", "HDW.EHZ.UW.--", "GMW.EHZ.UW.--", "GNW.BHZ.UW.--"]
+    },
     "Seahawks_Noise_Comparison":{
       "default":0,
       "scnls":["HWK6.HNZ.UW.--", "HWK1.HNZ.UW.--", "HWK3.HNZ.UW.--", "KDK.ENZ.UW.--", "COOS.HNZ.UW.--"]
