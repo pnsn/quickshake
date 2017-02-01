@@ -1,5 +1,5 @@
 #quickshake
-A realtime Node.js waveserver
+A realtime HTTP MongoDb-Node waveserver
 
 #Node Version
 Quickshake has been tested on Node 6.8.0. You can install this verision by

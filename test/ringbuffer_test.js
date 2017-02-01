@@ -2,7 +2,7 @@
 // var assert = require('assert')
 var expect  = require("chai").expect
   ,RingBuffer = require("../lib/ringBuffer.js")
-  ,MockTrace =  require("./mockTrace.js");
+  ,MockTrace =  require("./factories/mockTrace.js");
 
 
 var buffMax=6;
@@ -32,16 +32,3 @@ describe("Ringbuffer update", function(){
   });
 
 });
-
-// describe("Should translate keys correctly", function(){
-//   it("takes EW key and makes mongo key", function(){
-//     var valid_m_key="sta_chn_nt";
-//     var valid_ew_key="STA.CHN.NT.--";
-//     var valid_m_key_w_loc="sta_chn_nt_lc";
-//     var valid_ew_key_w_loc="STA.CHN.NT.LC";
-//     expect(ringbuff.ewKey2Mongo(valid_ew_key)).to.equal(valid_m_key);
-//     expect(ringbuff.ewKey2Mongo(valid_ew_key_w_loc)).to.equal(valid_m_key_w_loc);
-//
-//   });
-//
-// });

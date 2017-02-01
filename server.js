@@ -8,7 +8,7 @@ const  url = require('url');
 const WebSocketServer = require('ws').Server;
 const wss = new WebSocketServer({server: http});
 const logger = require('winston');
-const Conf = require("./config.js");
+const Conf = require("./config/serverConf.js");
 const MongoClient  = require('mongodb').MongoClient;
 const RingBuffer = require(__dirname + '/lib/ringBuffer');
 const MongoRealTime = require(__dirname + '/lib/mongoRealTime');
@@ -19,10 +19,8 @@ const debug = require('debug')('quickshake');
 const conf = new Conf();
 
 var env=process.env.NODE_ENV || "development"; //get this from env
-console.log(env);
   
 var MONGO_URI = conf[env].mongo.uri;
-console.log(MONGO_URI);
 exports.app=app; //for integration testing
 app.use(express['static']('public'));
 logger.level="debug";
@@ -48,9 +46,9 @@ MongoClient.connect(MONGO_URI, function(err, db) {
 /* 
 *****HTTP ROUTES******
 GET scnls realtime  
- /realtime?scnls=...
+ /?scnls=...
 GET scnls by timestamp
-/archive?starttime=[time]&duration=[duration]&scnls=...
+/archive?starttime=[time(ms)]&duration=[duration(ms)]&scnls=...
 GET available scnls
  /scnls
 GET scnls by group (maintained by config but will eventually have CRUD func 
@@ -223,6 +221,7 @@ function sendRing(id,socket){
 }
 
 //recursive function to iterate through each scnl by creating dynamic callback hell
+// try 
 function sendArchive(scnls,res,starttime, endtime, results) {
   // base case  
   if(scnls.length < 1){
@@ -234,12 +233,29 @@ function sendArchive(scnls,res,starttime, endtime, results) {
     }
     
   }else{
-    var key = scnls.shift() + "CWAVE";
-    var coll= _db.collection(key);
-    coll.find( {"starttime": {$gte: starttime, $lte: endtime}} ).toArray(function(err, tracebuffs){
-        if (err) return loggger.error( f);
-        results=results.concat(tracebuffs);
-        sendArchive(scnls,res,starttime,endtime,results);
+    var key = scnls.shift();
+    var coll= _db.collection(key + "CWAVE");
+    
+    // coll.findOne({"starttime": {$gte: starttime, $lte: endtime}}, {starttime: 1}, {sort: [["starttime", "asc"]], limit: 1}, function(err, tb){
+//         if (err) return logger.error(err);
+//         if(!tb || (tb && starttime <  tb.starttime)){
+//           coll= _db.collection(key + "EVENT");
+//           console.log("coll", coll);
+//         }
+//     });
+    coll.find( {"starttime": {$gte: starttime, $lte: endtime}} ).toArray(function(err, tbs){
+        if (err) return logger.error(err);
+        if(tbs.length >0){
+          results=results.concat(tbs);
+          sendArchive(scnls,res,starttime,endtime,results);
+        }else{
+          coll= _db.collection(key + "EVENT");
+           coll.find( {"starttime": {$gte: starttime, $lte: endtime}} ).toArray(function(err, tbs){
+             if (err) return logger.error(err);
+               results=results.concat(tbs);
+               sendArchive(scnls,res,starttime,endtime,results);
+           });
+        }
     });
     }
 }

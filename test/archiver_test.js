@@ -1,8 +1,8 @@
 'use strict';
 
-const Conf = require("../config.js");
+const Conf = require("../config/serverConf.js");
 const expect  = require("chai").expect;
-const mockTrace =  require("./mockTrace.js");
+const mockTrace =  require("./factories/mockTrace.js");
 const chai = require('chai');
 const should = chai.should();
 const conf = new Conf();
@@ -31,7 +31,6 @@ before(function(){
   fixtures.clear(['yach_hnz_uw__', 'ring'], function(err) {
   });
   ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
-  console.log("here we are" ,ringBuff.ring);
   mongoArchive = new CwaveArchiver(ringBuff, 5000, "ring", logger);
   
 
