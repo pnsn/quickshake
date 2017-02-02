@@ -1,4 +1,4 @@
-function Conf(){
+function ServerConf(){
   this.production= {
     mongo:{
       uri: "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWD + "@" 
@@ -86,4 +86,4 @@ function Conf(){
 };
 
 
-module.exports = Conf;
+module.exports = ServerConf;
