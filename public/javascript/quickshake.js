@@ -273,7 +273,7 @@ $(function() {
 
     //scnl label
     ctx.font = "15px Helvetica, Arial, sans-serif";
-    ctx.strokeStyle = "#119247"; // axis color    
+    ctx.strokeStyle = "#107a10"; // axis color    
     ctx.stroke();
     
 
@@ -1370,9 +1370,6 @@ $(function() {
         events = processEvents(localEventData[0], significantEventData[0]);
         
         stations = processStations(stations, stationData[0]);
-        
-
-        
         makeMap(stations);
         
         eventSelector.change(function() {
@@ -1424,8 +1421,7 @@ $(function() {
               $.ajax({
                 type: "GET",
                 dataType: "jsonp",
-                url: "http://" + path + "archive?starttime=" + starttime + "&scnls=" + channels + "&endtime=" + endtime,
-                timeout: 8000 //gives it time to think before giving up
+                url: "http://" + path + "archive?starttime=" + starttime + "&scnls=" + channels + "&endtime=" + endtime
               }).success(function(data) { //sometimes doesn't get called?
                 $("#fastforward-button").show();
                 quickshake.configViewer();
