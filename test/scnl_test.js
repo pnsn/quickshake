@@ -21,26 +21,27 @@ var fixtures = require('pow-mongodb-fixtures').connect('waveforms', {
 var env=process.env.NODE_ENV || "development";
 var MONGO_URI = serverconf[env].mongo.uri;
 
-
 var scnl;
 before(function(){
   fixtures.clearAllAndLoad("./fixtures", function(err){
     if(err) console.log("ERRR = " + err);
   });  
-  scnl = new Scnl([]);
+  scnl = Scnl;
 });
 
 
 //test for no collection, test for collection, test for adding document
 describe('should be good', function(){
   it('should get something from iris', function(done){
+    //mocha times out at 2 seconds
+    this.timeout(15000);
      scnl.parseIrisScnls(scnlconf.nets, function(err, scnls, response){
        expect(response.statusCode).to.equal(200); 
-       expect(scnls[0].length).to.not.equal(0);
+       expect(scnls.length).to.not.equal(0);
        done();
      });
   });
-  it('should get a list of collections and update missing SHIT', function(done){
+  it('should get a list of collections', function(done){
     MongoClient.connect(MONGO_URI, function(err, db) {
       if(err) throw err;     
       scnl.getCollections(db, function(err, scnls){

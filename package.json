@@ -22,7 +22,7 @@
     "debug": "latest"
   },
   "scripts": {
-     "start": "node server.js",
+     "start": "node controller/scnls_controller.js",
     "test": "./node_modules/.bin/mocha --reporter spec"
   },
   "author": "Jon Connolly",
