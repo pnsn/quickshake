@@ -65,15 +65,9 @@ app.get('/', function (req, res) {
 //GET: unique list of scnls
 //JSON response
 app.get('/scnls', function (req, res) {
-  _db.listCollections().toArray(function(err, collections){
+  coll=db.collection("scnls");
+  coll.toArray(function(err, scnls){
     if(err) throw err;
-    var scnls=[];
-    for(var i=0;i<collections.length; i++){
-      var scnl=collections[i]['name'];
-      if( scnl.match(/CWAVE$/)){
-        scnls.push(scnl.split("CWAVE")[0]);
-      }
-    }
     res.jsonp(scnls);
   });
 });
