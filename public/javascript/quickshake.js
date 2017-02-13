@@ -1427,6 +1427,11 @@ $(function() {
   });
 
   }
+  
+  function downloadCanvas(link, canvas, filename) {
+      link.href = canvas.toDataURL();
+      link.download = filename;
+  }
 
   function showControlPanel() {
     $("#controls").modal("show");
@@ -1451,7 +1456,7 @@ $(function() {
     
     
     $(".open-image").click(function(){
-        window.open(quickshake.canvasElement.toDataURL('png'), "");
+      downloadCanvas(this, quickshake.canvasElement, "quickshake-" + quickshake.endtime + ".png");
     });
     // Controls stuff
     $("#playback-slider").slider({
