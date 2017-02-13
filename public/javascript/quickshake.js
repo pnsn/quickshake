@@ -695,8 +695,8 @@ $(function() {
     right: -115,
     mag: 2
   };
-  var path = "quickshake.pnsn.org/";
-  // var path = window.location.host + "/";
+  // var path = "quickshake.pnsn.org/";
+  var path = window.location.host + "/";
   var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
 
   // Initialize UI
@@ -954,8 +954,8 @@ $(function() {
   
   //Do the math, the monster math
   function getStartOffset(event, start, station) {
-    var lat1 = station.coords.lat; //center of bounding box
-    var lon1 = station.coords.lon;
+    var lat1 = station.lat; //center of bounding box
+    var lon1 = station.lon;
 
     var lat2 = event.geometry.coordinates[1];
     var lon2 = event.geometry.coordinates[0];
@@ -970,8 +970,6 @@ $(function() {
       (1 - Math.cos(dLon)) / 2;
 
     var d = 2 * Math.asin(Math.sqrt(a)) * 180 / Math.PI; //angular distance in degrees
-
-    console.log(station, d)
     distances = Object.keys(traveltimes).sort(function compare(a, b) {
       return parseFloat(a) - parseFloat(b);
     });
@@ -998,56 +996,6 @@ $(function() {
 
   }
 
-  //TODO: make a leaflet map
-  function processStations(stations, stationData) {
-    var latlngs = [];
-    var stationData = stationData.split("#");
-
-    headers = stationData[1].split(" | ");
-    for(var i = 2; i < stationData.length; i++){
-      var nStations = stationData[i].split("\n");
-    
-      for(var j = 1; j < nStations.length; j++){
-        var station = nStations[j].split("|");
-        if(station.length > 1){
-          var sta = station[1],
-              net = station[0],
-              lat = station[4],
-              lon = station[5],
-              scale = station[11],
-              unit = station[13];
-                  
-          if(stations[sta] && !stations[sta].coords){
-            stations[sta].coords = {
-              lat: lat,
-              lon: lon
-            };
-            if(unit == "M/S**2") {
-              // stations[sta].scale = scale ;
-              // stations[sta].unit = "m/s^2";
-              
-              stations[sta].scale = scale * 9.8 / 100 ;
-              stations[sta].unit = "%g";
-            } else{
-              stations[sta].scale = scale ;
-              stations[sta].unit = "m/s";
-              // stations[sta].scale = scale / 100;
-              // stations[sta].unit = "cm/s";
-            }
-            latlngs.push([lat, lon]);
-          } 
-        }
-      }
-    }
-
-    $('#controls').on('shown.bs.modal', function() {
-      var bounds = new L.LatLngBounds(latlngs);
-      map.fitBounds(bounds);
-    });
-  
-    return stations;
-  }
-
   function makeMap(stations){
     map.addLayer(osm);
     // map.doubleClickZoom.disable(); 
@@ -1067,8 +1015,8 @@ $(function() {
         iconClass += " marker_" + _scnl;
       });
       container.append(list);
-      if(station.coords && station.coords.lat && station.coords.lon){
-        var marker = L.marker([station.coords.lat, station.coords.lon], {icon:L.divIcon({className: iconClass})});
+      if(station.lat && station.lon){
+        var marker = L.marker([station.lat, station.lon], {icon:L.divIcon({className: iconClass})});
       
         container.on('click', '.selected-station', function() {
           var thisChannel = $(this)[0].id.replace("marker_", "").replace(/_/g, ".");
@@ -1325,8 +1273,7 @@ $(function() {
     var getGroups = function(){ return $.ajax({dataType: "jsonp", url: "http://" + path + "groups"});};
     var getLocalEvents = function(){return $.ajax({dataType: "json", url: usgsPath + "minlatitude=" + bounds.bottom + "&maxlatitude=" + bounds.top + "&minlongitude=" + bounds.left + "&maxlongitude=" + bounds.right + "&minmagnitude=" + bounds.mag});};
     var getSignificantEvents = function(){return $.ajax({dataType: "json",url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"});};
-    var getStations = function(){return $.ajax({dataType: "text",url: "https://service.iris.edu/irisws/fedcatalog/1/query?net=UW&format=text&includeoverlaps=false&nodata=404"});};
-    
+        
     populateForm();
     
     var stations = {},
@@ -1339,37 +1286,49 @@ $(function() {
     $.ajax({
       type: "GET",
       dataType: "jsonp",
-      url: "http://web4.ess.washington.edu:8888/scnls"
+      url: "http://" + path + "scnls"
     }).done(function(data){
-      
-      $.each(data, function(key, scnl) {
+      var latlngs = [];
+      $.each(data, function(i, station) {
+        var sta  = station.sta,
+            net = station.net,
+            chan = chan,
+            lat = station.lat, 
+            lng = station.lon,
+            scnl = station.key;
         
-        var station = scnl.split(/\./g);
-        if(station.length <= 4 && station.length > 2) {
-          var sta = station[0],
-              cha = station[1],
-              net = station[2];
-          if(stations[sta] && $.inArray(cha, stations[sta].chans) === -1){
-            stations[sta].chans.push(cha);
-            stations[sta].scnls.push(scnl);
-          } else if(net != "TE") {
-            stations[sta] = {
-              sta: sta,
-              net : net,
-              chans : [cha],
-              scnls: [scnl]    
-            };
+        if(stations[sta] && $.inArray(chan, stations[sta].chans) === -1){
+          stations[sta].chans.push(chan);
+          stations[sta].scnls.push(scnl);
+        } else if(station.net != "TE") {
+          stations[sta] = station;
+          
+          stations[sta].chans = new Array(chan);
+          stations[sta].scnls = new Array(scnl);
+          
+          if(station.scaleUnits == "M/S**2") {
+            stations[sta].scale = scale * 9.8 / 100 ;
+            stations[sta].unit = "%g";
+          } else{
+            stations[sta].scale = scale ;
+            stations[sta].unit = "m/s";
           }
+
+          latlngs.push([lat, lng]);
         }
       });
       
+      $('#controls').on('shown.bs.modal', function() {
+        var bounds = new L.LatLngBounds(latlngs);
+        map.fitBounds(bounds);
+      });
+      
       //Patiently waits until all the requests are done before proceeding,
-      $.when(getGroups(),getLocalEvents(), getSignificantEvents(), getStations(), stations).done(function(groupData, localEventData, significantEventData, stationData, stations){
+      $.when(getGroups(),getLocalEvents(), getSignificantEvents(), stations).done(function(groupData, localEventData, significantEventData, stations){
         
         processGroups(groupData[0]);
         events = processEvents(localEventData[0], significantEventData[0]);
-        
-        stations = processStations(stations, stationData[0]);
+
         makeMap(stations);
         
         eventSelector.change(function() {

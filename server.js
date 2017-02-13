@@ -65,14 +65,12 @@ app.get('/', function (req, res) {
 //GET: unique list of scnls
 //JSON response
 app.get('/scnls', function (req, res) {
-  coll=db.collection("scnls");
-  coll.toArray(function(err, scnls){
+  var coll=_db.collection("scnls");
+  coll.find().toArray(function(err, scnls){
     if(err) throw err;
     res.jsonp(scnls);
   });
 });
-
-
 
 
 //return document of groups with channels
