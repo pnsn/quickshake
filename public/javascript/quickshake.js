@@ -1307,10 +1307,10 @@ $(function() {
           stations[sta].scnls = new Array(scnl);
           
           if(station.scaleUnits == "M/S**2") {
-            stations[sta].scale = scale * 9.8 / 100 ;
+            stations[sta].scale = stations[sta].scale * 9.8 / 100 ;
             stations[sta].unit = "%g";
           } else{
-            stations[sta].scale = scale ;
+            stations[sta].scale = stations[sta].scale ;
             stations[sta].unit = "m/s";
           }
 
@@ -1402,6 +1402,7 @@ $(function() {
           } else {
             $("#realtime-button").show();
             quickshake.configViewer();
+            console.log(channels)
             initializeSocket("scnls=" + channels, quickshake);
             controlsTimeout = window.setTimeout(function(){
               toggleControls(quickshake);
