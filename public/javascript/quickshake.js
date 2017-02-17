@@ -999,6 +999,7 @@ $(function() {
   function makeMap(stations){
     map.addLayer(osm);
     // map.doubleClickZoom.disable(); 
+    console.log(stations)
     $.each(stations, function(i, station){
       var icon;
       var container = $('<div />');
@@ -1292,7 +1293,7 @@ $(function() {
       $.each(data, function(i, station) {
         var sta  = station.sta,
             net = station.net,
-            chan = chan,
+            chan = station.chan,
             lat = station.lat, 
             lng = station.lon,
             scnl = station.key;
@@ -1302,9 +1303,8 @@ $(function() {
           stations[sta].scnls.push(scnl);
         } else if(station.net != "TE") {
           stations[sta] = station;
-          
-          stations[sta].chans = new Array(chan);
-          stations[sta].scnls = new Array(scnl);
+          stations[sta].chans = [chan];
+          stations[sta].scnls = [scnl];
           
           if(station.scaleUnits == "M/S**2") {
             stations[sta].scale = stations[sta].scale * 9.8 / 100 ;
