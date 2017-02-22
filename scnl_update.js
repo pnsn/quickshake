@@ -1,9 +1,11 @@
-'use strict';
-/*jslint node: true 
+/* 
 * script to archive waveforms into collections based on scnl 
 * process tails ring collection and writes to ringBuff
 * ringbuff is read every ~5 seconds and writes to respective collection
 */
+
+'use strict';
+/*jslint node: true */
 const scnlConf = require("../config/scnlConf.js");
 const serverConf = require("../config/serverConf.js");
 const scnlconf = new scnlConf();

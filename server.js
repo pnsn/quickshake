@@ -1,4 +1,8 @@
 'use strict';
+/*
+  To start with pm2
+  pm2 start server.js -i 0 --name quickshake --log-date-format="YYYY-MM-DD HH:mm Z"
+*/
 /*jslint node: true */
 // const compression = require('compression');
 const express = require('express');
@@ -194,7 +198,7 @@ function parseWsParams(socket){
 
 //delete client from pool
 function removeClient(id){
-  delete CLIENTS[id];
+  delete CLIENTS[id]; 
 }
 
 //send ringbuff to client on connection

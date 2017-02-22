@@ -7,7 +7,7 @@
 
 const  url = require('url');
 const logger = require('winston');
-const Conf = require("./config/serverConfig.js");
+const Conf = require("./config/serverConf.js");
 const MongoClient  = require('mongodb').MongoClient;
 const RingBuffer = require(__dirname + '/lib/ringBuffer');
 const CwaveArchiver = require(__dirname + '/lib/cwaveArchiver');
