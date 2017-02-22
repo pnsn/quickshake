@@ -68,29 +68,32 @@ $(function() {
       this.playScroll();
     }
     this.updatePlaybackSlider();
+    
+    if(this.stationScalars[packet.key]){
+      //update times to track oldest and youngest data points
+      if (packet.starttime < this.starttime)
+        this.starttime = this.makeTimeKey(packet.starttime);
+      if (packet.endtime > this.endtime)
+        this.endtime = this.makeTimeKey(packet.endtime);
+      //decimate data
+      var _decimate = parseInt(packet.samprate / this.sampPerSec, 0);
 
-    //update times to track oldest and youngest data points
-    if (packet.starttime < this.starttime)
-      this.starttime = this.makeTimeKey(packet.starttime);
-    if (packet.endtime > this.endtime)
-      this.endtime = this.makeTimeKey(packet.endtime);
-    //decimate data
-    var _decimate = parseInt(packet.samprate / this.sampPerSec, 0);
+      var _t = this.makeTimeKey(packet.starttime);
 
-    var _t = this.makeTimeKey(packet.starttime);
-
-    //move index to correct for time offset
-    var _i = parseInt(((_t - packet.starttime) * this.sampPerSec / 1000), 0);
-    while (_i < packet.data.length) {
-      if (_i < packet.data.length) {
-        if (!this.buffer[_t]) {
-          this.buffer[_t] = {};
+      //move index to correct for time offset
+      var _i = parseInt(((_t - packet.starttime) * this.sampPerSec / 1000), 0);
+      while (_i < packet.data.length) {
+        if (_i < packet.data.length) {
+          if (!this.buffer[_t]) {
+            this.buffer[_t] = {};
+          }
+          this.buffer[_t][packet.key] = packet.data[_i] / this.stationScalars[packet.key].scale;
+          _t += this.refreshRate;
+          _i += _decimate;
         }
-        this.buffer[_t][packet.key] = packet.data[_i] / this.stationScalars[packet.key].scale;
-        _t += this.refreshRate;
-        _i += _decimate;
       }
     }
+
   
   };
 
@@ -192,6 +195,7 @@ $(function() {
           }
           time += this.refreshRate;
         }
+        
         var mean = sum / count;
         
         ctx.strokeStyle = this.lineColor;
@@ -204,40 +208,47 @@ $(function() {
         // first time through we want to use moveTo
         var gap = true;
         // draw Always start from viewerLeftTime and go one canvas width
-        count = 0;
         
-        while (cursor <= cursorStop) {
-          if (this.buffer[cursor] && this.buffer[cursor][channel]) {
-            var val = this.buffer[cursor][channel];
+        if(this.stationScalars[channel] && count != 0){
+          count = 0;
+          var chanAxis = this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i; //22 is offset for header timeline.
+          
+          while (cursor <= cursorStop) {
+            if (this.buffer[cursor] && this.buffer[cursor][channel]) {
+              var val = this.buffer[cursor][channel];
             
-            var norm = ((val - mean) * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4 : this.scale));
+              var norm = ((val - mean) * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4 : this.scale));
 
-            if (norm < -1)
-              norm = -1;
-            if (norm > 1)
-              norm = 1;
+              if (norm < -1)
+                norm = -1;
+              if (norm > 1)
+                norm = 1;
 
-            var chanAxis = this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i; //22 is offset for header timeline.
-            
-            var yval = Math.round((this.channelHeight) / 2 * norm + chanAxis);
+              var yval = Math.round((this.channelHeight) / 2 * norm + chanAxis);
 
-            if (gap) {
-              ctx.moveTo(canvasIndex, yval);
-              gap = false;
+              if (gap) {
+                ctx.moveTo(canvasIndex, yval);
+                gap = false;
+              } else {
+                ctx.lineTo(canvasIndex, yval);
+              }
             } else {
-              ctx.lineTo(canvasIndex, yval);
+              gap = true;
             }
-          } else {
-            gap = true;
-          }
-          canvasIndex++;
-          cursor += this.refreshRate;
+            canvasIndex++;
+            cursor += this.refreshRate;
 
-        } //while
+          } //while
+        } else {
+          ctx.font = "15px Helvetica, Arial, sans-serif";
+          ctx.fillText("No data. ", this.width/2, chanAxis + this.channelHeight + 7);
+          
+        }
         ctx.stroke();
 
       }
     
+      
     
       this.drawAnnotations(ctx);
     }
@@ -284,8 +295,8 @@ $(function() {
       ctx.font = "15px Helvetica, Arial, sans-serif";
       var channel = this.channels[i];
       
-      //I got this from Renate
-      this.stationScalars[channel].unitPerPix =  this.channelHeight /  (2 * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4: this.scale));
+
+      
       var cName = channel.split(".")[0].toUpperCase();
       var yOffset = i * this.channelHeight;
       
@@ -301,9 +312,11 @@ $(function() {
       
       ctx.beginPath();
       ctx.font = "13px Helvetica, Arial, sans-serif";
-      
-      //Jon made me do this
-      ctx.fillText(this.stationScalars[channel].unitPerPix.toExponential(1) + " (" + this.stationScalars[channel].unit + ")", edge.right - 78, edge.top + this.archiveOffset + yOffset + this.timeOffset - 2);
+      if(this.stationScalars[channel]) {
+        this.stationScalars[channel].unitPerPix =  this.channelHeight /  (2 * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4: this.scale));
+        ctx.fillText(this.stationScalars[channel].unitPerPix.toExponential(1) + " (" + this.stationScalars[channel].unit + ")", edge.right - 78, edge.top + this.archiveOffset + yOffset + this.timeOffset - 2);
+      }
+
       
       ctx.moveTo(edge.right-5, edge.top + this.archiveOffset + yOffset );
       ctx.lineTo(edge.right, edge.top + this.archiveOffset + yOffset );
@@ -382,35 +395,25 @@ $(function() {
 
       ctx.strokeStyle = "#ff0000"; // axis color    
       ctx.stroke();
-
-      // // Start line
-      // if (this.eventtime) {
-      //   ctx.beginPath();
-      //   var eventPosition = (this.eventtime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
-      //   var text = this.width < 570 || (eventPosition - startPosition) < 135 ? "OT" : "Origin Time";
-      //   var eventOffset = this.width < 570 || (eventPosition - startPosition) < 135 ? 25 : 135;
-      //   ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
-      //   ctx.moveTo(eventPosition, edge.bottom);
-      //   ctx.lineTo(eventPosition, edge.top);
-      //   ctx.strokeStyle = "#000";
-      //   ctx.stroke();
-      // }
       
       if(this.arrivals.length > 0) {
         ctx.beginPath();
         var _this = this;
         $.each(this.arrivals, function(i, arrival){
-          var arrivalPosition = (arrival - _this.viewerLeftTime) / _this.refreshRate + _this.startPixOffset;
-          if(i == 0) {
-            var text = _this.width < 570 || (arrivalPosition - startPosition) < 135 ? "ETA" : "Estimated arrival times";
-            var eventOffset = _this.width < 570 || (arrivalPosition - startPosition) < 135 ? 25 : 135;
-            ctx.fillText(text, arrivalPosition - eventOffset, edge.top + _this.archiveOffset / 2 + 3);
-            ctx.moveTo(arrivalPosition, edge.top + _this.archiveOffset);
-            ctx.lineTo(arrivalPosition, edge.top);
-          } else {
-            ctx.moveTo(arrivalPosition, edge.top + _this.archiveOffset + _this.channelHeight * i);
-            ctx.lineTo(arrivalPosition, edge.top + _this.archiveOffset + _this.channelHeight * (i - 1));
+          if(arrival) {
+            var arrivalPosition = (arrival - _this.viewerLeftTime) / _this.refreshRate + _this.startPixOffset;
+            if(i == 0) {
+              var text = _this.width < 570 || (arrivalPosition - startPosition) < 135 ? "ETA" : "Estimated arrival times";
+              var eventOffset = _this.width < 570 || (arrivalPosition - startPosition) < 135 ? 25 : 135;
+              ctx.fillText(text, arrivalPosition - eventOffset, edge.top + _this.archiveOffset / 2 + 3);
+              ctx.moveTo(arrivalPosition, edge.top + _this.archiveOffset);
+              ctx.lineTo(arrivalPosition, edge.top);
+            } else {
+              ctx.moveTo(arrivalPosition, edge.top + _this.archiveOffset + _this.channelHeight * i);
+              ctx.lineTo(arrivalPosition, edge.top + _this.archiveOffset + _this.channelHeight * (i - 1));
+            }
           }
+
         });
         ctx.strokeStyle = "#107a10";
         ctx.stroke();
@@ -695,8 +698,8 @@ $(function() {
     right: -115,
     mag: 2
   };
-  var path = "quickshake.pnsn.org/";
-  // var path = window.location.host + "/";
+  // var path = "quickshake.pnsn.org/";
+  var path = window.location.host + "/";
   var usgsPath = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&";
 
   // Initialize UI
@@ -914,7 +917,7 @@ $(function() {
       $("#event-header").show();
       
       $.each(channels, function(i, channel){
-        var arrival = getStartOffset(events[evid], stime, stations[channel.split(".")[0]]);
+        var arrival = stations[channel.split(".")[0]] ? getStartOffset(events[evid], stime, stations[channel.split(".")[0]]) : null;
         arrivals.push(arrival);
         earliestArrival = Math.min(arrival, earliestArrival);
       });
@@ -939,7 +942,7 @@ $(function() {
         };
 
         $.each(channels, function(i, channel){
-          var arrival = getStartOffset(events[evid], stime, stations[channel.split(".")[0]]);
+          var arrival = stations[channel.split(".")[0]] ? getStartOffset(events[evid], stime, stations[channel.split(".")[0]]) : null;
           arrivals.push(arrival);
           earliestArrival = Math.min(arrival, earliestArrival);
         });
@@ -954,8 +957,8 @@ $(function() {
   
   //Do the math, the monster math
   function getStartOffset(event, start, station) {
-    var lat1 = station.coords.lat; //center of bounding box
-    var lon1 = station.coords.lon;
+    var lat1 = station.lat; //center of bounding box
+    var lon1 = station.lon;
 
     var lat2 = event.geometry.coordinates[1];
     var lon2 = event.geometry.coordinates[0];
@@ -970,8 +973,6 @@ $(function() {
       (1 - Math.cos(dLon)) / 2;
 
     var d = 2 * Math.asin(Math.sqrt(a)) * 180 / Math.PI; //angular distance in degrees
-
-    console.log(station, d)
     distances = Object.keys(traveltimes).sort(function compare(a, b) {
       return parseFloat(a) - parseFloat(b);
     });
@@ -998,59 +999,9 @@ $(function() {
 
   }
 
-  //TODO: make a leaflet map
-  function processStations(stations, stationData) {
-    var latlngs = [];
-    var stationData = stationData.split("#");
-
-    headers = stationData[1].split(" | ");
-    for(var i = 2; i < stationData.length; i++){
-      var nStations = stationData[i].split("\n");
-    
-      for(var j = 1; j < nStations.length; j++){
-        var station = nStations[j].split("|");
-        if(station.length > 1){
-          var sta = station[1],
-              net = station[0],
-              lat = station[4],
-              lon = station[5],
-              scale = station[11],
-              unit = station[13];
-                  
-          if(stations[sta] && !stations[sta].coords){
-            stations[sta].coords = {
-              lat: lat,
-              lon: lon
-            };
-            if(unit == "M/S**2") {
-              // stations[sta].scale = scale ;
-              // stations[sta].unit = "m/s^2";
-              
-              stations[sta].scale = scale * 9.8 / 100 ;
-              stations[sta].unit = "%g";
-            } else{
-              stations[sta].scale = scale ;
-              stations[sta].unit = "m/s";
-              // stations[sta].scale = scale / 100;
-              // stations[sta].unit = "cm/s";
-            }
-            latlngs.push([lat, lon]);
-          } 
-        }
-      }
-    }
-
-    $('#controls').on('shown.bs.modal', function() {
-      var bounds = new L.LatLngBounds(latlngs);
-      map.fitBounds(bounds);
-    });
-  
-    return stations;
-  }
-
   function makeMap(stations){
     map.addLayer(osm);
-    // map.doubleClickZoom.disable(); 
+
     $.each(stations, function(i, station){
       var icon;
       var container = $('<div />');
@@ -1067,8 +1018,8 @@ $(function() {
         iconClass += " marker_" + _scnl;
       });
       container.append(list);
-      if(station.coords && station.coords.lat && station.coords.lon){
-        var marker = L.marker([station.coords.lat, station.coords.lon], {icon:L.divIcon({className: iconClass})});
+      if(station.lat && station.lon){
+        var marker = L.marker([station.lat, station.lon], {icon:L.divIcon({className: iconClass})});
       
         container.on('click', '.selected-station', function() {
           var thisChannel = $(this)[0].id.replace("marker_", "").replace(/_/g, ".");
@@ -1182,6 +1133,8 @@ $(function() {
     var klass = ".marker_" + $(this).parent()[0].id.replace(/\./g, "_");
     $(".selected" + klass).removeClass("selected");
     removeStation($(this).parent());
+    
+    $("#length-warning").hide();
   });
 
   function removeStation(li) {
@@ -1325,8 +1278,7 @@ $(function() {
     var getGroups = function(){ return $.ajax({dataType: "jsonp", url: "http://" + path + "groups"});};
     var getLocalEvents = function(){return $.ajax({dataType: "json", url: usgsPath + "minlatitude=" + bounds.bottom + "&maxlatitude=" + bounds.top + "&minlongitude=" + bounds.left + "&maxlongitude=" + bounds.right + "&minmagnitude=" + bounds.mag});};
     var getSignificantEvents = function(){return $.ajax({dataType: "json",url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"});};
-    var getStations = function(){return $.ajax({dataType: "text",url: "https://service.iris.edu/irisws/fedcatalog/1/query?net=UW&format=text&includeoverlaps=false&nodata=404"});};
-    
+        
     populateForm();
     
     var stations = {},
@@ -1339,37 +1291,48 @@ $(function() {
     $.ajax({
       type: "GET",
       dataType: "jsonp",
-      url: "http://web4.ess.washington.edu:8888/scnls"
+      url: "http://" + path + "scnls"
     }).done(function(data){
-      
-      $.each(data, function(key, scnl) {
+      var latlngs = [];
+      $.each(data, function(i, station) {
+        var sta  = station.sta,
+            net = station.net,
+            chan = station.chan,
+            lat = station.lat, 
+            lng = station.lon,
+            scnl = station.key;
         
-        var station = scnl.split(/\./g);
-        if(station.length <= 4 && station.length > 2) {
-          var sta = station[0],
-              cha = station[1],
-              net = station[2];
-          if(stations[sta] && $.inArray(cha, stations[sta].chans) === -1){
-            stations[sta].chans.push(cha);
-            stations[sta].scnls.push(scnl);
-          } else if(net != "TE") {
-            stations[sta] = {
-              sta: sta,
-              net : net,
-              chans : [cha],
-              scnls: [scnl]    
-            };
+        if(stations[sta] && $.inArray(chan, stations[sta].chans) === -1){
+          stations[sta].chans.push(chan);
+          stations[sta].scnls.push(scnl);
+        } else if(station.net != "TE") {
+          stations[sta] = station;
+          stations[sta].chans = [chan];
+          stations[sta].scnls = [scnl];
+          
+          if(station.scaleUnits == "M/S**2") {
+            stations[sta].scale = stations[sta].scale * 9.8 / 100 ;
+            stations[sta].unit = "%g";
+          } else{
+            stations[sta].scale = stations[sta].scale ;
+            stations[sta].unit = "m/s";
           }
+
+          latlngs.push([lat, lng]);
         }
       });
       
+      $('#controls').on('shown.bs.modal', function() {
+        var bounds = new L.LatLngBounds(latlngs);
+        map.fitBounds(bounds);
+      });
+      
       //Patiently waits until all the requests are done before proceeding,
-      $.when(getGroups(),getLocalEvents(), getSignificantEvents(), getStations(), stations).done(function(groupData, localEventData, significantEventData, stationData, stations){
+      $.when(getGroups(),getLocalEvents(), getSignificantEvents(), stations).done(function(groupData, localEventData, significantEventData, stations){
         
         processGroups(groupData[0]);
         events = processEvents(localEventData[0], significantEventData[0]);
-        
-        stations = processStations(stations, stationData[0]);
+
         makeMap(stations);
         
         eventSelector.change(function() {
@@ -1384,10 +1347,13 @@ $(function() {
         });
 
         $.each(channels, function(i, channel){
-          quickshake.stationScalars[channel] = {
-            scale: stations[channel.split(".")[0]].scale,
-            unit:stations[channel.split(".")[0]].unit
-          };
+          if(stations[channel.split(".")[0]]){
+            quickshake.stationScalars[channel] = {
+              scale: stations[channel.split(".")[0]].scale,
+              unit:stations[channel.split(".")[0]].unit
+            };
+          }
+
         });
         
         if (channels.length > 0 && channels.length <= maxChannels) {
@@ -1467,6 +1433,11 @@ $(function() {
   });
 
   }
+  
+  function downloadCanvas(link, canvas, filename) {
+      link.href = canvas.toDataURL();
+      link.download = filename;
+  }
 
   function showControlPanel() {
     $("#controls").modal("show");
@@ -1491,7 +1462,7 @@ $(function() {
     
     
     $(".open-image").click(function(){
-        window.open(quickshake.canvasElement.toDataURL('png'), "");
+      downloadCanvas(this, quickshake.canvasElement, "quickshake-" + quickshake.endtime + ".png");
     });
     // Controls stuff
     $("#playback-slider").slider({
