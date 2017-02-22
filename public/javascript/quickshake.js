@@ -68,29 +68,32 @@ $(function() {
       this.playScroll();
     }
     this.updatePlaybackSlider();
+    
+    if(this.stationScalars[packet.key]){
+      //update times to track oldest and youngest data points
+      if (packet.starttime < this.starttime)
+        this.starttime = this.makeTimeKey(packet.starttime);
+      if (packet.endtime > this.endtime)
+        this.endtime = this.makeTimeKey(packet.endtime);
+      //decimate data
+      var _decimate = parseInt(packet.samprate / this.sampPerSec, 0);
 
-    //update times to track oldest and youngest data points
-    if (packet.starttime < this.starttime)
-      this.starttime = this.makeTimeKey(packet.starttime);
-    if (packet.endtime > this.endtime)
-      this.endtime = this.makeTimeKey(packet.endtime);
-    //decimate data
-    var _decimate = parseInt(packet.samprate / this.sampPerSec, 0);
+      var _t = this.makeTimeKey(packet.starttime);
 
-    var _t = this.makeTimeKey(packet.starttime);
-
-    //move index to correct for time offset
-    var _i = parseInt(((_t - packet.starttime) * this.sampPerSec / 1000), 0);
-    while (_i < packet.data.length) {
-      if (_i < packet.data.length) {
-        if (!this.buffer[_t]) {
-          this.buffer[_t] = {};
+      //move index to correct for time offset
+      var _i = parseInt(((_t - packet.starttime) * this.sampPerSec / 1000), 0);
+      while (_i < packet.data.length) {
+        if (_i < packet.data.length) {
+          if (!this.buffer[_t]) {
+            this.buffer[_t] = {};
+          }
+          this.buffer[_t][packet.key] = packet.data[_i] / this.stationScalars[packet.key].scale;
+          _t += this.refreshRate;
+          _i += _decimate;
         }
-        this.buffer[_t][packet.key] = packet.data[_i] / this.stationScalars[packet.key].scale;
-        _t += this.refreshRate;
-        _i += _decimate;
       }
     }
+
   
   };
 
@@ -192,6 +195,7 @@ $(function() {
           }
           time += this.refreshRate;
         }
+        
         var mean = sum / count;
         
         ctx.strokeStyle = this.lineColor;
@@ -204,40 +208,47 @@ $(function() {
         // first time through we want to use moveTo
         var gap = true;
         // draw Always start from viewerLeftTime and go one canvas width
-        count = 0;
         
-        while (cursor <= cursorStop) {
-          if (this.buffer[cursor] && this.buffer[cursor][channel]) {
-            var val = this.buffer[cursor][channel];
+        if(this.stationScalars[channel] && count != 0){
+          count = 0;
+          var chanAxis = this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i; //22 is offset for header timeline.
+          
+          while (cursor <= cursorStop) {
+            if (this.buffer[cursor] && this.buffer[cursor][channel]) {
+              var val = this.buffer[cursor][channel];
             
-            var norm = ((val - mean) * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4 : this.scale));
+              var norm = ((val - mean) * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4 : this.scale));
 
-            if (norm < -1)
-              norm = -1;
-            if (norm > 1)
-              norm = 1;
+              if (norm < -1)
+                norm = -1;
+              if (norm > 1)
+                norm = 1;
 
-            var chanAxis = this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i; //22 is offset for header timeline.
-            
-            var yval = Math.round((this.channelHeight) / 2 * norm + chanAxis);
+              var yval = Math.round((this.channelHeight) / 2 * norm + chanAxis);
 
-            if (gap) {
-              ctx.moveTo(canvasIndex, yval);
-              gap = false;
+              if (gap) {
+                ctx.moveTo(canvasIndex, yval);
+                gap = false;
+              } else {
+                ctx.lineTo(canvasIndex, yval);
+              }
             } else {
-              ctx.lineTo(canvasIndex, yval);
+              gap = true;
             }
-          } else {
-            gap = true;
-          }
-          canvasIndex++;
-          cursor += this.refreshRate;
+            canvasIndex++;
+            cursor += this.refreshRate;
 
-        } //while
+          } //while
+        } else {
+          ctx.font = "15px Helvetica, Arial, sans-serif";
+          ctx.fillText("No data. ", this.width/2, chanAxis + this.channelHeight + 7);
+          
+        }
         ctx.stroke();
 
       }
     
+      
     
       this.drawAnnotations(ctx);
     }
@@ -284,8 +295,8 @@ $(function() {
       ctx.font = "15px Helvetica, Arial, sans-serif";
       var channel = this.channels[i];
       
-      //I got this from Renate
-      this.stationScalars[channel].unitPerPix =  this.channelHeight /  (2 * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4: this.scale));
+
+      
       var cName = channel.split(".")[0].toUpperCase();
       var yOffset = i * this.channelHeight;
       
@@ -301,9 +312,11 @@ $(function() {
       
       ctx.beginPath();
       ctx.font = "13px Helvetica, Arial, sans-serif";
-      
-      //Jon made me do this
-      ctx.fillText(this.stationScalars[channel].unitPerPix.toExponential(1) + " (" + this.stationScalars[channel].unit + ")", edge.right - 78, edge.top + this.archiveOffset + yOffset + this.timeOffset - 2);
+      if(this.stationScalars[channel]) {
+        this.stationScalars[channel].unitPerPix =  this.channelHeight /  (2 * Math.pow(10, this.stationScalars[channel].unit == "m/s" ? this.scale + 4: this.scale));
+        ctx.fillText(this.stationScalars[channel].unitPerPix.toExponential(1) + " (" + this.stationScalars[channel].unit + ")", edge.right - 78, edge.top + this.archiveOffset + yOffset + this.timeOffset - 2);
+      }
+
       
       ctx.moveTo(edge.right-5, edge.top + this.archiveOffset + yOffset );
       ctx.lineTo(edge.right, edge.top + this.archiveOffset + yOffset );
@@ -382,35 +395,25 @@ $(function() {
 
       ctx.strokeStyle = "#ff0000"; // axis color    
       ctx.stroke();
-
-      // // Start line
-      // if (this.eventtime) {
-      //   ctx.beginPath();
-      //   var eventPosition = (this.eventtime - this.viewerLeftTime) / this.refreshRate + this.startPixOffset;
-      //   var text = this.width < 570 || (eventPosition - startPosition) < 135 ? "OT" : "Origin Time";
-      //   var eventOffset = this.width < 570 || (eventPosition - startPosition) < 135 ? 25 : 135;
-      //   ctx.fillText(text, eventPosition - eventOffset, edge.top + this.archiveOffset / 2 + 3);
-      //   ctx.moveTo(eventPosition, edge.bottom);
-      //   ctx.lineTo(eventPosition, edge.top);
-      //   ctx.strokeStyle = "#000";
-      //   ctx.stroke();
-      // }
       
       if(this.arrivals.length > 0) {
         ctx.beginPath();
         var _this = this;
         $.each(this.arrivals, function(i, arrival){
-          var arrivalPosition = (arrival - _this.viewerLeftTime) / _this.refreshRate + _this.startPixOffset;
-          if(i == 0) {
-            var text = _this.width < 570 || (arrivalPosition - startPosition) < 135 ? "ETA" : "Estimated arrival times";
-            var eventOffset = _this.width < 570 || (arrivalPosition - startPosition) < 135 ? 25 : 135;
-            ctx.fillText(text, arrivalPosition - eventOffset, edge.top + _this.archiveOffset / 2 + 3);
-            ctx.moveTo(arrivalPosition, edge.top + _this.archiveOffset);
-            ctx.lineTo(arrivalPosition, edge.top);
-          } else {
-            ctx.moveTo(arrivalPosition, edge.top + _this.archiveOffset + _this.channelHeight * i);
-            ctx.lineTo(arrivalPosition, edge.top + _this.archiveOffset + _this.channelHeight * (i - 1));
+          if(arrival) {
+            var arrivalPosition = (arrival - _this.viewerLeftTime) / _this.refreshRate + _this.startPixOffset;
+            if(i == 0) {
+              var text = _this.width < 570 || (arrivalPosition - startPosition) < 135 ? "ETA" : "Estimated arrival times";
+              var eventOffset = _this.width < 570 || (arrivalPosition - startPosition) < 135 ? 25 : 135;
+              ctx.fillText(text, arrivalPosition - eventOffset, edge.top + _this.archiveOffset / 2 + 3);
+              ctx.moveTo(arrivalPosition, edge.top + _this.archiveOffset);
+              ctx.lineTo(arrivalPosition, edge.top);
+            } else {
+              ctx.moveTo(arrivalPosition, edge.top + _this.archiveOffset + _this.channelHeight * i);
+              ctx.lineTo(arrivalPosition, edge.top + _this.archiveOffset + _this.channelHeight * (i - 1));
+            }
           }
+
         });
         ctx.strokeStyle = "#107a10";
         ctx.stroke();
@@ -914,7 +917,7 @@ $(function() {
       $("#event-header").show();
       
       $.each(channels, function(i, channel){
-        var arrival = getStartOffset(events[evid], stime, stations[channel.split(".")[0]]);
+        var arrival = stations[channel.split(".")[0]] ? getStartOffset(events[evid], stime, stations[channel.split(".")[0]]) : null;
         arrivals.push(arrival);
         earliestArrival = Math.min(arrival, earliestArrival);
       });
@@ -939,7 +942,7 @@ $(function() {
         };
 
         $.each(channels, function(i, channel){
-          var arrival = getStartOffset(events[evid], stime, stations[channel.split(".")[0]]);
+          var arrival = stations[channel.split(".")[0]] ? getStartOffset(events[evid], stime, stations[channel.split(".")[0]]) : null;
           arrivals.push(arrival);
           earliestArrival = Math.min(arrival, earliestArrival);
         });
@@ -998,8 +1001,7 @@ $(function() {
 
   function makeMap(stations){
     map.addLayer(osm);
-    // map.doubleClickZoom.disable(); 
-    console.log(stations)
+
     $.each(stations, function(i, station){
       var icon;
       var container = $('<div />');
@@ -1131,6 +1133,8 @@ $(function() {
     var klass = ".marker_" + $(this).parent()[0].id.replace(/\./g, "_");
     $(".selected" + klass).removeClass("selected");
     removeStation($(this).parent());
+    
+    $("#length-warning").hide();
   });
 
   function removeStation(li) {
@@ -1343,10 +1347,13 @@ $(function() {
         });
 
         $.each(channels, function(i, channel){
-          quickshake.stationScalars[channel] = {
-            scale: stations[channel.split(".")[0]].scale,
-            unit:stations[channel.split(".")[0]].unit
-          };
+          if(stations[channel.split(".")[0]]){
+            quickshake.stationScalars[channel] = {
+              scale: stations[channel.split(".")[0]].scale,
+              unit:stations[channel.split(".")[0]].unit
+            };
+          }
+
         });
         
         if (channels.length > 0 && channels.length <= maxChannels) {
@@ -1402,7 +1409,6 @@ $(function() {
           } else {
             $("#realtime-button").show();
             quickshake.configViewer();
-            console.log(channels)
             initializeSocket("scnls=" + channels, quickshake);
             controlsTimeout = window.setTimeout(function(){
               toggleControls(quickshake);
