@@ -1534,7 +1534,7 @@ $(function() {
 
   function initializeSocket(stations, quickshake) {
     if (window.WebSocket) {
-      socket = new WebSocket("ws://" + path + "?" + stations);
+      socket = new WebSocket("wss://" + path + "?" + stations);
       quickshake.setTimeout();
     };
 
