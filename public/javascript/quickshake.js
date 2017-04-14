@@ -684,8 +684,8 @@ $(function() {
   
   //map stuff
   var map = new L.Map('map'),
-	    osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-	    osmAttrib='Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors',
+	    osmUrl='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+	    osmAttrib='Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
 	    osm = new L.TileLayer(osmUrl, {attribution: osmAttrib});		
   
   //Set some configs
@@ -1275,7 +1275,7 @@ $(function() {
   }
   
   function initialize() {
-    var getGroups = function(){ return $.ajax({dataType: "jsonp", url: "http://" + path + "groups"});};
+    var getGroups = function(){ return $.ajax({dataType: "jsonp", url: "https://" + path + "groups"});};
     var getLocalEvents = function(){return $.ajax({dataType: "json", url: usgsPath + "minlatitude=" + bounds.bottom + "&maxlatitude=" + bounds.top + "&minlongitude=" + bounds.left + "&maxlongitude=" + bounds.right + "&minmagnitude=" + bounds.mag});};
     var getSignificantEvents = function(){return $.ajax({dataType: "json",url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"});};
         
@@ -1291,7 +1291,7 @@ $(function() {
     $.ajax({
       type: "GET",
       dataType: "jsonp",
-      url: "http://" + path + "scnls"
+      url: "https://" + path + "scnls"
     }).done(function(data){
       var latlngs = [];
       $.each(data, function(i, station) {
@@ -1387,7 +1387,7 @@ $(function() {
               $.ajax({
                 type: "GET",
                 dataType: "jsonp",
-                url: "http://" + path + "archive?starttime=" + starttime + "&scnls=" + channels + "&endtime=" + endtime
+                url: "https://" + path + "archive?starttime=" + starttime + "&scnls=" + channels + "&endtime=" + endtime
               }).success(function(data) { //sometimes doesn't get called?
                 $("#fastforward-button").show();
                 quickshake.configViewer();
