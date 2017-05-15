@@ -22,7 +22,7 @@
     "debug": "latest"
   },
   "scripts": {
-     "start": "node server.js",
+     "start": "node script/analytics/show_stats.js",
     "test": "./node_modules/.bin/mocha --reporter spec"
   },
   "author": "Jon Connolly",

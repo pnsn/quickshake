@@ -13,7 +13,9 @@ function ServerConf(){
   //the number of tracebuffs to keep in the buffer for each scnl
     ringBuffer: {
       max: 1024
-    }
+    },
+    //three days
+    archiveCollSize:(((3*86400* 1500)/256) * 256)
   };
   this.testing= {
     mongo:{
@@ -27,7 +29,10 @@ function ServerConf(){
   //the number of tracebuffs to keep in the buffer for each scnl
     ringBuffer: {
       max: 1024 
-    }
+    },
+    //three days
+    archiveCollSize: (((3*86400* 1500)/256) * 256)
+    
   };
   
   this.development= {
@@ -56,10 +61,6 @@ function ServerConf(){
     "Olympic_Peninsula":{
       "default":1,
       "scnls": ["OSD.EHZ.UW.--","DOSE.BHZ.UW.--", "HDW.EHZ.UW.--", "GMW.EHZ.UW.--", "GNW.BHZ.UW.--"]
-    },
-    "Seahawks_Noise_Comparison":{
-      "default":0,
-      "scnls":["HWK6.HNZ.UW.--", "HWK1.HNZ.UW.--", "HWK3.HNZ.UW.--", "KDK.ENZ.UW.--", "COOS.HNZ.UW.--"]
     },
     "Inland_Washington":{
       "default":0,
