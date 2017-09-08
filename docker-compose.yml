@@ -1,6 +1,6 @@
-db:
-  image: mongo:3.2
-  container_name: quickMongo
+# db:
+#   image: mongo:3.2
+#   container_name: quickMongo
 web:
   build: .
   command: bash -c "cd /quickshake && npm install && source .secret.sh &&  npm start --"
@@ -8,6 +8,6 @@ web:
     - .:/quickshake
   ports:
     - "8888:8888"
-  links:
-    - db
+  # links:
+  #   - db
   container_name: quickShake  
