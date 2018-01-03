@@ -54,6 +54,10 @@ function ServerConf(){
   
   //temporary till we create ui to manage groups
   this.groups={
+    "Mount_Saint_Helens":{
+      "default":1,
+      "scnls": ["FL2.EHZ.UW.--","SHW.EHZ.UW.--","HSR.EHZ.UW.--", "EDM.EHZ.UW.--", "JUN.EHZ.UW.--"]
+    },
     "Union_Gap":{
       "default":0,
       "scnls": ["UGAP1.HHZ.UW.--", "UGAP2.EHZ.UW.--", "UGAP3.EHZ.UW.--"]
@@ -67,7 +71,7 @@ function ServerConf(){
       "scnls": ["OSD.EHZ.UW.--","DOSE.BHZ.UW.--", "HDW.EHZ.UW.--", "GMW.EHZ.UW.--", "GNW.BHZ.UW.--"]
     },
     "Inland_Washington":{
-      "default":1,
+      "default":0,
       "scnls":["JCW.EHZ.UW.--", "CBS.EHZ.UW.--","SLF.EHZ.UW.--","FMW.EHZ.UW.--","RVC.EHZ.UW.--","ELK.EHZ.UW.--"]
     },
     "Inland_Oregon":{

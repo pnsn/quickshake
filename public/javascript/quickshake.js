@@ -58,7 +58,7 @@ $(function() {
   //called when new data arrive. Functions independently from 
   // drawSignal method which is called on a sampRate interval
   QuickShake.prototype.updateBuffer = function(packet) {
-
+    
     if (this.viewerLeftTime === null) {
       if (this.archive) {
         this.viewerLeftTime = this.makeTimeKey(this.starttime - this.viewerWidthSec * 1000 * 0.9);
@@ -558,7 +558,6 @@ $(function() {
         }
       }, this.refreshRate);
     }
-
   };
 
   QuickShake.prototype.selectPlayback = function(e, ui) {
@@ -1366,7 +1365,6 @@ $(function() {
 
       //Patiently waits until all the requests are done before proceeding,
       $.when(getGroups(), getLocalEvents(), getSignificantEvents(), stations).done(function(groupData, localEventData, significantEventData, stations) {
-
         processGroups(groupData[0]);
         events = processEvents(localEventData[0], significantEventData[0]);
 
