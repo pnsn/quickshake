@@ -54,12 +54,16 @@ function ServerConf(){
   
   //temporary till we create ui to manage groups
   this.groups={
+    "Union_Gap":{
+      "default":0,
+      "scnls": ["UGAP1.HHZ.UW.--", "UGAP2.EHZ.UW.--", "UGAP3.EHZ.UW.--"]
+    },
     "Short_Period":{
       "default":1,
-      "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "HDW.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
+      "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
     },
     "Olympic_Peninsula":{
-      "default":1,
+      "default":0,
       "scnls": ["OSD.EHZ.UW.--","DOSE.BHZ.UW.--", "HDW.EHZ.UW.--", "GMW.EHZ.UW.--", "GNW.BHZ.UW.--"]
     },
     "Inland_Washington":{
