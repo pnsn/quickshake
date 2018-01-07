@@ -42,8 +42,11 @@ MongoClient.connect(MONGO_URI, function(err, db) {
   }else{ //read from file
     var content = fs.readFileSync(args.src);
     var json = JSON.parse(content);
+    var coll=db.collection('scnls');
     for(var i=0; i<json.collection.length; i++){
-      scnl.upsert(db, json.collection[i], function(err, results){
+
+      var c=json.collection[i];
+      coll.update({sta: c.sta, chan: c.chan, net: c.net, loc: c.loc},c,{upsert: true}, function(err, results){
         if(err) throw err;
       });
     }
