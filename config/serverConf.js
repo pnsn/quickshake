@@ -56,7 +56,7 @@ function ServerConf(){
   this.groups={
     "Mount_Saint_Helens":{
       "default":0,
-      "scnls": ["FL2.EHZ.UW.--","SHW.EHZ.UW.--","HSR.EHZ.UW.--", "EDM.EHZ.UW.--", "JUN.EHZ.UW.--"]
+      "scnls": ["ELK.EHZ.UW.--","SHW.EHZ.UW.--", "TDL.EHZ.UW.--", "JUN.EHZ.UW.--"]
     },
     "Union_Gap":{
       "default":0,
