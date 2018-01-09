@@ -1,0 +1,47 @@
+{
+  "collection":
+  [
+    {
+      "net" : "UW",
+      "sta" : "UGAP2",
+      "loc" : "--",
+      "chan" : "EHZ",
+      "key": "UGAP2.HHZ.UW.--",
+      "lat" : "46.52602",
+      "lon" : "-120.46404",
+      "elevation" : "429",
+      "depth" : "0",
+      "azimuth" : "0",
+      "dip" : "-90",
+      "sensorDescription" : "L22",
+      "scale" : "1.50425997E9",
+      "scaleFreq" : "1",
+      "scaleUnits" : "M/S",
+      "sampleRate" : "200",
+      "starttime" : "2018-01-03T00:00:00",
+      "endtime" : "2599-12-31T23:59:59",
+      "active" : false
+    },
+    {
+      "net" : "UW",
+      "sta" : "UGAP3",
+      "loc" : "--",
+      "chan" : "EHZ",
+      "key": "UGAP3.HHZ.UW.--",
+      "lat" : "46.52764",
+      "lon" : "-120.46564",
+      "elevation" : "465",
+      "depth" : "0",
+      "azimuth" : "0",
+      "dip" : "-90",
+      "sensorDescription" : "L22",
+      "scale" : "1.50425997E9",
+      "scaleFreq" : "1",
+      "scaleUnits" : "M/S",
+      "sampleRate" : "200",
+      "starttime" : "2018-01-03T00:00:00",
+      "endtime" : "2599-12-31T23:59:59",
+      "active" : false
+    }
+  ]
+}
