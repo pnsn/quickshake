@@ -38,6 +38,7 @@ MongoClient.connect(MONGO_URI, function(err, db) {
           }
         }
       });
+      db.close()
     });
   }else{ //read from file
     var content = fs.readFileSync(args.src);
@@ -50,6 +51,7 @@ MongoClient.connect(MONGO_URI, function(err, db) {
         if(err) throw err;
       });
     }
+
   }
-  db.close();
+  db.close()
 });
