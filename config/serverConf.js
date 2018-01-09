@@ -60,7 +60,7 @@ function ServerConf(){
     },
     "Union_Gap":{
       "default":0,
-      "scnls": ["UGAP1.HHZ.UW.--", "UGAP2.EHZ.UW.--", "UGAP3.EHZ.UW.--"]
+      "scnls": ["UGAP1.HHZ.UW.--", "UGAP2.EHZ.UW.--", "UGAP3.EHZ.UW.--", "UGP4.HHZ.UW.--"]
     },
     "Short_Period":{
       "default":0,
