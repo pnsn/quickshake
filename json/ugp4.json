@@ -1,0 +1,26 @@
+{
+  "collection":
+  [
+    {
+      "net" : "UW",
+      "sta" : "UGP4",
+      "loc" : "--",
+      "chan" : "HHZ",
+      "key": "UGP4.HHZ.UW.--",
+      "lat" : "46.53023",
+      "lon" : "-120.44637",
+      "elevation" : "465",
+      "depth" : "0",
+      "azimuth" : "0",
+      "dip" : "-90",
+      "sensorDescription" : "6TD",
+      "scale" : "9.4818701E8",
+      "scaleFreq" : "0.05",
+      "scaleUnits" : "M/S",
+      "sampleRate" : "200",
+      "starttime" : "2018-01-02T00:00:00",
+      "endtime" : "2599-12-31T23:59:59",
+      "active" : false
+    }
+  ]
+}
