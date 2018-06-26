@@ -1387,6 +1387,11 @@ $(function() {
               scale: stations[channel.split(".")[0]].scale,
               unit: stations[channel.split(".")[0]].unit
             };
+          } else {
+            quickshake.stationScalars[channel] = {
+              scale: 204000.0, //default in case it isn't imported yet
+              unit: ""
+            };
           }
 
         });
