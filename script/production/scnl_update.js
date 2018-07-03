@@ -1,6 +1,8 @@
 /*
 *script to populate scnl table. --src=iris will get data from iris
-* src=path/to/jsonfile will get obj from json
+* --src=path/to/jsonfile will get obj from json
+* envoke with
+* node script/production/scnl_update.js --src[iris|path/to/jsonfile]
 */
 
 'use strict';

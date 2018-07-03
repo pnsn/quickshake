@@ -1,12 +1,16 @@
+/*
+  config for different environments
+*/
+
 function ServerConf(){
   this.production= {
     mongo:{
-      uri: "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWD + "@" 
+      uri: "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWD + "@"
               + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" + "waveforms"
               + "?authMechanism=DEFAULT" + "&authSource=admin",
       rtCollection: "ring"
     },
-    
+
     http:{
       port: 8888
     },
@@ -22,36 +26,36 @@ function ServerConf(){
       uri: "mongodb://" + process.env.QUICKMONGO_PORT_27017_TCP_ADDR + ":" + process.env.QUICKMONGO_PORT_27017_TCP_PORT + "/waveforms",
       rtCollection: "ring"
     },
-    
+
     http:{
       port: 8888
     },
   //the number of tracebuffs to keep in the buffer for each scnl
     ringBuffer: {
-      max: 1024 
+      max: 1024
     },
     //three days
     archiveCollSize: (((3*86400* 1500)/256) * 256)
-    
+
   };
-  
+
   this.development= {
     mongo:{
-      uri: "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWD + "@" 
+      uri: "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWD + "@"
               + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" + "waveforms"
               + "?authMechanism=DEFAULT" + "&authSource=admin",
       rtCollection: "ring"
     },
-    
+
     http:{
       port: 8888
     },
   //the number of tracebuffs to keep in the buffer for each scnl
     ringBuffer: {
-      max: 1024 
+      max: 1024
     }
   };
-  
+
   //temporary till we create ui to manage groups
   this.groups={
     "Mount_Saint_Helens":{
