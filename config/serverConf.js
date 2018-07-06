@@ -6,8 +6,9 @@ function ServerConf(){
   this.production= {
     mongo:{
       uri: "mongodb://" + process.env.MONGO_USER + ":" + encodeURIComponent(process.env.MONGO_PASSWD) + "@"
-              + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" + "waveforms"
+              + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/"
               + "?authMechanism=DEFAULT" + "&authSource=admin",
+      dbName: "waveforms",
       rtCollection: "ring"
     },
 

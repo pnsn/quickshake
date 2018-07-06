@@ -32,7 +32,7 @@ logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
 // app.use(compression());
 
-// var _db;
+// var db;
 var ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
 var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, ringBuff, logger);
 
@@ -40,7 +40,7 @@ var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, ringBuff, logger);
 MongoClient.connect(MONGO_URI, function(err, client) {
   if(err) throw err;
   const db = client.db(DB_NAME);
-  // _db = db;
+  //db = db;
   mongoRT.database(db);
   mongoRT.tail();
   http.listen(conf[env].http.port, function(){
@@ -71,7 +71,7 @@ app.get('/', function (req, res) {
 //GET: unique list of scnls
 //JSON response
 app.get('/scnls', function (req, res) {
-  var coll=_db.collection("scnls");
+  var coll=db.collection("scnls");
   coll.find().toArray(function(err, scnls){
     if(err) throw err;
     res.jsonp(scnls);
@@ -232,12 +232,12 @@ function sendArchive(scnls,res,starttime, endtime, results) {
 
   }else{
     var key = scnls.shift();
-    var coll= _db.collection(key + "CWAVE");
+    var coll= db.collection(key + "CWAVE");
 
     // coll.findOne({"starttime": {$gte: starttime, $lte: endtime}}, {starttime: 1}, {sort: [["starttime", "asc"]], limit: 1}, function(err, tb){
 //         if (err) return logger.error(err);
 //         if(!tb || (tb && starttime <  tb.starttime)){
-//           coll= _db.collection(key + "EVENT");
+//           coll= db.collection(key + "EVENT");
 //           console.log("coll", coll);
 //         }
 //     });
@@ -247,7 +247,7 @@ function sendArchive(scnls,res,starttime, endtime, results) {
           results=results.concat(tbs);
           sendArchive(scnls,res,starttime,endtime,results);
         }else{
-          coll= _db.collection(key + "EVENT");
+          coll= db.collection(key + "EVENT");
            coll.find( {"starttime": {$gte: starttime, $lte: endtime}} ).toArray(function(err, tbs){
              if (err) return logger.error(err);
                results=results.concat(tbs);
