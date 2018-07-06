@@ -10,14 +10,14 @@
     "chai-http": "^3.0.0",
     "express": "4.14.0",
     "mocha": "^3.1.2",
-    "mongodb": "2.2.33",
+    "mongodb": "3.0",
     "mongodb-fixture": "^1.0.0",
     "pow-mongodb-fixtures": "^0.13.0",
     "underscore": "^1.8.3",
-    "winston": "latest",
+    "winston": "2.4.3",
     "ws": "1.1.1",
     "request": "latest",
-    "yargs": "latest"
+    "yargs": "11.1.0"
   },
   "devDependencies": {
     "debug": "latest"

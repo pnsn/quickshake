@@ -5,7 +5,7 @@
 function ServerConf(){
   this.production= {
     mongo:{
-      uri: "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWD + "@"
+      uri: "mongodb://" + process.env.MONGO_USER + ":" + encodeURIComponent(process.env.MONGO_PASSWD) + "@"
               + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" + "waveforms"
               + "?authMechanism=DEFAULT" + "&authSource=admin",
       rtCollection: "ring"
@@ -23,7 +23,10 @@ function ServerConf(){
   };
   this.testing= {
     mongo:{
-      uri: "mongodb://" + process.env.QUICKMONGO_PORT_27017_TCP_ADDR + ":" + process.env.QUICKMONGO_PORT_27017_TCP_PORT + "/waveforms",
+      uri: "mongodb://" + process.env.MONGO_USER + ":" + encodeURIComponent(process.env.MONGO_PASSWD) + "@"
+              + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/"
+              + "?authMechanism=DEFAULT" + "&authSource=admin",
+      dbName: "waveforms",
       rtCollection: "ring"
     },
 
@@ -41,9 +44,10 @@ function ServerConf(){
 
   this.development= {
     mongo:{
-      uri: "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWD + "@"
-              + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" + "waveforms"
+      uri: "mongodb://" + process.env.MONGO_USER + ":" + encodeURIComponent(process.env.MONGO_PASSWD) + "@"
+              + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/"
               + "?authMechanism=DEFAULT" + "&authSource=admin",
+      dbName: "waveforms",
       rtCollection: "ring"
     },
 
