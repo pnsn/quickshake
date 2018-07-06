@@ -70,7 +70,7 @@ app.get('/', function (req, res) {
 //GET: unique list of scnls
 //JSON response
 app.get('/scnls', function (req, res) {
-  var coll=_db.collection("scnls");
+  var coll=db.collection("scnls");
   coll.find().toArray(function(err, scnls){
     if(err) throw err;
     res.jsonp(scnls);
@@ -231,12 +231,12 @@ function sendArchive(scnls,res,starttime, endtime, results) {
 
   }else{
     var key = scnls.shift();
-    var coll= _db.collection(key + "CWAVE");
+    var coll= db.collection(key + "CWAVE");
 
     // coll.findOne({"starttime": {$gte: starttime, $lte: endtime}}, {starttime: 1}, {sort: [["starttime", "asc"]], limit: 1}, function(err, tb){
 //         if (err) return logger.error(err);
 //         if(!tb || (tb && starttime <  tb.starttime)){
-//           coll= _db.collection(key + "EVENT");
+//           coll= db.collection(key + "EVENT");
 //           console.log("coll", coll);
 //         }
 //     });
@@ -246,7 +246,7 @@ function sendArchive(scnls,res,starttime, endtime, results) {
           results=results.concat(tbs);
           sendArchive(scnls,res,starttime,endtime,results);
         }else{
-          coll= _db.collection(key + "EVENT");
+          coll= db.collection(key + "EVENT");
            coll.find( {"starttime": {$gte: starttime, $lte: endtime}} ).toArray(function(err, tbs){
              if (err) return logger.error(err);
                results=results.concat(tbs);
