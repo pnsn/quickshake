@@ -32,15 +32,14 @@ logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
 // app.use(compression());
 
-// var db;
+var db;
 var ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
 var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, ringBuff, logger);
 
 //create a connection pool
 MongoClient.connect(MONGO_URI, function(err, client) {
   if(err) throw err;
-  const db = client.db(DB_NAME);
-  //db = db;
+  db = client.db(DB_NAME);
   mongoRT.database(db);
   mongoRT.tail();
   http.listen(conf[env].http.port, function(){
@@ -71,7 +70,7 @@ app.get('/', function (req, res) {
 //GET: unique list of scnls
 //JSON response
 app.get('/scnls', function (req, res) {
-  var coll=db.collection("scnls");
+  var coll=_db.collection("scnls");
   coll.find().toArray(function(err, scnls){
     if(err) throw err;
     res.jsonp(scnls);
@@ -232,12 +231,12 @@ function sendArchive(scnls,res,starttime, endtime, results) {
 
   }else{
     var key = scnls.shift();
-    var coll= db.collection(key + "CWAVE");
+    var coll= _db.collection(key + "CWAVE");
 
     // coll.findOne({"starttime": {$gte: starttime, $lte: endtime}}, {starttime: 1}, {sort: [["starttime", "asc"]], limit: 1}, function(err, tb){
 //         if (err) return logger.error(err);
 //         if(!tb || (tb && starttime <  tb.starttime)){
-//           coll= db.collection(key + "EVENT");
+//           coll= _db.collection(key + "EVENT");
 //           console.log("coll", coll);
 //         }
 //     });
@@ -247,7 +246,7 @@ function sendArchive(scnls,res,starttime, endtime, results) {
           results=results.concat(tbs);
           sendArchive(scnls,res,starttime,endtime,results);
         }else{
-          coll= db.collection(key + "EVENT");
+          coll= _db.collection(key + "EVENT");
            coll.find( {"starttime": {$gte: starttime, $lte: endtime}} ).toArray(function(err, tbs){
              if (err) return logger.error(err);
                results=results.concat(tbs);
