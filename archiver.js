@@ -1,6 +1,6 @@
 'use strict';
-/*jslint node: true 
-* script to archive waveforms into collections based on scnl 
+/*jslint node: true
+* script to archive waveforms into collections based on scnl
 * process tails ring collection and writes to ringBuff
 * ringbuff is read every ~5 seconds and writes to respective collection
 */
@@ -18,17 +18,19 @@ var collsize= ((3*86400* 1500)/256) * 256
 const conf = new Conf();
 
 var env=process.env.NODE_ENV || "development"; //get this from env
-var collsize= conf[env].archiveCollSize 
+var collsize= conf[env].archiveCollSize
 var MONGO_URI = conf[env].mongo.uri;
+var DB_NAME = conf[env].mongo.dbName;
 logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/archiver.log' });
 
 var ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
 var cwaveArchiver = new CwaveArchiver(ringBuff, 5000, "ring", collsize, logger);
 
-MongoClient.connect(MONGO_URI, function(err, db) {
-  if(err) throw err;  
+MongoClient.connect(MONGO_URI, function(err, client) {
+  if(err) throw err;
+  const db = client.db(DB_NAME);
   cwaveArchiver.database(db);
   cwaveArchiver.tail();
   cwaveArchiver.start();
-}); 
+});

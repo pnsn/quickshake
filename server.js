@@ -16,29 +16,30 @@ const Conf = require("./config/serverConf.js");
 const MongoClient  = require('mongodb').MongoClient;
 const RingBuffer = require(__dirname + '/lib/ringBuffer');
 const MongoRealTime = require(__dirname + '/lib/mongoRealTime');
-    
+
 const debug = require('debug')('quickshake');
 
 
 const conf = new Conf();
 
 var env=process.env.NODE_ENV || "development"; //get this from env
-  
+
 var MONGO_URI = conf[env].mongo.uri;
+var DB_NAME = conf[env].mongo.dbName;
 exports.app=app; //for integration testing
 app.use(express['static']('public'));
 logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
 // app.use(compression());
 
-var _db;
+var db;
 var ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
 var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, ringBuff, logger);
 
 //create a connection pool
-MongoClient.connect(MONGO_URI, function(err, db) {
-  if(err) throw err;  
-  _db = db;
+MongoClient.connect(MONGO_URI, function(err, client) {
+  if(err) throw err;
+  db = client.db(DB_NAME);
   mongoRT.database(db);
   mongoRT.tail();
   http.listen(conf[env].http.port, function(){
@@ -47,15 +48,15 @@ MongoClient.connect(MONGO_URI, function(err, db) {
 });
 
 
-/* 
+/*
 *****HTTP ROUTES******
-GET scnls realtime  
+GET scnls realtime
  /?scnls=...
 GET scnls by timestamp
 /archive?starttime=[time(ms)]&duration=[duration(ms)]&scnls=...
 GET available scnls
  /scnls
-GET scnls by group (maintained by config but will eventually have CRUD func 
+GET scnls by group (maintained by config but will eventually have CRUD func
   /groups
 */
 
@@ -69,7 +70,7 @@ app.get('/', function (req, res) {
 //GET: unique list of scnls
 //JSON response
 app.get('/scnls', function (req, res) {
-  var coll=_db.collection("scnls");
+  var coll=db.collection("scnls");
   coll.find().toArray(function(err, scnls){
     if(err) throw err;
     res.jsonp(scnls);
@@ -90,7 +91,7 @@ app.get("/archive", function(req, res) {
   logger.info("path: /archive, ?query=" + req.query);
   var starttime=parseInt(req.query.starttime,0);
   var endtime;
-  
+
   var scnls = req.query.scnls === undefined ? null : req.query.scnls.split(",");
   if(scnls===null || starttime===null){
     res.status(400)
@@ -103,9 +104,9 @@ app.get("/archive", function(req, res) {
         clean_scnls.push(scnls[i]);
       }
     }
-      
-     if(req.query.duration===undefined || 
-         parseInt(req.query.duration,0) > (60*60*1000) || 
+
+     if(req.query.duration===undefined ||
+         parseInt(req.query.duration,0) > (60*60*1000) ||
          parseInt(req.query.duration,0) < (1*60*1000)){
        endtime= starttime + (10*60*1000);
      }else{
@@ -147,18 +148,18 @@ wss.on('connection', function connection(ws) {
   if(CLIENTS[id]["params"]["scnls"]){
     sendRing(id,ws);
   }
-  
+
   ws.on("close", function(){
     logger.info("removing client: " + id);
     removeClient(id);
   });
-  
+
   ws.on("error", function(error){
     logger.error(error);
     removeClient(id);
   });
-  
-  
+
+
 });
 
 
@@ -170,7 +171,7 @@ function sendMessage(doc){
     if(socket.readyState != socket.OPEN){
       logger.info("Socket closed, removing client" + id);
       removeClient(id);
-    }else if(CLIENTS[id] && CLIENTS[id]["params"] && 
+    }else if(CLIENTS[id] && CLIENTS[id]["params"] &&
             CLIENTS[id]['params']["scnls"] &&
             CLIENTS[id]['params']["scnls"].indexOf(doc["key"]) != -1){
       socket.send(JSON.stringify(doc));
@@ -196,7 +197,7 @@ function parseWsParams(socket){
 
 //delete client from pool
 function removeClient(id){
-  delete CLIENTS[id]; 
+  delete CLIENTS[id];
 }
 
 //send ringbuff to client on connection
@@ -217,9 +218,9 @@ function sendRing(id,socket){
 }
 
 //recursive function to iterate through each scnl by creating dynamic callback hell
-// try 
+// try
 function sendArchive(scnls,res,starttime, endtime, results) {
-  // base case  
+  // base case
   if(scnls.length < 1){
     if(results.length ===0){
       res.status(404)
@@ -227,15 +228,15 @@ function sendArchive(scnls,res,starttime, endtime, results) {
     }else{
       res.jsonp(results);
     }
-    
+
   }else{
     var key = scnls.shift();
-    var coll= _db.collection(key + "CWAVE");
-    
+    var coll= db.collection(key + "CWAVE");
+
     // coll.findOne({"starttime": {$gte: starttime, $lte: endtime}}, {starttime: 1}, {sort: [["starttime", "asc"]], limit: 1}, function(err, tb){
 //         if (err) return logger.error(err);
 //         if(!tb || (tb && starttime <  tb.starttime)){
-//           coll= _db.collection(key + "EVENT");
+//           coll= db.collection(key + "EVENT");
 //           console.log("coll", coll);
 //         }
 //     });
@@ -245,7 +246,7 @@ function sendArchive(scnls,res,starttime, endtime, results) {
           results=results.concat(tbs);
           sendArchive(scnls,res,starttime,endtime,results);
         }else{
-          coll= _db.collection(key + "EVENT");
+          coll= db.collection(key + "EVENT");
            coll.find( {"starttime": {$gte: starttime, $lte: endtime}} ).toArray(function(err, tbs){
              if (err) return logger.error(err);
                results=results.concat(tbs);
