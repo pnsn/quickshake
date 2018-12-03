@@ -90,19 +90,12 @@ MongoClient.connect(MONGO_URI, {connectTimeoutMS: 600000, socketTimeoutMS: 60000
     ws.connect(start, end);
     //parse getScnlRaw flag and decide whether to disconnect or continue
     ws.on('header', function(header){
+      logger.info("Using Port " + wavePort);
       responseHeader=header.flag;
-      logger.info("Flag=" + header.flag);
-      if (header.flag ==="FR" ){ //most common error missed by current data not in ws yet
-        logger.info("flag=FR")
-        ws.disconnect();
-        process.exit(0)
-      }else if(header.flag === 'FB'){
-        logger.info("there has been a terrible error of some sort or other.");
-        ws.disconnect();
-        process.exit(1)
-      }else if(header.flag === 'FN'){
+      logger.info("Received Response Flag=" + header.flag + " " + ws.returnFlagKey()[header.flag]);
+      if(header.flag === 'FN'){
         var scnl_str = scnl.sta + ":" + scnl.chan + ":" + scnl.net + ":" + scnl.loc;
-        logger.info("Tank not found for scnl " + scnl_str + " on " + waveHost +":" +wavePort);
+        logger.info("Scnl " + scnl_str +  " not found in tank on " + waveHost +":" +wavePort);
         logger.info("incrementing port and trying again")
         ws.disconnect();
         wavePort+=1;
@@ -115,7 +108,11 @@ MongoClient.connect(MONGO_URI, {connectTimeoutMS: 600000, socketTimeoutMS: 60000
           process.exit(1);
         }
 
+      }else if(header.flag !="F"){
+	logger.info("Error Flag Returned");
+        ws.disconnect()
       }
+
 
 
     });
@@ -139,10 +136,12 @@ MongoClient.connect(MONGO_URI, {connectTimeoutMS: 600000, socketTimeoutMS: 60000
           logger.info("buffsProcessed = " + buffsProcessed);
           if(buffsReceived == buffsProcessed){
             logger.info("closing time");
-            process.exit(0)
+            process.exit(0);
           }
         },2000);
-      }
+      }else{
+	process.exit(0);
+     }
     });
 
   }
