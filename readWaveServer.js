@@ -52,8 +52,8 @@ if(ARGS['endtime']==null){
 
 
 var waveHost = waveConf.waveHost;
-var wavePort = waveConf.wavePort;
-
+var wavePort = parseInt(waveConf.wavePortStart);
+var wavePortStop = parseInt(waveConf.wavePortStop);
 var start = ARGS['starttime'];
 var end =  ARGS['endtime'];
 //assume the mongo collection doesn't exist
@@ -100,17 +100,17 @@ MongoClient.connect(MONGO_URI, {connectTimeoutMS: 600000, socketTimeoutMS: 60000
         ws.disconnect();
         wavePort+=1;
         logger.info(wavePort);
-        if(wavePort < 16028){
-          logger.info("in the next call")
+        if(wavePort <= wavePortStop){
+          logger.info("incrementing port by 1");
           getData(scnl);
         }else{
-          logger.info("Nope! Tanks for nothing " + scnl_str + " on " + waveHost)
-          process.exit(1);
+          logger.info("Nope! Tanks for nothing " + scnl_str + " on " + waveHost);
+          ws.disconnect();
         }
 
       }else if(header.flag !="F"){
-	logger.info("Error Flag Returned");
-        ws.disconnect()
+	       logger.info("Error Flag Returned");
+         ws.disconnect();
       }
 
 
@@ -140,7 +140,7 @@ MongoClient.connect(MONGO_URI, {connectTimeoutMS: 600000, socketTimeoutMS: 60000
           }
         },2000);
       }else{
-	process.exit(0);
+	       process.exit(0);
      }
     });
 

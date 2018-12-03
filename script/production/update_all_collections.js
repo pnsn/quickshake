@@ -21,7 +21,7 @@ process.argv.forEach(function(val, index, array) {
 if(ARGS['starttime']==null){
   var usage= `
             Usage:
-              node update_all_collections starttime=123544545 [endtime=1232323212...]
+              node update_all_collections starttime=123544545 [endtime=1232323212]
               You must include starttime but if endtime is missing default is
               starttime + 10 min
 
