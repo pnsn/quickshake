@@ -30,7 +30,7 @@ HTTP is managed via express and has the following routes
 ### Websockets
  The WS requests are managed with the standard ws library and uses group or scnls query params in / HTTP request.
 
-#Backfilling
+# Backfilling
 You can manually backfill a single or all continuous collections from wavetank data. The configuration file is found in config/waveserver.conf.js
 
 Processes will start from lowest port and increment by one on each miss.
@@ -45,7 +45,7 @@ To update all collections that end in 'CWAVE':
 
 Endtime default is 10 minutes
 
-#Scnl updates
+# Scnl updates
 The scnls collection is updated using FDSN data with
 
 script/production/scnl_update.js
