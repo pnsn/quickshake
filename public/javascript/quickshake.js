@@ -1,4 +1,4 @@
-//client side of quakeShake 
+//client side of quakeShake
 $(function() {
   //initial params that should be consistent across all channels on page
   function QuickShake(viewerWidthSec, chans) {
@@ -23,7 +23,7 @@ $(function() {
     // this.stationScalar = 3.207930 * Math.pow(10, 5) * 9.8; // count/scalar => %g
     this.stationScalars = {};
     //log values
-    this.scale = 2; //starting scale slide value 
+    this.scale = 2; //starting scale slide value
     this.scaleSliderMin = 0.1;
     this.scaleSliderMax = 4;
     //end log values
@@ -46,7 +46,7 @@ $(function() {
 
   //buffer will be of form:
 
-  //  
+  //
   //    milliseconds: {
   //      chan1: val,
   //      chan2: val,
@@ -54,11 +54,11 @@ $(function() {
   //      chanN: val
   //    }
   //        ....
-  //  
-  //called when new data arrive. Functions independently from 
+  //
+  //called when new data arrive. Functions independently from
   // drawSignal method which is called on a sampRate interval
   QuickShake.prototype.updateBuffer = function(packet) {
-    
+
     if (this.viewerLeftTime === null) {
       if (this.archive) {
         this.viewerLeftTime = this.makeTimeKey(this.starttime - this.viewerWidthSec * 1000 * 0.9);
@@ -153,7 +153,7 @@ $(function() {
       cursorStop = cursor + this.viewerWidthSec * 1000;
     }
 
-    //Thickness of time axis labels 
+    //Thickness of time axis labels
     this.timeOffset = 13;
     //Thickness of line labels
     this.archiveOffset = this.annotations.length > 0 || this.archive ? 20 : 1;
@@ -285,7 +285,7 @@ $(function() {
 
     //scnl label
     ctx.font = "15px Helvetica, Arial, sans-serif";
-    ctx.strokeStyle = "#107a10"; // axis color    
+    ctx.strokeStyle = "#107a10"; // axis color
     ctx.stroke();
 
 
@@ -394,7 +394,7 @@ $(function() {
       ctx.moveTo(endPosition, edge.bottom);
       ctx.lineTo(endPosition, edge.top);
 
-      ctx.strokeStyle = "#ff0000"; // axis color    
+      ctx.strokeStyle = "#ff0000"; // axis color
       ctx.stroke();
 
       if (this.arrivals.length > 0) {
@@ -440,7 +440,7 @@ $(function() {
     // }
   };
 
-  //make a key based on new samprate that zeros out the insignificant digits. 
+  //make a key based on new samprate that zeros out the insignificant digits.
   //if the timestamp is less than starttime, increment by the refresh rate
   QuickShake.prototype.makeTimeKey = function(t) {
     var _t = parseInt(t / this.refreshRate, 0) * this.refreshRate;
@@ -459,7 +459,7 @@ $(function() {
 
     var cursorOffset = (this.viewerWidthSec / 10) * this.sampPerSec;
     //i.e. how much buffer in pixels is hanging off the right side of the viewer
-    //tail in px    
+    //tail in px
     var tail = this.startPixOffset + cursorOffset + (this.endtime - this.viewerLeftTime - this.viewerWidthSec * 1000) / 1000 * this.sampPerSec;
     //when we're close to cursorOffset just pad by one to avoid jerky behavior
     if (!this.archive) {
@@ -575,10 +575,10 @@ $(function() {
     }
   };
 
-  //Handles the connection timeout 
+  //Handles the connection timeout
   QuickShake.prototype.setTimeout = function() {
     if (getUrlParam('timeout') == true || getUrlParam('timeout') == null) { //for some reason I have to put == true...
-      //Initial interval for checking state  
+      //Initial interval for checking state
 
       var idleTime = 0;
 
@@ -604,7 +604,7 @@ $(function() {
         idleTime++;
       }
       var idleInterval = setInterval(timerIncrement, 60000); // 60000 = 1 minute
-      // Hide the information and 
+      // Hide the information and
       function resume() {
         if (idleTime >= maxTime) {
           initializeSocket();
@@ -637,7 +637,7 @@ $(function() {
 
   // Handles sizing of the canvas for different screens
   QuickShake.prototype.configViewer = function() {
-    var offSet = 10; //Default for mobile and if there is no scale    
+    var offSet = 10; //Default for mobile and if there is no scale
     $("#quickshake-canvas").show();
     $("#quickshake").height(window.innerHeight - $("#header").height() - 10 - $("#controls-container").height());
 
@@ -671,14 +671,14 @@ $(function() {
   //   }
   // });
 
-  /*****End QuickShake prototype 
+  /*****End QuickShake prototype
    *
    *
    *
    *
    ***/
 
-  //Globals  
+  //Globals
   var socket;
   var channels = [];
 
@@ -773,7 +773,7 @@ $(function() {
     }
   }
 
-  //Produces a date string for the eventselector name 
+  //Produces a date string for the eventselector name
   function makeDate(date) {
     var values = [date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()];
 
@@ -1038,7 +1038,7 @@ $(function() {
             }
             $("#selected-stations span").text(channels);
             $(".update.station-select").addClass("btn-primary");
-          } else if (index == -1 && channels.length < maxChannels) { //not in channel array, space to add 
+          } else if (index == -1 && channels.length < maxChannels) { //not in channel array, space to add
             $("#length-warning").hide();
             channels.push(thisChannel);
             $(marker._icon).addClass('selected');
@@ -1093,9 +1093,9 @@ $(function() {
       eventMarker.on('mouseout', function(e) {
         this.closePopup();
       });
-      
-      
-      
+
+
+
       eventMarker.addTo(map);
       $("button.clear-all").click(function(){
         eventMarker.remove()
@@ -1299,7 +1299,7 @@ $(function() {
     var getGroups = function() {
       return $.ajax({
         dataType: "jsonp",
-        url: "https://" + path + "groups"
+        url: "http://" + path + "groups"
       });
     };
     var getLocalEvents = function() {
@@ -1323,11 +1323,11 @@ $(function() {
       duration = getValue("duration") ? getValue("duration") : 10,
       start = getValue("start"),
       evid = getValue("evid");
- 
+
     $.ajax({
       type: "GET",
       dataType: "jsonp",
-      url: "https://" + path + "scnls"
+      url: "http://" + path + "scnls"
     }).done(function(data) {
       var latlngs = [];
       $.each(data, function(i, station) {
@@ -1427,7 +1427,7 @@ $(function() {
               $.ajax({
                 type: "GET",
                 dataType: "jsonp",
-                url: "https://" + path + "archive?starttime=" + starttime + "&scnls=" + channels + "&endtime=" + endtime
+                url: "http://" + path + "archive?starttime=" + starttime + "&scnls=" + channels + "&endtime=" + endtime
               }).success(function(data) { //sometimes doesn't get called?
                 $("#fastforward-button").show();
                 quickshake.configViewer();
@@ -1573,12 +1573,12 @@ $(function() {
 
   function initializeSocket(stations, quickshake) {
     if (window.WebSocket) {
-      socket = new WebSocket("wss://" + path + "?" + stations);
+      socket = new WebSocket("ws://" + path + "?" + stations);
       quickshake.setTimeout();
     };
 
     $("#last-data-header").show();
-    
+
     var lastEndtime = 0;
     socket.onmessage = function(message, flags) {
       var packet = JSON.parse(message.data);
@@ -1586,7 +1586,7 @@ $(function() {
       if (packet.endtime > lastEndtime){
         lastEndtime = packet.endtime
       }
-      
+
       $("#last-data-header span").text(new Date(lastEndtime))
     };
 
