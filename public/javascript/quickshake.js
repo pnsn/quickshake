@@ -1100,10 +1100,10 @@ $(function() {
       $("button.clear-all").click(function(){
         eventMarker.remove()
       });
-      $(".sort-distance").removeClass("hidden");
-      $(".sort-distance").click(function(){
-        sortStations([], event);
-      });
+      // $(".sort-distance").removeClass("hidden");
+      // $(".sort-distance").click(function(){
+      //   sortStations([], event);
+      // });
     }
   }
 
