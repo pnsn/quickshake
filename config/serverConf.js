@@ -58,8 +58,11 @@ function ServerConf(){
   //the number of tracebuffs to keep in the buffer for each scnl
     ringBuffer: {
       max: 1024
-    }
+    },
+    archiveCollSize: (((3*86400* 1500)/256) * 256)
+
   };
+
 
   //temporary till we create ui to manage groups
   this.groups={
