@@ -70,10 +70,6 @@ function ServerConf(){
       "default":0,
       "scnls": ["ELK.EHZ.UW.--","SHW.EHZ.UW.--", "TDL.EHZ.UW.--", "JUN.EHZ.UW.--"]
     },
-    "Union_Gap":{
-      "default":0,
-      "scnls": ["UGAP1.HHZ.UW.--", "UGAP2.EHZ.UW.--", "UGAP3.EHZ.UW.--", "UGAP5.EHZ.UW.--", "UGAP6.EHZ.UW.--"]
-    },
     "Short_Period":{
       "default":0,
       "scnls": ["FMW.EHZ.UW.--", "SLF.EHZ.UW.--", "BBO.EHZ.UW.--", "HBO.EHZ.UW.--", "ELK.EHZ.UW.--"]
@@ -84,7 +80,7 @@ function ServerConf(){
     },
     "Inland_Washington":{
       "default":1,
-      "scnls":["JCW.EHZ.UW.--", "CBS.EHZ.UW.--","SLF.EHZ.UW.--","FMW.EHZ.UW.--","RVC.EHZ.UW.--","ELK.EHZ.UW.--"]
+      "scnls":["JCW.EHZ.UW.--", "CBS.EHZ.UW.--","SLF.EHZ.UW.--","RVC.EHZ.UW.--","ELK.EHZ.UW.--"]
     },
     "Inland_Oregon":{
       "default":0,
