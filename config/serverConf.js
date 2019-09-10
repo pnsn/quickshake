@@ -84,7 +84,7 @@ function ServerConf(){
     },
     "Inland_Oregon":{
       "default":0,
-      "scnls":["TDH.EHZ.UW.--","HBO.EHZ.UW.--"]
+      "scnls":["MORO.ENZ.UW.--", "TDH.EHZ.UW.--","BRO.HHZ.UW.--","HBO.EHZ.UW.--","BBO.HHZ.UW.--"]
     },
     "Coastal":{
       "default":0,
