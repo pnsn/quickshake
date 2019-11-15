@@ -11,7 +11,7 @@ const http = require('http').Server(app);
 const  url = require('url');
 const WebSocketServer = require('ws').Server;
 const wss = new WebSocketServer({server: http});
-const logger = require('winston');
+const winston = require('winston');
 const Conf = require("./config/serverConf.js");
 const MongoClient  = require('mongodb').MongoClient;
 const RingBuffer = require(__dirname + '/lib/ringBuffer');
@@ -28,16 +28,19 @@ var MONGO_URI = conf[env].mongo.uri;
 var DB_NAME = conf[env].mongo.dbName;
 exports.app=app; //for integration testing
 app.use(express['static']('public'));
-logger.level="debug";
-logger.add(logger.transports.File, { filename: 'log/server.log' });
-// app.use(compression());
+
+const logger = winston.createLogger({
+  transports: [
+    new winston.transports.File({ filename: 'log/server.log', level: 'debug' }),
+  ]
+});
 
 var db;
 var ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
 var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, ringBuff, logger);
 
 //create a connection pool
-MongoClient.connect(MONGO_URI, function(err, client) {
+MongoClient.connect(MONGO_URI, {useUnifiedTopology: true }, function(err, client) {
   if(err) throw err;
   db = client.db(DB_NAME);
   mongoRT.database(db);
@@ -142,7 +145,7 @@ wss.on('connection', function connection(ws) {
   var client = {"socket": ws, "params":{}};
   lastId++;
   var id = lastId;
-  client["params"]=parseWsParams(ws);
+  client["params"] = parseWsParams(ws);
   // client['mongo-listener']
   CLIENTS[id]=client;
   if(CLIENTS[id]["params"]["scnls"]){
@@ -200,7 +203,12 @@ function removeClient(id){
   delete CLIENTS[id];
 }
 
-//send ringbuff to client on connection
+/* send ringbuff to client on connection for realtime feed. 
+  called on client intial connection and 
+  sends whole buffer accross the pipes via ws connection
+  all packets more recent then buffer will be send via the sendMessage
+  function
+*/
 function sendRing(id,socket){
   var scnls= CLIENTS[id]["params"]["scnls"];
   if(scnls !==undefined){
@@ -218,8 +226,10 @@ function sendRing(id,socket){
 }
 
 //recursive function to iterate through each scnl by creating dynamic callback hell
-// try
-function sendArchive(scnls,res,starttime, endtime, results) {
+// This is called for all /archive urls. It doesn't use the ring or ws
+//params
+// scnls 
+function sendArchive(scnls, res, starttime, endtime, results) {
   // base case
   if(scnls.length < 1){
     if(results.length ===0){
@@ -233,13 +243,7 @@ function sendArchive(scnls,res,starttime, endtime, results) {
     var key = scnls.shift();
     var coll= db.collection(key + "CWAVE");
 
-    // coll.findOne({"starttime": {$gte: starttime, $lte: endtime}}, {starttime: 1}, {sort: [["starttime", "asc"]], limit: 1}, function(err, tb){
-//         if (err) return logger.error(err);
-//         if(!tb || (tb && starttime <  tb.starttime)){
-//           coll= db.collection(key + "EVENT");
-//           console.log("coll", coll);
-//         }
-//     });
+  
     coll.find( {"starttime": {$gte: starttime, $lte: endtime}} ).toArray(function(err, tbs){
         if (err) return logger.error(err);
         if(tbs.length >0){
