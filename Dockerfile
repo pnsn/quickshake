@@ -1,6 +1,6 @@
-FROM node:8.4.0
+FROM node:13.1.0
 RUN apt-get update -qq && apt-get install -y build-essential
 WORKDIR /quickshake
 ADD package.json /quickshake/package.json
-RUN npm install
+# RUN npm install
 EXPOSE 8888
