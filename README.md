@@ -2,9 +2,7 @@
 A realtime Node WS/HTTP MongoDB waveserver
 
 # Node Version
-Quickshake has been tested on Node 6.8.0. You can install this verision by
-* npm cache clean -f
-* npm install -g node -v 6.8.0
+QuickShake has been tested on Node 13.1.0 Use Docker files included in app root for development
 
 
 
@@ -30,7 +28,7 @@ HTTP is managed via express and has the following routes
 ### Websockets
  The WS requests are managed with the standard ws library and uses group or scnls query params in / HTTP request.
 
-# Backfilling
+## Backfilling
 You can manually backfill a single or all continuous collections from wavetank data. The configuration file is found in config/waveserver.conf.js
 
 Processes will start from lowest port and increment by one on each miss.
@@ -45,7 +43,7 @@ To update all collections that end in 'CWAVE':
 
 Endtime default is 10 minutes
 
-# Scnl updates
+## Scnl updates
 The scnls collection is updated using FDSN data with
 
 script/production/scnl_update.js

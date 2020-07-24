@@ -44,7 +44,7 @@ describe('should be good', function(){
   it('should get a list of collections', function(done){
     MongoClient.connect(MONGO_URI, function(err, db) {
       if(err) throw err;     
-      scnl.getCollections(db, function(err, scnls){
+      scnl.getCwaveCollections(db, function(err, scnls){
         expect(scnls.length).to.equal(2);
         done();
       }); 
