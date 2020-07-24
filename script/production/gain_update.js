@@ -11,7 +11,6 @@ const scnlConf = require("../../config/scnlConf.js");
 const serverConf = require("../../config/serverConf.js");
 const scnlconf = new scnlConf();
 const serverconf= new serverConf();
-// const logger = require('winston');
 const MongoClient  = require('mongodb').MongoClient;
 const Scnl = require("../../lib/scnl.js");
 var env=process.env.NODE_ENV || "development"; //get this from env
@@ -27,16 +26,25 @@ MongoClient.connect(MONGO_URI, function(err, client) {
   if(err) throw err;
   const db = client.db(DB_NAME);
 
-  scnl.parseIrisScnls(scnlconf.nets, function(err, iris_scnls, response){
-    scnl.getCollections(db, function(err, scnls){
-      for(var i=0; i<scnls.length; i++){
-        if(iris_scnls.hasOwnProperty(scnls[i])){
-          scnl.upsert(db,iris_scnls[scnls[i]], function(err, results){
-            if(err) throw err;
-          });
+    scnl.parseChannelResponse(function(err, chanRes, response){
+      var coll = db.collection('scnls');
+      scnl.getCollections(db, function(err, scnls){
+      
+        for(var i=0; i<scnls.length; i++){
+          var key = scnls[i];
+          if(chanRes.hasOwnProperty(key)){
+            var res = chanRes[scnls[i]];            
+            coll.updateOne(
+              {'key': key},
+              {$set: {'gain': res.gain, 'gain_units': res.gain_units}},
+              {upsert: false},
+              function(err, results){
+                if(err) throw err;
+              }
+            );
+          }
         }
-      }
-      client.close();
+        client.close();
+      });
     });
-  });
 });
