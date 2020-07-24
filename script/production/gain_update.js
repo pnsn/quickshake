@@ -1,8 +1,6 @@
 /*
-*script to populate scnl table. --src=iris will get data from iris
-* --src=path/to/jsonfile will get obj from json
-* envoke with
-* node script/production/scnl_update.js --src[iris|path/to/jsonfile]
+  * script to query aqms simple_response endpoint
+  * adds gain and gain_units to scnl collection
 */
 
 'use strict';
@@ -16,9 +14,6 @@ const Scnl = require("../../lib/scnl.js");
 var env=process.env.NODE_ENV || "development"; //get this from env
 var MONGO_URI = serverconf[env].mongo.uri;
 var DB_NAME = serverconf[env].mongo.dbName;
-var fs = require("fs");
-const args = require('yargs').argv;
-var usage="must specify src=iris or filepath";
 
 var scnl =Scnl;
 var collName= "scnl";
@@ -28,7 +23,7 @@ MongoClient.connect(MONGO_URI, function(err, client) {
 
     scnl.parseChannelResponse(function(err, chanRes, response){
       var coll = db.collection('scnls');
-      scnl.getCollections(db, function(err, scnls){
+      scnl.getCwaveCollections(db, function(err, scnls){
       
         for(var i=0; i<scnls.length; i++){
           var key = scnls[i];
