@@ -80,7 +80,7 @@ function ServerConf(){
     },
     "Inland_Washington":{
       "default":1,
-      "scnls":["JCW.EHZ.UW.--", "CTR.EHZ.UW.--","SLF.EHZ.UW.--","RER.EHZ.UW.--","ELK.EHZ.UW.--"]
+      "scnls":["JCW.EHZ.UW.--", "GMW.EHZ.UW.--","SLF.EHZ.UW.--","RER.EHZ.UW.--","ELK.EHZ.UW.--"]
     },
     "Inland_Oregon":{
       "default":0,
