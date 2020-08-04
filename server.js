@@ -1,4 +1,4 @@
-'use strict';
+'use strict()';
 /*
   To start with pm2
   pm2 start server.js -i 0 --name quickshake --log-date-format="YYYY-MM-DD HH:mm Z"
@@ -27,7 +27,7 @@ var env=process.env.NODE_ENV || "development"; //get this from env
 var MONGO_URI = conf[env].mongo.uri;
 var DB_NAME = conf[env].mongo.dbName;
 exports.app=app; //for integration testing
-app.use(express['static']('public'));
+app.use(express.static('public'));
 
 const logger = winston.createLogger({
   transports: [
@@ -141,23 +141,22 @@ mongoRT.on('error',function(err){
 
 
 /*ws for each  client connection*/
-wss.on('connection', function connection(ws) {
-  var client = {"socket": ws, "params":{}};
+wss.on('connection', function connection(wss, req) {
+  var client = {"socket": wss, "params":{}};
   lastId++;
   var id = lastId;
-  client["params"] = parseWsParams(ws);
-  // client['mongo-listener']
+  client.params = parseWsParams(req);
   CLIENTS[id]=client;
-  if(CLIENTS[id]["params"]["scnls"]){
-    sendRing(id,ws);
+  if(client.params.length > 0){
+    sendRing(id, wss, client);
   }
 
-  ws.on("close", function(){
+  wss.on("close", function(){
     logger.info("removing client: " + id);
     removeClient(id);
   });
 
-  ws.on("error", function(error){
+  wss.on("error", function(error){
     logger.error(error);
     removeClient(id);
   });
@@ -170,13 +169,13 @@ wss.on('connection', function connection(ws) {
 
 function sendMessage(doc){
   for(var id in CLIENTS){
-    var socket = CLIENTS[id]["socket"];
+    var socket = CLIENTS[id].socket;
     if(socket.readyState != socket.OPEN){
       logger.info("Socket closed, removing client" + id);
       removeClient(id);
-    }else if(CLIENTS[id] && CLIENTS[id]["params"] &&
-            CLIENTS[id]['params']["scnls"] &&
-            CLIENTS[id]['params']["scnls"].indexOf(doc["key"]) != -1){
+    }else if(CLIENTS[id] && CLIENTS[id].params &&
+            CLIENTS[id].params.scnls &&
+            CLIENTS[id].params.scnls.indexOf(doc.key) != -1){
       socket.send(JSON.stringify(doc));
     }
   }
@@ -184,18 +183,13 @@ function sendMessage(doc){
 }
 
 /*parse user params from webocket connections*/
-function parseWsParams(socket){
-  var params = url.parse(socket.upgradeReq.url, true).query;
-  //it was necessary to call it this way
-  //since url parse does not create obj with Object.prototype as it's prototype
-  if(Object.prototype.hasOwnProperty.call(params, 'scnls')){
-    var temp= params["scnls"].split(",");
-    params['scnls'] =[];
-    for(var i=0;i< temp.length; i++){
-      params['scnls'].push(temp[i]);
-    }
+function parseWsParams(req){
+  var queryParams = url.parse(req.url, true).query;
+  var scnls = [];
+  if('scnls' in queryParams){
+    scnls =  queryParams.scnls.split(",");
   }
-  return params;
+  return scnls;
 }
 
 //delete client from pool
@@ -209,12 +203,12 @@ function removeClient(id){
   all packets more recent then buffer will be send via the sendMessage
   function
 */
-function sendRing(id,socket){
-  var scnls= CLIENTS[id]["params"]["scnls"];
+function sendRing(id, socket, client){
+  var scnls= client.params;
   if(scnls !==undefined){
     for(var i=0; i < scnls.length; i++){
-      if(ringBuff['ring'].hasOwnProperty(scnls[i])){
-        var buf = ringBuff['ring'][scnls[i]];
+      if(ringBuff.ring.hasOwnProperty(scnls[i])){
+        var buf = ringBuff.ring[scnls[i]];
         var index= (buf.currentIndex+1)%buf.traces.length;
         while(index !== buf.currentIndex){
           socket.send(JSON.stringify(buf.traces[index]));

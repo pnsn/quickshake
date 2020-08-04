@@ -1,4 +1,4 @@
-'use strict';
+'use strict()';
 
 const scnlConf = require("../config/scnlConf.js");
 const serverConf = require("../config/serverConf.js");
@@ -7,7 +7,6 @@ const chai = require('chai');
 const should = chai.should();
 const scnlconf = new scnlConf();
 const serverconf= new serverConf();
-// const logger = require('winston');
 const MongoClient  = require('mongodb').MongoClient;
 const Scnl = require("../lib/scnl.js");
 const MockScnl =  require("./factories/mockScnl.js");
@@ -44,7 +43,7 @@ describe('should be good', function(){
   it('should get a list of collections', function(done){
     MongoClient.connect(MONGO_URI, function(err, db) {
       if(err) throw err;     
-      scnl.getCollections(db, function(err, scnls){
+      scnl.getCwaveCollections(db, function(err, scnls){
         expect(scnls.length).to.equal(2);
         done();
       }); 
