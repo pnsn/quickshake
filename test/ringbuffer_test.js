@@ -1,8 +1,9 @@
+'user strict()';
 //test cases for mongoserver prototype
 // var assert = require('assert')
-var expect  = require("chai").expect
-  ,RingBuffer = require("../lib/ringBuffer.js")
-  ,MockTrace =  require("./factories/mockTrace.js");
+var expect  = require("chai").expect;
+var RingBuffer = require("../lib/ringBuffer.js");
+var MockTrace =  require("./factories/mockTrace.js");
 
 
 var buffMax=6;
@@ -25,10 +26,10 @@ describe("Ringbuffer update", function(){
 
   it("has valid index", function(){
     validKey=sta + "." + chan + "."  + net + "." + loc;
-    expect(ringbuff['ring'][validKey].traces.length).to.equal(buffMax);
-    expect(ringbuff['ring'][validKey].currentIndex).to.equal(buffMax-1);
+    expect(ringbuff.ring[validKey].traces.length).to.equal(buffMax);
+    expect(ringbuff.ring[validKey].currentIndex).to.equal(buffMax-1);
     ringbuff.update(new MockTrace(sta,chan,net,loc));
-    expect(ringbuff['ring'][validKey].currentIndex).to.equal(0);
+    expect(ringbuff.ring[validKey].currentIndex).to.equal(0);
   });
 
 });

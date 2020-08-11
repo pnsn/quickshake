@@ -1,6 +1,6 @@
 //test cases for mongoserver prototype
 // var assert = require('assert')
-'use strict';
+'use strict()';
 
 const expect  = require("chai").expect;
 const MockTrace =  require("./factories/mockTrace.js");
@@ -8,12 +8,10 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const server = require('../server');
 const should = chai.should();
-
 var fixtures = require('pow-mongodb-fixtures').connect('waveforms', {
-  host: process.env.QUICKMONGO_PORT_27017_TCP_ADDR, 
-  port: process.env.QUICKMONGO_PORT_27017_TCP_PORT
+  host: "db", 
+  port: '27017'  
 });
-
 chai.use(chaiHttp);
 
 //create a connection pool
@@ -21,10 +19,27 @@ before(function(){
   fixtures.load("./fixtures/waveforms.js", function(err){
     if(err) console.log("ERRR = " + err);
   });
+  fixtures.load("./fixtures/scnls.js", function(err){
+    if(err) console.log("ERRR = " + err);
+  });
 });
 
 
      
+describe('/GET scnls', function(){
+  it('it return available scnls', function(done){
+    chai.request(server.app)
+        .get('/scnls')
+        .end(function(err, res){
+            res.should.have.status(200);
+            Object.keys(res.body).length.should.not.be.eql(0);
+          done();
+        });
+  });
+});
+
+
+
 describe('/GET groups', function(){
     it('it should GET all groups', function(done){
       chai.request(server.app)

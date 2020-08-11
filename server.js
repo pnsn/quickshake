@@ -40,6 +40,7 @@ var ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
 var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, ringBuff, logger);
 
 //create a connection pool
+
 MongoClient.connect(MONGO_URI, {useUnifiedTopology: true }, function(err, client) {
   if(err) throw err;
   db = client.db(DB_NAME);
@@ -96,7 +97,7 @@ app.get("/archive", function(req, res) {
   var endtime;
 
   var scnls = req.query.scnls === undefined ? null : req.query.scnls.split(",");
-  if(scnls===null || starttime===null){
+  if(scnls === null || starttime === null || Number.isNaN(starttime)){
     res.status(400)
         .send("missing params starttime and or scnls"); //send 400 if missing params
   }else{
@@ -143,6 +144,7 @@ mongoRT.on('error',function(err){
 /*ws for each  client connection*/
 wss.on('connection', function connection(wss, req) {
   var client = {"socket": wss, "params":{}};
+  console.log("connect");
   lastId++;
   var id = lastId;
   client.params = parseWsParams(req);

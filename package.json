@@ -1,5 +1,5 @@
 {
-  "name": "QuickShake",
+  "name": "Quickshake",
   "version": "2.0.0",
   "description": "QuickShake serves waveform data stored on MongoDb",
   "main": "server.js",
@@ -23,11 +23,12 @@
     "minimist": ">=0.2.1"
   },
   "devDependencies": {
-    "debug": "latest"
+    "debug": "latest",
+    "pow-mongodb-fixtures": "latest"
   },
   "scripts": {
     "start": "node server.js",
-    "test": "./node_modules/.bin/mocha --reporter spec"
+    "test": "./node_modules/.bin/mocha test --reporter spec"
   },
   "author": "Jon Connolly",
   "license": "GPL",
