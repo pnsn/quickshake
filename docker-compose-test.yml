@@ -1,13 +1,18 @@
-db:
-  image: mongo:3.2
-  container_name: quickMongo
-web:
-  build: .
-  command: bash -c "cd /quickshake && npm install &&  NODE_ENV=testing npm test"
-  volumes:
-    - .:/quickshake
-  ports:
-    - "8888:8888"
-  links:
-    - db
-  container_name: quickShake
+version: "3"
+services:
+  web:
+    build: .
+    command: bash -c "cd /quickshake && NODE_ENV=testing npm test"
+    volumes:
+      - .:/quickshake
+    ports:
+      - "8888:8888"
+    links:
+      - db
+    container_name: quickShake
+
+  db:
+    image: mongo:3.2
+    container_name: quickMongo
+    ports:
+        - "27017:27017"

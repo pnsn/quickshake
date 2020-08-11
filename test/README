@@ -1,0 +1,8 @@
+To run tests use docker-compose-test.yml
+  docker-compose -f docker-compose-test.yml up
+This runs script in package.json
+scripts['test']
+to run all tests
+"./node_modules/.bin/mocha  --reporter spec"
+to run tests/event_tests.js
+"./node_modules/.bin/mocha test/event_test.js --reporter spec"

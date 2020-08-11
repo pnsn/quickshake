@@ -1,4 +1,4 @@
-'use strict';
+'use strict()';
 
 const Conf = require("../config/eventConf.js");
 const expect  = require("chai").expect;
