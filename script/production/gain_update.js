@@ -28,15 +28,17 @@ MongoClient.connect(MONGO_URI, function(err, client) {
         for(var i=0; i<scnls.length; i++){
           var key = scnls[i];
           if(chanRes.hasOwnProperty(key)){
-            var res = chanRes[scnls[i]];            
-            coll.updateOne(
-              {'key': key},
-              {$set: {'gain': res.gain, 'gain_units': res.gain_units}},
-              {upsert: false},
-              function(err, results){
-                if(err) throw err;
-              }
-            );
+            var res = chanRes[scnls[i]];
+            if(res !== null){
+              coll.updateOne(
+                {'key': key},
+                {$set: {'gain': res.gain, 'gain_units': res.gain_units}},
+                {upsert: false},
+                function(err, results){
+                  if(err) throw err;
+                }
+              );
+            }
           }
         }
         client.close();
