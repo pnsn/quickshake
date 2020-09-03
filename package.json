@@ -4,7 +4,7 @@
   "description": "QuickShake serves waveform data stored on MongoDb",
   "main": "server.js",
   "dependencies": {
-    "bl": "^2.1.2",
+    "bl": "^2.2.1",
     "bson": "0.5.5",
     "bufferutil": "^1.2.1",
     "chai": "^3.5.0",
