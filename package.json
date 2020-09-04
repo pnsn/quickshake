@@ -12,7 +12,7 @@
     "child_process": "^1.0.2",
     "express": "4.14.0",
     "mocha": "^3.1.2",
-    "mongodb": "3.0",
+    "mongodb": "3.1",
     "mongodb-fixture": "^1.0.0",
     "pow-mongodb-fixtures": "^0.13.0",
     "request": "latest",
