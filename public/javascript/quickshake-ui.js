@@ -2,7 +2,7 @@
   //Globals
   var socket;
   var channels = [];
-  var inactiveTimeout = 2; //Number of minutes to keep activeg
+  var inactiveTimeout = 60; //Number of minutes to keep activeg
   var quickshake;
   //map stuff
   var map = new L.Map('map'),
@@ -91,14 +91,18 @@
 
       idleTime = 0;
 
-      var maxTime = inactiveTimeout + 1; //minute (time to )
+      var maxTime = inactiveTimeout + 5; //minute (time to )
      
       startIdleInterval(maxTime);
      
       // Hide the information and
 
-      $(window).keypress(resumePlayback(maxTime));
-      $(window).click(resumePlayback(maxTime));
+      $(window).keypress(function() {
+        resumePlayback(maxTime);
+      });
+      $(window).click(function() {
+        resumePlayback(maxTime);
+      });
     }
   }
 
@@ -119,19 +123,21 @@
       }
 
       if (idleTime >= minTime) {
-        timeAlert.modal("show");
-        timeAlert.click(resumePlayback(maxTime))
-      } 
 
+        timeAlert.modal("show");
+
+      } 
+      timeAlert.click(function() {
+        resumePlayback(maxTime);
+      });
       idleTime++;
-    }, 1000); // 60000 = 1 minute
+    }, 60000); // 60000 = 1 minute
   }
 
   function resumePlayback(maxTime) {
     console.log("Resume playback")
     if (idleTime >= maxTime) {
-      initializeSocket();
-      startIdleInterval(maxTime);
+      location.reload();
     }
     idleTime = 0;
   }
