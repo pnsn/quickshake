@@ -29,7 +29,7 @@ MongoClient.connect(MONGO_URI, function(err, client) {
           var key = scnls[i];
           if(chanRes.hasOwnProperty(key)){
             var res = chanRes[scnls[i]];
-            if(res !== null){
+            if(res !== null && res.gain !==null){
               coll.updateOne(
                 {'key': key},
                 {$set: {'gain': res.gain, 'gain_units': res.gain_units}},
