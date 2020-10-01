@@ -5,13 +5,15 @@
 
 'use strict';
 /*jslint node: true */
-const scnlConf = require("../../config/scnlConf.js");
-const serverConf = require("../../config/serverConf.js");
+const path= "/home/eworm/quickshake"
+const scnlConf = require(path + "/config/scnlConf.js");
+const serverConf = require(path + "/config/serverConf.js");
 const scnlconf = new scnlConf();
 const serverconf= new serverConf();
 const MongoClient  = require('mongodb').MongoClient;
-const Scnl = require("../../lib/scnl.js");
+const Scnl = require(path + "/lib/scnl.js");
 var env=process.env.NODE_ENV || "development"; //get this from env
+console.log(env);
 var MONGO_URI = serverconf[env].mongo.uri;
 var DB_NAME = serverconf[env].mongo.dbName;
 
@@ -20,7 +22,6 @@ var collName= "scnl";
 MongoClient.connect(MONGO_URI, function(err, client) {
   if(err) throw err;
   const db = client.db(DB_NAME);
-
     scnl.parseChannelResponse(function(err, chanRes, response){
       var coll = db.collection('scnls');
       scnl.getCwaveCollections(db, function(err, scnls){
@@ -28,15 +29,18 @@ MongoClient.connect(MONGO_URI, function(err, client) {
         for(var i=0; i<scnls.length; i++){
           var key = scnls[i];
           if(chanRes.hasOwnProperty(key)){
-            var res = chanRes[scnls[i]];            
-            coll.updateOne(
-              {'key': key},
-              {$set: {'gain': res.gain, 'gain_units': res.gain_units}},
-              {upsert: false},
-              function(err, results){
-                if(err) throw err;
-              }
-            );
+            var res = chanRes[scnls[i]];
+            console.log(res);
+            if(res !== null && res.gain !==null){
+              coll.updateOne(
+                {'key': key},
+                {$set: {'gain': res.gain, 'gain_units': res.gain_units}},
+                {upsert: false},
+                function(err, results){
+                  if(err) throw err;
+                }
+              );
+            }
           }
         }
         client.close();
