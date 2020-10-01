@@ -1,7 +1,7 @@
 //client side of quakeShake
 
   //initial params that should be consistent across all channels on page
-  function QuickShake(viewerWidthSec, chans) {
+  function QuickShake(canvasElement, viewerWidthSec, chans) {
     this.viewerWidthSec = viewerWidthSec; //width of viewer in seconds
     //these vals are set dynamically on load and on window resize
     this.height = null;
@@ -18,7 +18,7 @@
     this.endtime = 0;
     this.startPixOffset = this.width; //starttime pixelOffset
     this.viewerLeftTime = null; // track the time of the last time frame(left side of canvas this will be incremented each interval)
-    this.canvasElement = document.getElementById("quickshake-canvas");
+    this.canvasElement = canvasElement[0];
     this.localTime = true;
     // this.stationScalar = 3.207930 * Math.pow(10, 5) * 9.8; // count/scalar => %g
     this.stationScalars = {};
@@ -29,18 +29,20 @@
     //end log values
     this.realtime = true; //realtime will fast forward if tail of buffer gets too long.
     this.scroll = null; //sets scrolling
+ 
     this.lineColor = "#000";
     this.tz = "PST";
     this.channels = chans;
     this.archive = false;
     this.pad = 0;
-    this.archiveOffset = 0; //offset for line labels in archive
+    this.archiveOffset = 0; //offset for line labels in archivex
     this.annotations = [];
     this.arrivals = [];
     this.eventtime = null;
 
     this.brandLogo = new Image();
     this.brandLogo.src = 'images/brand_icon.png';
+    
   }
 
   // incoming data are appended to buf
@@ -161,10 +163,6 @@
     this.archiveOffset = this.annotations.length > 0 || this.archive ? 20 : 1;
 
     this.channelHeight = (this.height - this.timeOffset * 2 - this.archiveOffset) / this.channels.length;
-
-
-    $(".quickshake-scale").height(this.channelHeight / 2);
-
 
     if (cursor < cursorStop) {
 
@@ -563,14 +561,15 @@
     }
   };
 
-  QuickShake.prototype.selectPlayback = function(e, ui) {
+  QuickShake.prototype.selectPlayback = function(slider, value) {
     if (this.scroll) {
       this.pauseScroll();
     }
-    var val = ui.value;
+    var val = value;
+    // prevent scrolling back before the data?
     if (val > this.endtime) {
-
-      $("#playback-slider").slider("option", "value", this.viewerLeftTime);
+      
+      slider.slider("option", "value", this.viewerLeftTime);
 
     } else {
       this.viewerLeftTime = this.makeTimeKey(val);
@@ -587,25 +586,20 @@
   };
 
   QuickShake.prototype.updateScale = function() {
-    // $("#quickshake-scale").css("height", this.channelHeight / 2);
     var scale = Math.pow(10, -this.scale); //3 sig. digits
     if (scale < 0.000099) {
       scale = scale.toExponential(2);
     } else {
       scale = scale.toPrecision(2);
     }
-    $("#top").html(scale);
+
   };
 
   // Handles sizing of the canvas for different screens
-  QuickShake.prototype.configViewer = function() {
-    var offSet = 10; //Default for mobile and if there is no scale
-    $("#quickshake-canvas").show();
-    $("#quickshake").height(window.innerHeight - $("#header").height() - 10 - $("#controls-container").height());
+  QuickShake.prototype.configViewer = function(height, width) {
+    this.height = height;
+    this.width = width;
 
-    this.height = $("#quickshake").height();
-    this.width = $("#quickshake").width();
-    $("#quickshake-scale").height(this.height);
     this.sampPerSec = Math.round(this.width / this.viewerWidthSec);
     this.viewerWidthSec = this.width / this.sampPerSec; //actual width in Sec due to rounding
     this.refreshRate = Math.round(1000 / this.sampPerSec); //refresh rate in milliseconds

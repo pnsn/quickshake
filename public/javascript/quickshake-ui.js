@@ -316,7 +316,7 @@
         $("#event-header span").text(text);
         $("#event-header").show();
 
-        event = {
+        var event = {
           evid: data.id,
           description: data.properties.title,
           starttime: parseFloat(data.properties.time),
@@ -672,7 +672,7 @@
     $("#hide-controls, #show-controls, #toggle-controls, #quickshake-controls").toggleClass("closed");
 
     window.setTimeout(function() {
-      quickshake.configViewer();
+      resizeWindow();
 
       if (!quickshake.scroll) { //FIXME: goes blank if not scrolling
         quickshake.drawSignal();
@@ -753,7 +753,7 @@
         });
 
 
-        quickshake = new QuickShake(getValue("width") ? getValue("width") * 60 : 2 * 60, channels.slice());
+        quickshake = new QuickShake($("#quickshake-canvas"), getValue("width") ? getValue("width") * 60 : 2 * 60, channels.slice());
 
         $("#toggle-controls").click(function() {
           toggleControls();
@@ -775,7 +775,7 @@
           }
 
           if(!scaleVal || !unit) {
-            scaleVal = 204000.0;
+            scaleVal = 204000.0* 32 * 100;
             unit = "?";
           }
           quickshake.stationScalars[channel] = {
@@ -817,12 +817,12 @@
                 url: "https://" + path + "archive?starttime=" + starttime + "&scnls=" + channels + "&endtime=" + endtime
               }).success(function(data) { //sometimes doesn't get called?
                 $("#fastforward-button").show();
-                quickshake.configViewer();
+                resizeWindow();
                 quickshake.playArchive(data, eventtime, starttime);
                 quickshake.arrivals = arrivals.slice();
-                controlsTimeout = window.setTimeout(function() {
-                  toggleControls();
-                }, 10000);
+                // controlsTimeout = window.setTimeout(function() {
+                //   toggleControls();
+                // }, 10000);
 
               }).complete(function(xhr, data) {
                 if (xhr.status != 200) { //In case it fails
@@ -835,11 +835,11 @@
 
           } else {
             $("#realtime-button").show();
-            quickshake.configViewer();
+            resizeWindow();
             initializeSocket();
-            controlsTimeout = window.setTimeout(function() {
-              toggleControls();
-            }, 10000);
+            // controlsTimeout = window.setTimeout(function() {
+            //   toggleControls();
+            // }, 10000);
           }
 
           controlsInit();
@@ -877,11 +877,19 @@
   //Give date in milliseconds
   initialize();
 
+  function resizeWindow() {
+    $("#quickshake-canvas").show();
+    $("#quickshake").height(window.innerHeight - $("#header").height() - 10 - $("#controls-container").height());
+
+    quickshake.configViewer($("#quickshake").height(), $("#quickshake").width());
+
+  }
+
   // Can't load these until the quickshake is made
   function controlsInit() {
     // $(window).resize(function(){
     //    var timeout = setTimeout(function(){
-    //      quickshake.configViewer();
+    //      resizeWindow();
     //      quickshake.drawSignal();
     //    }, 1000);
     // });
@@ -897,7 +905,7 @@
           $("#play-button").removeClass("disabled");
           $("#stop-button, #realtime-button").addClass("disabled");
         }
-        quickshake.selectPlayback(e, ui);
+        quickshake.selectPlayback( $("#playback-slider"), ui.value);
       }
     });
 
