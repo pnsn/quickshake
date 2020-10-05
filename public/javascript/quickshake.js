@@ -311,6 +311,8 @@
 
       ctx.beginPath();
       ctx.font = "13px Helvetica, Arial, sans-serif";
+
+      // Add the scale
       if (this.stationScalars[channel]) {
         var unitPerPix = this.channelHeight / (2 * Math.pow(10, this.scale));
         var xPos = edge.right - 78;

@@ -766,7 +766,7 @@
 
             if (channelData.scaleUnits == "M/S**2" || channelData.scaleUnits == "m/s**2") {
               scaleVal = channelData.gain * 32 * 100;
-             unit = "m/s^2";
+              unit = "m/s^2";
             } else {
               scaleVal = channelData.gain;
               unit = "m/s";
@@ -774,8 +774,11 @@
 
           }
 
-          if(!scaleVal || !unit) {
-            scaleVal = 204000.0* 32 * 100;
+          if(!scaleVal) {
+            scaleVal = 204000.0 * 32 * 100;
+          }
+
+          if(!unit) {
             unit = "?";
           }
           quickshake.stationScalars[channel] = {
