@@ -13,7 +13,6 @@ const serverconf= new serverConf();
 const MongoClient  = require('mongodb').MongoClient;
 const Scnl = require(path + "/lib/scnl.js");
 var env=process.env.NODE_ENV || "development"; //get this from env
-console.log(env);
 var MONGO_URI = serverconf[env].mongo.uri;
 var DB_NAME = serverconf[env].mongo.dbName;
 
@@ -30,15 +29,11 @@ MongoClient.connect(MONGO_URI, function(err, client) {
           var key = scnls[i];
           if(chanRes.hasOwnProperty(key)){
             var res = chanRes[scnls[i]];
-            console.log(res);
             if(res !== null && res.gain !==null){
               coll.updateOne(
                 {'key': key},
                 {$set: {'gain': res.gain, 'gain_units': res.gain_units}},
-                {upsert: false},
-                function(err, results){
-                  if(err) throw err;
-                }
+                {upsert: false}
               );
             }
           }
