@@ -188,8 +188,8 @@
         var count = 0;
         while (time <= this.endtime) {
           if (this.buffer[time] && this.buffer[time][channel]) {
-            var val = this.buffer[time][channel];
-            sum += val;
+            var value = this.buffer[time][channel];
+            sum += value;
             count++;
 
           }
@@ -209,9 +209,10 @@
         var gap = true;
         // draw Always start from viewerLeftTime and go one canvas width
 
+        var chanAxis = this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i; //22 is offset for header timeline.
         if (this.stationScalars[channel] && count != 0) {
           count = 0;
-          var chanAxis = this.archiveOffset + this.timeOffset + (this.channelHeight / 2) + this.channelHeight * i; //22 is offset for header timeline.
+         
 
           while (cursor <= cursorStop) {
             if (this.buffer[cursor] && this.buffer[cursor][channel]) {
@@ -468,7 +469,7 @@
       if (tail > -cursorOffset && tail < cursorOffset / 2) {
         pad = -1;
       } else if (tail < -cursorOffset) {
-        pad - 1;
+        pad --;
       } else if (tail > -cursorOffset / 2) {
         pad = parseInt(Math.abs(tail / 10), 0);
       }

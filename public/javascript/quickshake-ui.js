@@ -111,7 +111,6 @@
     var minTime = inactiveTimeout;
 
     idleTimeoutInterval = setInterval(function(){
-      console.log(idleTime, minTime, maxTime)
       if (maxTime - idleTime > 1) {
         $("#timer").html("Stream will stop in " + (maxTime - idleTime) + " minutes.");
       } else if (maxTime - idleTime == 1) {
@@ -135,7 +134,6 @@
   }
 
   function resumePlayback(maxTime) {
-    console.log("Resume playback")
     if (idleTime >= maxTime) {
       location.reload();
     }
@@ -214,7 +212,7 @@
 
       if (feature.properties.type == "earthquake") {
         significant.append(append);
-      };
+      }
 
       events[feature.id] = {
         evid: feature.id,
@@ -488,7 +486,7 @@
 
       eventMarker.addTo(map);
       $("button.clear-all").click(function(){
-        eventMarker.remove()
+        eventMarker.remove();
       });
       // $(".sort-distance").removeClass("hidden");
       // $(".sort-distance").click(function(){
