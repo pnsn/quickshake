@@ -4,22 +4,28 @@
   "description": "QuickShake serves waveform data stored on MongoDb",
   "main": "server.js",
   "dependencies": {
-    "bl": "^2.1.2",
-    "bson": "0.5.5",
+    "bl": "^2.2.1",
+    "bson": "^1.0.5",
     "bufferutil": "^1.2.1",
     "chai": "^3.5.0",
     "chai-http": "^3.0.0",
     "child_process": "^1.0.2",
+    "cryptiles": "^4.1.2",
+    "diff": "^3.5.0",
     "express": "4.14.0",
+    "fresh": "^0.5.2",
+    "growl": "^1.10.0",
+    "lodash": "^4.17.19",
     "mocha": "^3.1.2",
-    "mongodb": "3.0",
+    "mongodb": "^3.1.13",
     "mongodb-fixture": "^1.0.0",
     "pow-mongodb-fixtures": "^0.13.0",
     "request": "latest",
     "underscore": "^1.8.3",
     "winston": "2.4.3",
-    "ws": "1.1.1",
-    "yargs": "11.1.0"
+    "ws": "^1.1.5",
+    "yargs": "11.1.0",
+    "yargs-parser": "^13.1.2"
   },
   "devDependencies": {
     "debug": "latest"
