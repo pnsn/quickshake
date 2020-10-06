@@ -242,7 +242,7 @@
           } //while
         } else {
           ctx.font = "15px Helvetica, Arial, sans-serif";
-          ctx.fillText("No data. ", this.width / 2, chanAxis + this.channelHeight + 7);
+          ctx.fillText("No data.", this.width / 2, chanAxis + 7);
 
         }
         ctx.stroke();
