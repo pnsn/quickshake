@@ -27,14 +27,34 @@ MongoClient.connect(MONGO_URI, function(err, client) {
     scnl.getCwaveCollections(db, function(err, scnls){
       for(var i=0; i<scnls.length; i++){
         if(iris_scnls.hasOwnProperty(scnls[i])){
-          var chan = iris_scnls[scnls[i]];
-          //remove gain an gain_units
-          delete chan.gain;
-          delete chan.gain_units;
-          delete chan.active;
-          scnl.upsert(db,iris_scnls[scnls[i]], function(err, results){
+          // var chan = iris_scnls[scnls[i]];
+          var coll=db.collection(collName);
+          coll.update({"key": scnl.key}, {$set: {
+            'net': iris_scnls.net,
+            'sta': iris_scnls.sta,
+            'loc': iris_scnls.loc,
+            'chan': iris_scnls.chan,
+            'key': scnl.makeKey,
+            'lat': iris_scnls.lat,
+            'lon': iris_scnls.lon,
+            'elevation': iris_scnls.elevation,
+            'depth': iris_scnls.depth,
+            'azimuth': iris_scnls.azimuth,
+            'dip': iris_scnls.dip,
+            'sensorDescription': iris_scnls.sensorDescription,
+            'scale': iris_scnls.scale,
+            'scaleFreq': iris_scnls.scaleFreq,
+            'scaleUnits': iris_scnls.scaleUnits,
+            'sampRate': iris_scnls.sampleRate,
+            'startime': iris_scnls.starttime,
+            'endtime': iris_scnls.endtime
+            }
+          },
+          {upsert: true}, 
+          function(err, result){
             if(err) throw err;
           });
+
         }
       }
       client.close();
