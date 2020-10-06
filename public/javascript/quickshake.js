@@ -1299,7 +1299,7 @@ $(function() {
     var getGroups = function() {
       return $.ajax({
         dataType: "jsonp",
-        url: "https://" + path + "groups"
+        url: "http://" + path + "groups"
       });
     };
     var getLocalEvents = function() {
@@ -1327,7 +1327,7 @@ $(function() {
     $.ajax({
       type: "GET",
       dataType: "jsonp",
-      url: "https://" + path + "scnls"
+      url: "http://" + path + "scnls"
     }).done(function(data) {
       var latlngs = [];
       $.each(data, function(i, station) {
@@ -1427,7 +1427,7 @@ $(function() {
               $.ajax({
                 type: "GET",
                 dataType: "jsonp",
-                url: "https://" + path + "archive?starttime=" + starttime + "&scnls=" + channels + "&endtime=" + endtime
+                url: "http://" + path + "archive?starttime=" + starttime + "&scnls=" + channels + "&endtime=" + endtime
               }).success(function(data) { //sometimes doesn't get called?
                 $("#fastforward-button").show();
                 quickshake.configViewer();
