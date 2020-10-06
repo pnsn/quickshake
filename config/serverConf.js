@@ -5,9 +5,9 @@
 function ServerConf(){
   this.production= {
     mongo:{
-      uri: "mongodb://" + process.env.MONGO_USER + ":" + encodeURIComponent(process.env.MONGO_PASSWD) + "@"
-              + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/"
-              + "?authMechanism=DEFAULT" + "&authSource=admin",
+      uri: "mongodb://" + process.env.MONGO_USER + ":" + encodeURIComponent(process.env.MONGO_PASSWD) + 
+            "@" + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" +
+            "?authMechanism=DEFAULT" + "&authSource=admin",
       dbName: "waveforms",
       rtCollection: "ring"
     },
@@ -24,9 +24,7 @@ function ServerConf(){
   };
   this.testing= {
     mongo:{
-      uri: "mongodb://" + process.env.MONGO_USER + ":" + encodeURIComponent(process.env.MONGO_PASSWD) + "@"
-              + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/"
-              + "?authMechanism=DEFAULT" + "&authSource=admin",
+      uri: "mongodb://db:27017",
       dbName: "waveforms",
       rtCollection: "ring"
     },
@@ -45,9 +43,9 @@ function ServerConf(){
 
   this.development= {
     mongo:{
-      uri: "mongodb://" + process.env.MONGO_USER + ":" + encodeURIComponent(process.env.MONGO_PASSWD) + "@"
-              + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/"
-              + "?authMechanism=DEFAULT" + "&authSource=admin",
+      uri: "mongodb://" + process.env.MONGO_USER + ":" + encodeURIComponent(process.env.MONGO_PASSWD) + 
+            "@" + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" +
+            "?authMechanism=DEFAULT" + "&authSource=admin",
       dbName: "waveforms",
       rtCollection: "ring"
     },
@@ -99,7 +97,7 @@ function ServerConf(){
       "scnls":["CNNB.HNZ.UW.--","CHZZ.HNZ.UW.--","ONAB.HNZ.UW.--","FLRE.HNZ.UW.--","COOS.HNZ.UW.--","WEDR.HNZ.UW.--"]
     }
   };
-};
+}
 
 
 module.exports = ServerConf;

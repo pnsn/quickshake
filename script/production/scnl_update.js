@@ -27,6 +27,11 @@ MongoClient.connect(MONGO_URI, function(err, client) {
     scnl.getCwaveCollections(db, function(err, scnls){
       for(var i=0; i<scnls.length; i++){
         if(iris_scnls.hasOwnProperty(scnls[i])){
+          var chan = iris_scnls[scnls[i]];
+          //remove gain an gain_units
+          delete chan.gain;
+          delete chan.gain_units;
+          delete chan.active;
           scnl.upsert(db,iris_scnls[scnls[i]], function(err, results){
             if(err) throw err;
           });
