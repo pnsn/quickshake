@@ -216,9 +216,7 @@ form button.btn {
   display:none;
 }
 
-.bootstrap-select .dropdown-menu {
-/*  width: 100%;*/
-}
+
 
 .bootstrap-select .dropdown-menu span.text {
   display: block !important;
@@ -243,6 +241,9 @@ form button.btn {
   height:500px;
 }
 
+ul.available-channels {
+  padding-left: 20px;
+}
 .station-icon{
   background-color:#B8B8B8 ;
   border:1px solid #808080 ;    
