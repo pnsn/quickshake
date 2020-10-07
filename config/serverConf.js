@@ -86,7 +86,7 @@ function ServerConf(){
     },
     "Mount_Rainier" : {
       "default": 0, 
-      "scnls": ["STAR.EHZ.UW.--", "MCS.EHZ.UW.--", "RCM.EHZ.UW.--", "LON.HHZ.UW.--", "FMW.HHZ.UW.--"]
+      "scnls": ["STAR.EHZ.UW.--", "RCS.EHZ.UW.--", "RCM.EHZ.UW.--", "LON.HHZ.UW.--", "FMW.HHZ.UW.--"]
     },
     "Mount_St._Helens" : {
       "default": 0, 
