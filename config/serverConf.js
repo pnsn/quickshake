@@ -64,37 +64,37 @@ function ServerConf(){
 
   //temporary till we create ui to manage groups
   this.groups={
-    "Mount_Saint_Helens":{
-      "default":0,
-      "scnls": ["ELK.EHZ.UW.--","SHW.EHZ.UW.--", "TDL.EHZ.UW.--", "HSR.EHZ.UW.--"]
-    },
-    "Short_Period":{
-      "default":0,
-      "scnls": ["JCW.EHZ.UW.--", "SLF.EHZ.UW.--", "RER.EHZ.UW.--", "TDH.EHZ.UW.--", "HBO.EHZ.UW.--"]
-    },
-    "Olympic_Peninsula":{
-      "default":0,
-      "scnls": ["MKAH.HNZ.UW.--","OSD.EHZ.UW.--", "HDW.EHZ.UW.--", "GMW.EHZ.UW.--", "BILS.HNZ.UW.--"]
-    },
-    "Inland_Washington":{
+    "Central_Washington":{
       "default":1,
-      "scnls":["JCW.EHZ.UW.--", "GMW.EHZ.UW.--","SLF.EHZ.UW.--","RER.EHZ.UW.--","ELK.EHZ.UW.--"]
+      "scnls":["RPW.EHZ.UW.--","JCW.HNZ.UW.--","GMW.EHZ.UW.--","STOR.HHZ.UW.--", "LCW2.EHZ.UW.--", "TDL.EHZ.UW.--"]
     },
-    "Inland_Oregon":{
+    "Eastern_Washington": {
       "default":0,
-      "scnls":["MORO.ENZ.UW.--", "TDH.EHZ.UW.--","BRO.HHZ.UW.--","HBO.EHZ.UW.--","BBO.HHZ.UW.--"]
+      "scnls":["CBS.HHZ.UW.--", "OD2.EHZ.UW.--", "YA2.EHZ.UW.--", "ET4.EHZ.UW.--", "RED2.EHZ.UW.--", "TUCA.HHZ.UW.--"]
     },
-    "Coastal":{
-      "default":0,
-      "scnls":["OOW2.HNZ.UW.--","CORE.HNZ.UW.--","RSLG.HNZ.UW.--","FLRE.HNZ.UW.--","CABL.HNZ.UW.--","BROK.HNZ.UW.--"]
+    "Olympics" : {
+      "default": 0, 
+      "scnls": ["MKAH.HNZ.UW.--", "OSD.EHZ.UW.--", "GMW.EHZ.UW.--", "OLQN.HHZ.UW.--", "BILS.HNZ.UW.--"]
     },
-    "Coastal_Washington":{
-      "default":0,
-      "scnls":["MKAH.HNZ.UW.--","BILS.HNZ.UW.--","OCEN.HNZ.UW.--","LWCK.HNZ.UW.--"]
+    "Western_Oregon" : {
+      "default": 0, 
+      "scnls": ["FISH.HHZ.UW.--", "LCCR.HHZ.UW.--", "BABR.HHZ.UW.--", "BRO.HHZ.UW.--", "HBUG.HHZ.UW.--", "WOOD.HHZ.UW.--"]
     },
-    "Coastal_Oregon":{
-      "default":0,
-      "scnls":["CNNB.HNZ.UW.--","CHZZ.HNZ.UW.--","ONAB.HNZ.UW.--","FLRE.HNZ.UW.--","COOS.HNZ.UW.--","WEDR.HNZ.UW.--"]
+    "Eastern_Oregon" : {
+      "default": 0, 
+      "scnls": ["JESE.HHZ.UW.--", "WIFE.BHZ.UW.--", "NORM.BHZ.UW.--", "TREE.HHZ.UW.--", "JAZZ.HHZ.UW.--"]
+    },
+    "Mount_Rainier" : {
+      "default": 0, 
+      "scnls": ["STAR.EHZ.UW.--", "MCS.EHZ.UW.--", "RCM.EHZ.UW.--", "LON.HHZ.UW.--", "FMW.HHZ.UW.--"]
+    },
+    "Mount_St._Helens" : {
+      "default": 0, 
+      "scnls": ["SEP.BHZ.UW.--", "HSR.BHZ.UW.--", "SHW.EHZ.UW.--", "EDM.ELK.UW.--", "ELK.EHZ.UW.--", "FL2.EHZ.UW.--"]
+    },
+    "Mount_Hood" : {
+      "default": 0, 
+      "scnls": ["TIMB.EHZ.UW.--", "HOOD.HHZ.UW.--", "TDH.EHZ.UW.--", "VFP.EHZ.UW.--", "VLL.EHZ.UW.--"]
     }
   };
 }
