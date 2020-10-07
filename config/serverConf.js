@@ -66,7 +66,7 @@ function ServerConf(){
   this.groups={
     "Central_Washington":{
       "default":1,
-      "scnls":["RPW.EHZ.UW.--","JCW.HNZ.UW.--","GMW.EHZ.UW.--","STOR.HHZ.UW.--", "LCW2.EHZ.UW.--", "TDL.EHZ.UW.--"]
+      "scnls":["RPW.EHZ.UW.--","JCW.EHZ.UW.--","GMW.EHZ.UW.--","STOR.HHZ.UW.--", "LCW2.EHZ.UW.--", "TDL.EHZ.UW.--"]
     },
     "Eastern_Washington": {
       "default":0,
@@ -78,23 +78,23 @@ function ServerConf(){
     },
     "Western_Oregon" : {
       "default": 0, 
-      "scnls": ["FISH.HHZ.UW.--", "LCCR.HHZ.UW.--", "BABR.HHZ.UW.--", "BRO.HHZ.UW.--", "HBUG.HHZ.UW.--", "WOOD.HHZ.UW.--"]
+      "scnls": ["FISH.HHZ.UW.--", "LCCR.HHZ.UW.--", "BABR.HHZ.UW.--", "BRO.HHZ.UW.--", "HBUG.HHZ.UO.--", "WOOD.HHZ.UO.--"]
     },
     "Eastern_Oregon" : {
       "default": 0, 
-      "scnls": ["JESE.HHZ.UW.--", "WIFE.BHZ.UW.--", "NORM.BHZ.UW.--", "TREE.HHZ.UW.--", "JAZZ.HHZ.UW.--"]
+      "scnls": ["JESE.HHZ.UO.--", "WIFE.BHZ.CC.--", "NORM.BHZ.CC.--", "TREE.HHZ.UW.--", "JAZZ.HHZ.UW.--"]
     },
     "Mount_Rainier" : {
       "default": 0, 
-      "scnls": ["STAR.EHZ.UW.--", "RCS.EHZ.UW.--", "RCM.EHZ.UW.--", "LON.HHZ.UW.--", "FMW.HHZ.UW.--"]
+      "scnls": ["STAR.EHZ.UW.01", "RCS.EHZ.UW.--", "RCM.HHZ.UW.--", "LON.HHZ.UW.--", "FMW.HHZ.UW.--"]
     },
-    "Mount_St._Helens" : {
+    "Mount_St_Helens" : {
       "default": 0, 
-      "scnls": ["SEP.BHZ.UW.--", "HSR.BHZ.UW.--", "SHW.EHZ.UW.--", "EDM.ELK.UW.--", "ELK.EHZ.UW.--", "FL2.EHZ.UW.--"]
+      "scnls": ["SEP.BHZ.CC.--", "HSR.EHZ.UW.--", "SHW.EHZ.UW.--", "EDM.EHZ.UW.--", "ELK.EHZ.UW.--", "FL2.EHZ.UW.--"]
     },
     "Mount_Hood" : {
       "default": 0, 
-      "scnls": ["TIMB.EHZ.UW.--", "HOOD.HHZ.UW.--", "TDH.EHZ.UW.--", "VFP.EHZ.UW.--", "VLL.EHZ.UW.--"]
+      "scnls": ["TIMB.BHZ.UW.--", "HOOD.HHZ.UW.--", "TDH.EHZ.UW.--", "VFP.EHZ.UW.--", "VLL.EHZ.UW.--"]
     }
   };
 }
