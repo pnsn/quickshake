@@ -82,7 +82,7 @@ function ServerConf(){
     },
     "Eastern_Oregon" : {
       "default": 0, 
-      "scnls": ["JESE.HHZ.UO.--", "WIFE.BHZ.CC.--", "NORM.BHZ.CC.--", "TREE.HHZ.UW.--", "JAZZ.HHZ.UW.--"]
+      "scnls": ["JESE.HHZ.UO.--", "WIFE.BHZ.CC.--", "NORM.BHZ.CC.--", "TREE.HHZ.UW.--", "JAZZ.HHZ.UO.--"]
     },
     "Mount_Rainier" : {
       "default": 0, 
