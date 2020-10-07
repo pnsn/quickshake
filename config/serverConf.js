@@ -94,7 +94,7 @@ function ServerConf(){
     },
     "Mount_Hood" : {
       "default": 0, 
-      "scnls": ["TIMB.BHZ.UW.--", "HOOD.HHZ.UW.--", "TDH.EHZ.UW.--", "VFP.EHZ.UW.--", "VLL.EHZ.UW.--"]
+      "scnls": ["TIMB.BHZ.CC.--", "HOOD.HHZ.UW.--", "TDH.EHZ.UW.--", "VFP.EHZ.UW.--", "VLL.EHZ.UW.--"]
     }
   };
 }
