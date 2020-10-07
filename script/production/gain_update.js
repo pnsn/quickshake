@@ -5,7 +5,7 @@
 
 'use strict';
 /*jslint node: true */
-const path= "/home/eworm/quickshake"
+const path= "/home/eworm/quickshake";
 const scnlConf = require(path + "/config/scnlConf.js");
 const serverConf = require(path + "/config/serverConf.js");
 const scnlconf = new scnlConf();
