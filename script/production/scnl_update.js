@@ -17,7 +17,7 @@ var MONGO_URI = serverconf[env].mongo.uri;
 var DB_NAME = serverconf[env].mongo.dbName;
 
 var scnl =Scnl;
-var collName= "scnl"; // mongo collection
+var collName= "scnls"; // mongo collection
 
 MongoClient.connect(MONGO_URI, function(err, client) {
   if(err) throw err;
@@ -29,7 +29,9 @@ MongoClient.connect(MONGO_URI, function(err, client) {
         if(iris_scnls.hasOwnProperty(scnls[i])){
           // var chan = iris_scnls[scnls[i]];
           var coll=db.collection(collName);
+          console.log(scnl.key);
           coll.update({"key": scnl.key}, {$set: {
+            'key': scnl.key,
             'net': iris_scnls.net,
             'sta': iris_scnls.sta,
             'loc': iris_scnls.loc,
