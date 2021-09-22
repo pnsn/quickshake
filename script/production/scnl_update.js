@@ -17,7 +17,7 @@ var MONGO_URI = serverconf[env].mongo.uri;
 var DB_NAME = serverconf[env].mongo.dbName;
 
 var scnl =Scnl;
-var collName= "scnl"; // mongo collection
+var collName= "scnls"; // mongo collection
 
 MongoClient.connect(MONGO_URI, function(err, client) {
   if(err) throw err;
@@ -27,27 +27,27 @@ MongoClient.connect(MONGO_URI, function(err, client) {
     scnl.getCwaveCollections(db, function(err, scnls){
       for(var i=0; i<scnls.length; i++){
         if(iris_scnls.hasOwnProperty(scnls[i])){
-          // var chan = iris_scnls[scnls[i]];
+          var chan = iris_scnls[scnls[i]];
           var coll=db.collection(collName);
-          coll.update({"key": scnl.key}, {$set: {
-            'net': iris_scnls.net,
-            'sta': iris_scnls.sta,
-            'loc': iris_scnls.loc,
-            'chan': iris_scnls.chan,
-            'key': scnl.makeKey,
-            'lat': iris_scnls.lat,
-            'lon': iris_scnls.lon,
-            'elevation': iris_scnls.elevation,
-            'depth': iris_scnls.depth,
-            'azimuth': iris_scnls.azimuth,
-            'dip': iris_scnls.dip,
-            'sensorDescription': iris_scnls.sensorDescription,
-            'scale': iris_scnls.scale,
-            'scaleFreq': iris_scnls.scaleFreq,
-            'scaleUnits': iris_scnls.scaleUnits,
-            'sampRate': iris_scnls.sampleRate,
-            'startime': iris_scnls.starttime,
-            'endtime': iris_scnls.endtime
+          coll.updateOne({"key": scnls[i]}, {$set: {
+            'net': chan.net,
+            'sta': chan.sta,
+            'loc': chan.loc,
+            'chan': chan.chan,
+            'key': chan.makeKey(),
+            'lat': chan.lat,
+            'lon': chan.lon,
+            'elevation': chan.elevation,
+            'depth': chan.depth,
+            'azimuth': chan.azimuth,
+            'dip': chan.dip,
+            'sensorDescription': chan.sensorDescription,
+            'scale': chan.scale,
+            'scaleFreq': chan.scaleFreq,
+            'scaleUnits': chan.scaleUnits,
+            'sampRate': chan.sampleRate,
+            'startime': chan.starttime,
+            'endtime': chan.endtime
             }
           },
           {upsert: true}, 

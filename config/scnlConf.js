@@ -4,7 +4,7 @@ which updates the scnls collection in mongo by comparing collections with
 fdsn to retrieve lat/lon data for plotting on client map
 */
 function ScnlConf(){
-  this.nets= ["UW","CC"];
+  this.nets= ["UW","CC","UO"];
 
 }
 
