@@ -21,7 +21,7 @@
     "mongodb-fixture": "^1.0.0",
     "pow-mongodb-fixtures": "^0.13.0",
     "request": "latest",
-    "underscore": "^1.8.3",
+    "underscore": "^1.12.1",
     "winston": "2.4.3",
     "ws": "^5.2.3",
     "yargs": "11.1.0",
