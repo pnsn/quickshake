@@ -61,12 +61,11 @@ function ServerConf(){
 
   };
 
-
   //temporary till we create ui to manage groups
   this.groups={
     "Central_Washington":{
       "default":1,
-      "scnls":["RPW.EHZ.UW.01","JCW.EHZ.UW.--","GMW.EHZ.UW.--","STOR.HHZ.UW.--", "LCW2.EHZ.UW.--", "TDL.EHZ.UW.--"]
+      "scnls":["JCW.EHZ.UW.--","GMW.EHZ.UW.--","STOR.HHZ.UW.--", "LCW2.EHZ.UW.--", "TDL.EHZ.UW.--"]
     },
     "Eastern_Washington": {
       "default":0,
