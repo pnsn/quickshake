@@ -182,7 +182,11 @@ function sendMessage(doc){
 
 /*parse user params from webocket connections*/
 function parseWsParams(socket){
-  var params = url.parse(socket.upgradeReq.url, true).query;
+  var params = [];
+  if(socket && socket.upgradeReq) {
+    params = url.parse(socket.upgradeReq.url, true).query;
+  }
+  
   //it was necessary to call it this way
   //since url parse does not create obj with Object.prototype as it's prototype
   if(Object.prototype.hasOwnProperty.call(params, 'scnls')){
