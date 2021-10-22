@@ -37,7 +37,7 @@ var ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
 var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, ringBuff, logger);
 
 //create a connection pool
-MongoClient.connect(MONGO_URI, { useUnifiedTopology: true }, function(err, client) {
+MongoClient.connect(MONGO_URI, {}, function(err, client) {
   if(err) throw err;
   db = client.db(DB_NAME);
   mongoRT.database(db);
