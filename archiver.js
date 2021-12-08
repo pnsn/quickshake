@@ -1,5 +1,3 @@
-'use strict';
-
   // jslint node: true
   // script to archive waveforms into collections based on scnl
   // process tails ring collection and writes to ringBuff
