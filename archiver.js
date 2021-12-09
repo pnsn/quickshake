@@ -1,9 +1,7 @@
-'use strict';
-/*jslint node: true
-* script to archive waveforms into collections based on scnl
-* process tails ring collection and writes to ringBuff
-* ringbuff is read every ~5 seconds and writes to respective collection
-*/
+  // jslint node: true
+  // script to archive waveforms into collections based on scnl
+  // process tails ring collection and writes to ringBuff
+  // ringbuff is read every ~5 seconds and writes to respective collection
 
 const  url = require('url');
 const logger = require('winston');

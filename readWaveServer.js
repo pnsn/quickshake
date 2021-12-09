@@ -6,15 +6,15 @@
 
 //ALL EPOCH TIMES ARE MILLISECONDS!!!!
 
-const Waveserver = require(__dirname + '/lib/waveserver');
-const ScnlRequest = require(__dirname + '/lib/scnl_request');
-const MongoClient  = require('mongodb').MongoClient;
-const ServerConf = require("./config/serverConf.js");
-const WaveServerConf= require(__dirname + "/config/waveserver.conf.js");
+var Waveserver = require(__dirname + '/lib/waveserver');
+var ScnlRequest = require(__dirname + '/lib/scnl_request');
+var MongoClient  = require('mongodb').MongoClient;
+var ServerConf = require("./config/serverConf.js");
+var WaveServerConf= require(__dirname + "/config/waveserver.conf.js");
 
 var waveConf = new WaveServerConf();
 var serverConf = new ServerConf();
-const logger = require('winston');
+var logger = require('winston');
 
 var env=process.env.NODE_ENV || "development"; //get this from env
 

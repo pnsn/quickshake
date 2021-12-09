@@ -4,30 +4,29 @@
   pm2 start server.js -i 0 --name quickshake --log-date-format="YYYY-MM-DD HH:mm Z"
 */
 /*jslint node: true */
-// const compression = require('compression');
-const express = require('express');
-const app = express();
-const http = require('http').Server(app);
-const  url = require('url');
-const WebSocketServer = require('ws').Server;
-const wss = new WebSocketServer({server: http});
-const logger = require('winston');
-const Conf = require("./config/serverConf.js");
-const MongoClient  = require('mongodb').MongoClient;
-const RingBuffer = require(__dirname + '/lib/ringBuffer');
-const MongoRealTime = require(__dirname + '/lib/mongoRealTime');
+// var compression = require('compression');
+var express = require('express');
+var app = express();
+var http = require('http').Server(app);
+var url = require('url');
+var WebSocketServer = require('ws').Server;
+var wss = new WebSocketServer({server: http});
+var logger = require('winston');
+var Conf = require("./config/serverConf.js");
+var MongoClient  = require('mongodb').MongoClient;
+var RingBuffer = require(__dirname + '/lib/ringBuffer');
+var MongoRealTime = require(__dirname + '/lib/mongoRealTime');
 
-const debug = require('debug')('quickshake');
+var debug = require('debug')('quickshake');
 
-
-const conf = new Conf();
+var conf = new Conf();
 
 var env=process.env.NODE_ENV || "development"; //get this from env
 
 var MONGO_URI = conf[env].mongo.uri;
 var DB_NAME = conf[env].mongo.dbName;
 exports.app=app; //for integration testing
-app.use(express['static']('public'));
+app.use(express.static(__dirname + '/public'));
 logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
 // app.use(compression());
@@ -37,7 +36,7 @@ var ringBuff = new RingBuffer(conf[env].ringBuffer.max, logger);
 var mongoRT = new MongoRealTime(conf[env].mongo.rtCollection, ringBuff, logger);
 
 //create a connection pool
-MongoClient.connect(MONGO_URI, { useUnifiedTopology: true }, function(err, client) {
+MongoClient.connect(MONGO_URI, function(err, client) {
   if(err) throw err;
   db = client.db(DB_NAME);
   mongoRT.database(db);
@@ -65,7 +64,6 @@ GET scnls by group (maintained by config but will eventually have CRUD func
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/public/index.html');
 });
-
 
 //GET: unique list of scnls
 //JSON response

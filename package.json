@@ -1,5 +1,5 @@
 {
-  "name": "quickShake",
+  "name": "quickshake",
   "version": "0.0.1",
   "description": "QuickShake serves waveform data stored on MongoDb",
   "main": "server.js",
