@@ -4,23 +4,23 @@
   pm2 start server.js -i 0 --name quickshake --log-date-format="YYYY-MM-DD HH:mm Z"
 */
 /*jslint node: true */
-// const compression = require('compression');
-const express = require('express');
-const app = express();
-const http = require('http').Server(app);
-const  url = require('url');
-const WebSocketServer = require('ws').Server;
-const wss = new WebSocketServer({server: http});
-const logger = require('winston');
-const Conf = require("./config/serverConf.js");
-const MongoClient  = require('mongodb').MongoClient;
-const RingBuffer = require(__dirname + '/lib/ringBuffer');
-const MongoRealTime = require(__dirname + '/lib/mongoRealTime');
+// var compression = require('compression');
+var express = require('express');
+var app = express();
+var http = require('http').Server(app);
+var  url = require('url');
+var WebSocketServer = require('ws').Server;
+var wss = new WebSocketServer({server: http});
+var logger = require('winston');
+var Conf = require("./config/serverConf.js");
+var MongoClient  = require('mongodb').MongoClient;
+var RingBuffer = require(__dirname + '/lib/ringBuffer');
+var MongoRealTime = require(__dirname + '/lib/mongoRealTime');
 
-const debug = require('debug')('quickshake');
+var debug = require('debug')('quickshake');
 
 
-const conf = new Conf();
+var conf = new Conf();
 
 var env=process.env.NODE_ENV || "development"; //get this from env
 
