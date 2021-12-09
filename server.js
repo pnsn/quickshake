@@ -8,7 +8,7 @@
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
-var  url = require('url');
+var url = require('url');
 var WebSocketServer = require('ws').Server;
 var wss = new WebSocketServer({server: http});
 var logger = require('winston');
@@ -19,7 +19,6 @@ var MongoRealTime = require(__dirname + '/lib/mongoRealTime');
 
 var debug = require('debug')('quickshake');
 
-
 var conf = new Conf();
 
 var env=process.env.NODE_ENV || "development"; //get this from env
@@ -27,7 +26,7 @@ var env=process.env.NODE_ENV || "development"; //get this from env
 var MONGO_URI = conf[env].mongo.uri;
 var DB_NAME = conf[env].mongo.dbName;
 exports.app=app; //for integration testing
-app.use(express.static('public'));
+app.use(express.static(__dirname + '/public'));
 logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
 // app.use(compression());
@@ -64,11 +63,6 @@ GET scnls by group (maintained by config but will eventually have CRUD func
 //HTML response
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/public/index.html');
-});
-
-
-app.get('/javascript', function (req, res) {
-  res.sendFile(__dirname + '/public/javascript');
 });
 
 //GET: unique list of scnls
