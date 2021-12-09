@@ -67,6 +67,10 @@ app.get('/', function (req, res) {
 });
 
 
+app.get('/javascript', function (req, res) {
+  res.sendFile(__dirname + '/public/javascript');
+});
+
 //GET: unique list of scnls
 //JSON response
 app.get('/scnls', function (req, res) {
