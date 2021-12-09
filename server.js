@@ -27,7 +27,7 @@ var env=process.env.NODE_ENV || "development"; //get this from env
 var MONGO_URI = conf[env].mongo.uri;
 var DB_NAME = conf[env].mongo.dbName;
 exports.app=app; //for integration testing
-app.use(express.static(('public')));
+app.use(express.static('public'));
 logger.level="debug";
 logger.add(logger.transports.File, { filename: 'log/server.log' });
 // app.use(compression());
