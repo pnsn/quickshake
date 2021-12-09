@@ -6,12 +6,12 @@
 
 'use strict';
 /*jslint node: true */
-const scnlConf = require("../../config/scnlConf.js");
-const serverConf = require("../../config/serverConf.js");
-const scnlconf = new scnlConf();
-const serverconf= new serverConf();
-const MongoClient  = require('mongodb').MongoClient;
-const Scnl = require("../../lib/scnl.js");
+var scnlConf = require("../../config/scnlConf.js");
+var serverConf = require("../../config/serverConf.js");
+var scnlconf = new scnlConf();
+var serverconf= new serverConf();
+var MongoClient  = require('mongodb').MongoClient;
+var Scnl = require("../../lib/scnl.js");
 var env=process.env.NODE_ENV || "development"; //get this from env
 var MONGO_URI = serverconf[env].mongo.uri;
 var DB_NAME = serverconf[env].mongo.dbName;
@@ -21,7 +21,7 @@ var collName= "scnls"; // mongo collection
 
 MongoClient.connect(MONGO_URI, function(err, client) {
   if(err) throw err;
-  const db = client.db(DB_NAME);
+  var db = client.db(DB_NAME);
 
   scnl.parseIrisScnls(scnlconf.nets, function(err, iris_scnls, response){
     scnl.getCwaveCollections(db, function(err, scnls){

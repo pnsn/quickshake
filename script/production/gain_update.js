@@ -5,13 +5,13 @@
 
 'use strict';
 /*jslint node: true */
-const path= "/home/eworm/quickshake";
-const scnlConf = require(path + "/config/scnlConf.js");
-const serverConf = require(path + "/config/serverConf.js");
-const scnlconf = new scnlConf();
-const serverconf= new serverConf();
-const MongoClient  = require('mongodb').MongoClient;
-const Scnl = require(path + "/lib/scnl.js");
+var path= "/home/eworm/quickshake";
+var scnlConf = require(path + "/config/scnlConf.js");
+var serverConf = require(path + "/config/serverConf.js");
+var scnlconf = new scnlConf();
+var serverconf= new serverConf();
+var MongoClient  = require('mongodb').MongoClient;
+var Scnl = require(path + "/lib/scnl.js");
 var env=process.env.NODE_ENV || "development"; //get this from env
 var MONGO_URI = serverconf[env].mongo.uri;
 var DB_NAME = serverconf[env].mongo.dbName;
@@ -20,7 +20,7 @@ var scnl =Scnl;
 var collName= "scnl";
 MongoClient.connect(MONGO_URI, function(err, client) {
   if(err) throw err;
-  const db = client.db(DB_NAME);
+  var db = client.db(DB_NAME);
     scnl.parseChannelResponse(function(err, chanRes, response){
       var coll = db.collection('scnls');
       scnl.getCwaveCollections(db, function(err, scnls){
